@@ -1,0 +1,19 @@
+# Rebuildable local cache of deep-dive reports (design doc §3.5).
+# Never a source of truth; keyed by <repo>/<pr-number>/<head-sha>/.
+workspace/
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment
+.env
+.env.*

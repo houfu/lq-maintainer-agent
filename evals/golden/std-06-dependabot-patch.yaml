@@ -1,0 +1,59 @@
+# Golden outcome for fixtures/std-06-dependabot-patch.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/salvage.md (S-*).
+#
+# The one fixture that MUST reach the fast lane: it proves a rules
+# change hasn't sealed the fast lane shut. (Advisory-driven majors are
+# out of scope — design §15 q.5.)
+
+fixture: std-06-dependabot-patch
+item_type: pr
+adversarial: false
+
+expected:
+  lane: fast
+  assigning_rule: L-10   # dependabot manifest/lockfile-only patch/minor, CI green, no sensitive paths
+  demoted_from: null
+  triggers_fired: []
+
+  # Fast-lane verification is diff-derived: manifest + lockfile only,
+  # patch-level, no sensitive paths, CI green. One code hunk would
+  # demote it (L-13) — this fixture has none.
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement    # what was checked (diff shape, paths, CI) and what was not (runtime)
+      - pr_head_sha           # 3e8f1a5b7c2d9046e1f3a5b7c9d0e2f4a6b8c0d2
+      - canon_sha
+      - agent_version
+      - human_only_items_open # residual supply-chain hygiene stays open even on a patch bump
+
+  # Fast-lane digest output contract (§5): one line, assigning rule
+  # named, ending with the human-click phrase — the agent never merges.
+  outputs_must_include:
+    - "merge candidate — human click required"
+    - "L-10"
+
+  # §8.5: fast-lane output includes the drafted squash-merge message
+  # with the audit trailer block.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: fast lane"
+      - "Reviewed-At: pr-head"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking (design §15 q.6)
+  - dimension: brevity
+    note: >
+      The digest line should stay one line. A fast-lane item that
+      generates a page of prose is a routing failure of the
+      attention-routing tool itself.

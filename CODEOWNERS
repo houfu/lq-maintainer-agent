@@ -1,0 +1,17 @@
+# CODEOWNERS — lq-maintainer-agent
+#
+# Security-routes the judgment-bearing and permission-bearing surfaces
+# (design doc §3.6). Together with branch protection, these paths require
+# review from the security team; CONTRIBUTING.md additionally requires
+# two maintainer reviews for rules/, settings/, and skills/ frontmatter.
+#
+# NOTE: @legalquants/maintainer-agent-security is a placeholder team name;
+# replace with the real GitHub team once created.
+
+/rules/           @legalquants/maintainer-agent-security
+/settings/        @legalquants/maintainer-agent-security
+/skills/          @legalquants/maintainer-agent-security
+/.claude-plugin/  @legalquants/maintainer-agent-security
+
+# CODEOWNERS itself is a permission surface too.
+/CODEOWNERS       @legalquants/maintainer-agent-security
