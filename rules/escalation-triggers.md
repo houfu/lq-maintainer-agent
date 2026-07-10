@@ -18,7 +18,7 @@ un-fired within a review (L-04). Canon paths resolve via
 
 - **E-01 — CODEOWNERS-sensitive paths.** Any touched path matches a
   security-routing pattern in lq-ai's CODEOWNERS (including
-  `.github/workflows/**` and `.claude/`). Applies to docs under those
+  `.github/workflows/**` and the .claude/ directory once lq-ai ships it, M0 §2.1). Applies to docs under those
   patterns too (lanes rule L-21).
 - **E-02 — Auth / authz / audit / crypto.** The change touches
   authentication, authorization, audit-logging, or cryptographic

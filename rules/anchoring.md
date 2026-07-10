@@ -30,7 +30,7 @@ anchor status. Canon locations referenced here resolve via
 - **A-04 — Docs changes** anchor to the thing documented: the
   feature, behavior, or process the text describes must exist and
   work as described. Above all other checks, the text must be
-  consistent with `HONEST-STATE.md` — a doc anchored to code but
+  consistent with `docs/HONEST-STATE.md` — a doc anchored to code but
   contradicting HONEST-STATE.md fails anchoring on truthfulness
   (lanes rule L-23).
 - **A-05 — Skills changes** anchor to the attestation path: the human

@@ -70,7 +70,7 @@ These apply to every item before and above any per-lane rule.
   ever do is an open security-team call (design doc §15 q.5).
 - **L-11 — No sensitive paths.** No touched path matches a
   CODEOWNERS security-routing pattern or any other sensitive class in
-  `rules/escalation-triggers.md` (workflows, `.claude/`, auth/crypto
+  `rules/escalation-triggers.md` (workflows, the .claude/ directory, auth/crypto
   code, skills).
 - **L-12 — CI green.** All required checks pass on the reviewed head
   SHA. Pending or failing CI disqualifies.
@@ -103,7 +103,7 @@ the item was not fast-lane material; demote it (L-04).
 
 - **L-20 — Docs-only diff.** Every touched file is documentation
   (markdown/prose under the docs tree, README, changelog); no code,
-  no configuration, no CI/workflow files, no `.claude/`. Mixed
+  no configuration, no CI/workflow files, nothing under .claude/. Mixed
   docs+code diffs go to the standard lane (and are salvage
   candidates, `rules/salvage.md`).
 - **L-21 — Sensitive docs escalate.** Docs under security or
@@ -117,7 +117,7 @@ the item was not fast-lane material; demote it (L-04).
   correct doc in the wrong place is a finding with a suggested
   destination.
 - **L-23 — Truthfulness.** No overclaiming: every capability or
-  status claim is checked against lq-ai's `HONEST-STATE.md`. A doc
+  status claim is checked against lq-ai's `docs/HONEST-STATE.md`. A doc
   that says the project does something HONEST-STATE.md says it does
   not is a blocking finding.
 - **L-24 — Audience and register.** Detail level and tone match the
