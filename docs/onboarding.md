@@ -29,7 +29,7 @@ path.
 1. Add this repo as a plugin marketplace source in Claude Code:
 
    ```
-   /plugin marketplace add legalquants/lq-maintainer-agent
+   /plugin marketplace add houfu/lq-maintainer-agent
    ```
 
 2. Install the plugin:

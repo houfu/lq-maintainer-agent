@@ -20,7 +20,8 @@
 # Budget (§4.2): eval runs consume API tokens. PR runs are capped at
 # EVAL_FIXTURE_CAP fixtures; adding the `full-eval` label to a PR lifts
 # the cap, and the nightly scheduled run always grades the full suite
-# against the advanced canon pin.
+# against lq-ai main HEAD, resolved at run time (deviation from design
+# §3.4, maintainer decision 2026-07-10: latest canon, no pin file).
 #
 # NOTE — file location: GitHub Actions only discovers workflows under
 # .github/workflows/. The design layout (§3.1) keeps CI under ci/ as
@@ -46,9 +47,9 @@ on:
       - "ci/scripts/grade-evals.sh"
       - ".github/workflows/eval-run.yml"
   schedule:
-    # Nightly full run (03:43 UTC), after the canon-pin advance job
-    # (02:17 UTC in ci/canon-drift-check.yml) has had its chance to
-    # refresh the pin-advance PR.
+    # Nightly full run (03:43 UTC), after the nightly drift check
+    # (02:17 UTC in ci/canon-drift-check.yml) has already flagged any
+    # dangling canon references against the same day's main HEAD.
     - cron: "43 3 * * *"
   workflow_dispatch:
 
@@ -97,18 +98,18 @@ jobs:
           echo "cap=$CAP" >> "$GITHUB_OUTPUT"
           echo "Fixture cap for this run: $CAP (0 = uncapped)"
 
-      - name: Record canon pin for this run
-        # The nightly run is defined as "against the advanced pin"
-        # (§4.2). The v0.1.0 mechanical grader does not yet consume the
-        # lq-ai tree — fixture-vs-canon resolution joins with the M1
-        # harness — but every run records which pin it would have used,
-        # so results are attributable from day one.
+      - name: Record canon SHA for this run
+        # The canon is lq-ai main HEAD at run time. The v0.1.0
+        # mechanical grader does not yet consume the lq-ai tree —
+        # fixture-vs-canon resolution joins with the M1 harness — but
+        # every run records the exact SHA it would have used, so
+        # results are attributable and reproducible from day one.
         run: |
           set -euo pipefail
-          PIN="$(grep -v '^#' ci/canon-pin.txt | tr -d '[:space:]' | head -n1)"
-          echo "Canon pin for this run: ${PIN}" | tee -a "$GITHUB_STEP_SUMMARY"
-          if ! printf '%s' "$PIN" | grep -qE '^[0-9a-f]{40}$'; then
-            echo "::warning file=ci/canon-pin.txt::canon pin is not set ('${PIN}'). The mechanical grader does not need it yet, but the drift check and the M1 harness do — set it at first setup."
+          SHA="$(git ls-remote https://github.com/legalquants/lq-ai.git refs/heads/main | cut -f1)"
+          echo "Canon for this run: legalquants/lq-ai@${SHA} (main HEAD at run time)" | tee -a "$GITHUB_STEP_SUMMARY"
+          if ! printf '%s' "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "::warning::could not resolve legalquants/lq-ai main HEAD. The mechanical grader does not need the canon yet, but the drift check and the M1 harness do."
           fi
 
       - name: Grade (mechanical — structure, rule IDs, paths)

@@ -5,13 +5,14 @@
 # review from the security team; CONTRIBUTING.md additionally requires
 # two maintainer reviews for rules/, settings/, and skills/ frontmatter.
 #
-# NOTE: @legalquants/maintainer-agent-security is a placeholder team name;
-# replace with the real GitHub team once created.
+# NOTE: while the repo lives under the personal account @houfu, that
+# account owns all routes. On transfer to the legalquants org, replace
+# with the security team (e.g. @legalquants/maintainer-agent-security).
 
-/rules/           @legalquants/maintainer-agent-security
-/settings/        @legalquants/maintainer-agent-security
-/skills/          @legalquants/maintainer-agent-security
-/.claude-plugin/  @legalquants/maintainer-agent-security
+/rules/           @houfu
+/settings/        @houfu
+/skills/          @houfu
+/.claude-plugin/  @houfu
 
 # CODEOWNERS itself is a permission surface too.
-/CODEOWNERS       @legalquants/maintainer-agent-security
+/CODEOWNERS       @houfu

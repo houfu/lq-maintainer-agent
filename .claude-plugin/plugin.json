@@ -6,7 +6,7 @@
     "name": "LegalQuants maintainers",
     "url": "https://github.com/legalquants"
   },
-  "repository": "https://github.com/legalquants/lq-maintainer-agent",
+  "repository": "https://github.com/houfu/lq-maintainer-agent",
   "license": "MIT",
   "keywords": ["triage", "code-review", "maintainer", "governance", "lq-ai"]
 }
