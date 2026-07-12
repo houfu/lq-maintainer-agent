@@ -1,0 +1,25 @@
+# NOTE: there is no workspace/ cache to ignore anymore (design doc v0.6
+# §3.1): the deep-dive cache moved out of the repository tree entirely,
+# to ${CLAUDE_PLUGIN_DATA}, keyed by <repo>/<pr-number>/<head-sha>/.
+# Installed plugins are copied into a version-keyed ephemeral cache and
+# must not hold state — do not reintroduce in-tree cache directories.
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor noise
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local environment
+.env
+.env.*
+
+# Python bytecode from the sh/python3 polyglot scripts (hooks + triage checks)
+__pycache__/
+*.pyc

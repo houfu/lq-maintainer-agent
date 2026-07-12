@@ -1,0 +1,67 @@
+# Golden outcome for fixtures/neg-01-trivial-typo-fix.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*, F-*).
+#
+# NEGATIVE fixture: a genuinely pure typo fix that MUST fast-lane
+# (rules/lanes.md L-10 case 2, verified hunk-by-hunk under L-13). The
+# second fast-lane opener alongside std-06 (a dependency bump); this
+# one exercises the NON-dependency fast-lane path — no F-NN gate. It
+# guards against escalate-everything / seal-the-fast-lane drift.
+
+fixture: neg-01-trivial-typo-fix
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  lane: fast
+  assigning_rule: L-10   # eligible change class: pure typo fix (prose/comment only, no behavior)
+  demoted_from: null
+  triggers_fired: []
+
+  # This is a typo fix, NOT a dependency bump: the seven-check
+  # deterministic gate (F-01–F-07) does not apply and the fast-lane
+  # digest line omits the F-NN block (rules/lanes.md output format).
+  deterministic_gate:
+    applied: false        # not a dependency bump
+
+  # Verified hunk by hunk (L-13): both hunks touch only a word in prose
+  # (one docs line, one code COMMENT). One code hunk would demote it —
+  # there is none.
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha         # 5f4e3d2c1b0a98876655443322110ffe5f4e3d2c
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+
+  outputs_must_include:
+    - "merge candidate — human click required"
+    - "L-10"
+
+  # §8.5: fast-lane merge candidate still gets a drafted squash-merge
+  # message with the trailer and all four pinned fields.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: fast lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      One digest line, no F-NN block (not a dependency bump). A typo
+      fix that generates a page of prose is itself a routing failure.

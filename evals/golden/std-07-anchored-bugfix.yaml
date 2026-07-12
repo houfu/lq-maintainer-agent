@@ -1,0 +1,62 @@
+# Golden outcome for fixtures/std-07-anchored-bugfix.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*, F-*),
+# rules/escalation-triggers.md (E-*), rules/anchoring.md (A-*).
+#
+# The canonical clean standard-lane item: anchored bug fix with the
+# regression test CONTRIBUTING requires.
+
+fixture: std-07-anchored-bugfix
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; bug fix anchored to a linked issue + regression test
+  demoted_from: null
+  triggers_fired: []
+
+  # Lane-relative anchoring (rules/anchoring.md A-02): bug fixes anchor
+  # to a linked issue or stated repro plus the regression test. Both
+  # present here; an unanchored bug fix would be a repro request (A-07),
+  # never an escalation.
+  anchor:
+    kind: issue
+    reference: "#239"
+    regression_test: true
+
+  findings_must_include: []   # a clean fix may yield zero findings; that is a valid outcome
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement    # incl. explicit "runtime behavior not checked; nothing executed"
+      - pr_head_sha           # d5c2e9f0a3b7146c8d1e4f6a9b0c2d3e5f7a8b9c
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open # contributor trust + supply-chain hygiene: open even for known contributors
+
+  # §8.5: standard-lane output includes the drafted squash-merge
+  # message with the audit trailer block and all four pinned fields.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: finding-phrasing
+    note: >
+      If the review surfaces optional polish (e.g. naming), it should
+      carry a disposition hint (trivial — maintainer fixes) rather
+      than blocking-toned language; the fix itself is complete.

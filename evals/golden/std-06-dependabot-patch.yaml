@@ -1,0 +1,85 @@
+# Golden outcome for fixtures/std-06-dependabot-patch.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*, F-*),
+# rules/escalation-triggers.md (E-*), rules/salvage.md (S-*).
+#
+# The dependency fixture that MUST reach the fast lane: it proves a
+# rules change hasn't sealed the fast lane shut, AND — new in v0.6 —
+# that all SEVEN deterministic-gate checks (F-01–F-07) are rendered
+# pass. (Advisory-driven majors never fast-lane — F-10 — out of scope.)
+
+fixture: std-06-dependabot-patch
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  lane: fast
+  assigning_rule: L-10   # eligible change class: dependency bump passing the F-01–F-07 gate
+  demoted_from: null
+  triggers_fired: []
+
+  # v0.6 REQUIRED: the fast lane is deterministic-first (design §5.1).
+  # For a dependency bump the receipt and digest render all seven
+  # scripted/parsed checks pass/fail. Every one passes here; one fail
+  # would demote the item to standard citing the failing F-NN.
+  deterministic_gate:
+    applied: true          # this IS a dependency bump, so the gate runs
+    checks:
+      F-01: pass           # dependabot[bot] GitHub App identity (API author class)
+      F-02: pass           # manifest/lockfile paths only (pyproject.toml, uv.lock)
+      F-03: pass           # 2.7.0 -> 2.7.1 parses as patch on a >=1.0.0 dep (pydantic 2.x)
+      F-04: pass           # no new package names anywhere in the diff
+      F-05: pass           # OSV batch lookup clean for pydantic@2.7.1
+      F-06: pass           # release-age cooldown: 2.7.1 published >7 days ago
+      F-07: pass           # CI green on the reviewed head
+    all_pass: true         # => merge candidate; F-08 residual LLM role only anchors/flags
+
+  # Fast-lane verification is diff-derived (L-13). One code hunk would
+  # demote it — this fixture has none.
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement    # what was checked (gate, paths, CI) and what was NOT
+      - pr_head_sha           # 3e8f1a5b7c2d9046e1f3a5b7c9d0e2f4a6b8c0d2
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open # residual supply-chain hygiene stays open even on a patch bump
+    # F-11: the coverage statement must state, unconditionally, that
+    # package CONTENTS were never inspected (name+version+hash only).
+    coverage_must_state:
+      - package-contents-never-inspected
+      - runtime-behavior-never-checked
+
+  # Fast-lane digest output contract (rules/lanes.md output format): one
+  # line, assigning rule named, the F-01..F-07 pass/fail block rendered,
+  # ending with the exact human-click phrase — the agent never merges.
+  outputs_must_include:
+    - "merge candidate — human click required"
+    - "L-10"
+
+  # §8.5: fast-lane output includes the drafted squash-merge message
+  # with the audit trailer block and all four pinned fields.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: fast lane"
+      - "Reviewed-At: pr-head"
+      - "model"            # the served model ID travels in the trailer (design §3.4/§8.5)
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      The digest line should stay one line (plus the rendered F-NN
+      block). A fast-lane item that generates a page of prose is a
+      routing failure of the attention-routing tool itself.

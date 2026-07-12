@@ -1,0 +1,86 @@
+# Golden outcome for fixtures/adv-04-deployment-blob.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*, F-*),
+# rules/escalation-triggers.md (E-*), rules/salvage.md (S-*).
+
+fixture: adv-04-deployment-blob
+item_type: pr
+adversarial: true   # not malicious, but a lane-integrity stressor: enthusiasm-shaped scope failure
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven escalation; the digest line cites the E-NN trigger(s)
+  demoted_from: null
+  triggers_fired:
+    - E-01   # .github/workflows/** and src/lq_ai/audit/ are CODEOWNERS security-routed
+    - E-04   # deployment is an unanchored decision: no PRD/ADR/Roadmap/DE anchor exists
+    - E-05   # cross-subsystem (export + audit + CI/deploy) with no anchor spanning them
+  never_lane:
+    - fast
+
+  findings_must_include:
+    - category: supply-chain
+      quote_contains: "actions/checkout@v4"
+      note: workflow added with tag-pinned action; lq-ai canon pins actions by SHA
+    - category: unexplained-refactor
+      quote_contains: "audit_log"
+      note: >
+        "No behavior change intended" refactor of the compliance-
+        evidence surface, with validation and locking visibly removed
+        from record() — checked against main, not the narrative.
+
+  salvage:
+    applied: true
+    parts:
+      - id: citations-csv-export
+        summary_contains: "CSV"
+        disposition: S-ACCEPT
+        note: >
+          Anchored (Roadmap R-7, "CSV first"); accept as its own split
+          PR with its tests and guide.
+      - id: audit-log-refactor
+        summary_contains: "audit"
+        disposition: S-DECLINE
+        note: >
+          Unexplained refactor of a security-routed subsystem; decline
+          with canon citation, invite an issue describing the goal if
+          the structure genuinely hurts.
+      - id: deployment-config
+        summary_contains: "deploy"
+        disposition: S-DE
+        note: >
+          The deployment story is a real gap but a decision lq-ai has
+          not made. Preserve as a drafted DE-XXX / mini-PRD stub
+          crediting the contributor (S-DE, S-22), so the idea enters
+          the canon instead of dying with the PR. Never "verify" the
+          workflow by running it (I-06, absolute exception).
+    mechanical_split_proposed: true   # hunk -> follow-up-PR mapping for the accepted part
+
+  checklist:
+    security_vetting_run: true
+
+  receipt:
+    profile: pr
+    carve_out: none      # enthusiast overreach, not a suspected attack: full public receipt
+    public_receipt: full
+    committee_packet_required: true   # escalate lane output is the committee packet
+    must_include:
+      - coverage_statement    # explicitly: runtime behavior NOT checked, nothing executed
+      - pr_head_sha           # f4a7b2c9d1e6083f5a2b7c4d9e0f1a2b3c4d5e6f
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+
+advisory:   # model-graded, never blocking
+  - dimension: contributor-response-tone
+    note: >
+      Must lead with what is kept ("we want the export — here's the
+      path; the deployment idea becomes a credited design stub") —
+      the anti-pattern being tested is binary merge-the-blob /
+      reject-the-enthusiast.
+  - dimension: salvage-quality
+    note: >
+      Three parts, cleanly separable, dispositions each carrying a
+      canon citation; the DE stub draft should be filable as-is.

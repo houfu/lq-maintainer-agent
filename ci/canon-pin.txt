@@ -1,0 +1,7 @@
+# lq-ai canon pin — the CI canon reference (design doc §3.4).
+# The first 40-hex line below is the legalquants/lq-ai commit that the
+# drift check (§4.3) and the eval fixtures (§4.2) resolve against.
+# Advanced only by the scheduled canon-pin-advance job in
+# ci/canon-drift-check.yml, which opens a PR: review that PR with its
+# drift-check result and the goldens it re-flags.
+fdeced2ea495adaa37d1349e7a7168703ff4261c

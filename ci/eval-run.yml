@@ -1,0 +1,215 @@
+# eval-run.yml — the eval harness workflow (design doc §4.2).
+#
+# Two lanes:
+#   mechanical-grade   — BLOCKING. Runs ci/scripts/grade-evals.sh:
+#                        suite structure (fixture/golden pairing,
+#                        rule-ID and path resolution), golden canon-SHA
+#                        provenance (re-flagging goldens adjudicated
+#                        under an older pin), and — once the M1
+#                        agent-run harness (ci/scripts/
+#                        run-agent-eval.sh) exists — lane/trigger
+#                        outcome grading: pass^k on never-fast-lane
+#                        invariants (temperature 0 is not
+#                        deterministic; k trials, ANY failure fails),
+#                        threshold grading on ordinary lanes, and a
+#                        per-lane confusion matrix in the step summary
+#                        whose fast-lane false-positive cell is the
+#                        safety number. Until the harness lands, the
+#                        script says honestly that judgment was not
+#                        graded.
+#   model-graded       — ADVISORY (continue-on-error at the job level:
+#                        a red job never blocks the PR). Salvage
+#                        decomposition quality and contributor-response
+#                        tone are judgment calls graded by a model
+#                        rubric: binary rubric, chain-of-thought before
+#                        verdict, a judge model distinct from the
+#                        triage model. Advisory until the judge itself
+#                        is validated — TPR/TNR measured against
+#                        maintainer labels is the graduation bar
+#                        (§4.2; adopted former open question q.6, §15
+#                        preamble).
+#
+# Canon (§3.4): every run — PR and nightly — grades against the PINNED
+# lq-ai reference in ci/canon-pin.txt, so results are deterministic and
+# reproducible. The pin is advanced by the scheduled job in
+# ci/canon-drift-check.yml, which opens a PR; because ci/canon-pin.txt
+# is in this workflow's pull_request paths, that pin-advance PR gets a
+# full eval run, and the grader re-flags every golden adjudicated under
+# the previous canon SHA (§4.2).
+#
+# Budget (§4.2): eval runs consume API tokens. PR runs are capped at
+# DEFAULT_FIXTURE_CAP fixtures; adding the `full-eval` label to a PR
+# lifts the cap, and the nightly scheduled run always grades the full
+# suite against the pin.
+#
+# NOTE — file location: GitHub Actions only discovers workflows under
+# .github/workflows/. The design layout (§3.1) keeps CI under ci/ as
+# the reviewed source of truth; a byte-identical copy ships at
+# .github/workflows/eval-run.yml (symlinks are not followed). The
+# mechanical-grade job's first step fails if the two copies diverge:
+# edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): all third-party actions are pinned by
+# full commit SHA (resolved 2026-07-11 from the tags noted beside each
+# pin). Repo-wide OpenSSF Scorecard and zizmor runs are a standing
+# §3.6 requirement and live in their own hygiene workflow, not here.
+
+name: eval-run
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+    paths:
+      - "rules/**"
+      - "templates/**"
+      - "skills/**"
+      - "evals/**"
+      - "ci/canon-pin.txt"
+      - "ci/eval-run.yml"
+      - "ci/scripts/grade-evals.sh"
+      - ".github/workflows/eval-run.yml"
+  schedule:
+    # Nightly full run (03:43 UTC) against the advanced canon pin,
+    # after the nightly canon-pin advance (02:17 UTC in
+    # ci/canon-drift-check.yml) has had its say.
+    - cron: "43 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: eval-run-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Fixture cap for ordinary PR runs; 0 means uncapped. Lifted by the
+  # `full-eval` label and by the nightly schedule (computed per job).
+  DEFAULT_FIXTURE_CAP: "10"
+  # pass^k trials per never-fast-lane invariant fixture (§4.2).
+  EVAL_PASS_K: "3"
+  # Ordinary-lane suite accuracy floor, percent (§4.2 threshold grading).
+  EVAL_LANE_THRESHOLD: "90"
+
+jobs:
+  mechanical-grade:
+    name: mechanical grading (blocking)
+    runs-on: ubuntu-latest
+    outputs:
+      # Shared with the model-graded job so the `full-eval` label (and
+      # the nightly uncapped run) applies to both lanes, and both lanes
+      # grade against the same pinned canon.
+      cap: ${{ steps.cap.outputs.cap }}
+      canon: ${{ steps.canon.outputs.sha }}
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/eval-run.yml .github/workflows/eval-run.yml; then
+            echo "::error file=ci/eval-run.yml::ci/eval-run.yml and .github/workflows/eval-run.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Compute fixture cap
+        id: cap
+        run: |
+          set -euo pipefail
+          CAP="${DEFAULT_FIXTURE_CAP}"
+          if [ "${{ github.event_name }}" != "pull_request" ]; then
+            CAP=0   # nightly and manual runs grade the full suite
+          elif [ "${{ contains(github.event.pull_request.labels.*.name, 'full-eval') }}" = "true" ]; then
+            CAP=0   # explicit full-eval opt-in (§4.2)
+          fi
+          echo "cap=$CAP" >> "$GITHUB_OUTPUT"
+          echo "Fixture cap for this run: $CAP (0 = uncapped)"
+
+      - name: Read the canon pin
+        id: canon
+        run: |
+          set -euo pipefail
+          SHA="$(grep -m1 -oE '^[0-9a-f]{40}$' ci/canon-pin.txt || true)"
+          if [ -z "$SHA" ]; then
+            echo "::error file=ci/canon-pin.txt::canon pin missing or invalid — ci/canon-pin.txt must contain the 40-hex lq-ai commit SHA CI is pinned to (§3.4). The scheduled canon-pin-advance job in ci/canon-drift-check.yml maintains it."
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Canon for this run: legalquants/lq-ai@${SHA} (pinned — ci/canon-pin.txt, §3.4)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Shallow-fetch lq-ai at the pinned SHA
+        # The agent-run harness reads the canon from here (EVAL_CANON_DIR);
+        # the structural checks do not need it but the fetch is depth-1
+        # cheap and keeps one code path for both stages.
+        run: |
+          set -euo pipefail
+          git init -q lq-ai-canon
+          git -C lq-ai-canon remote add origin https://github.com/legalquants/lq-ai.git
+          git -C lq-ai-canon fetch -q --depth 1 origin "${{ steps.canon.outputs.sha }}"
+          git -C lq-ai-canon checkout -q FETCH_HEAD
+
+      - name: Grade (mechanical — structure, provenance, pass^k when the runner exists)
+        env:
+          EVAL_FIXTURE_CAP: ${{ steps.cap.outputs.cap }}
+          CANON_PIN_SHA: ${{ steps.canon.outputs.sha }}
+          EVAL_CANON_DIR: lq-ai-canon
+          # Consumed only by the M1 agent-run harness; absent on
+          # fork PRs, where the structural checks still run.
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -f ci/scripts/run-agent-eval.sh ]; then
+            chmod +x ci/scripts/run-agent-eval.sh
+            export EVAL_RUNNER=ci/scripts/run-agent-eval.sh
+            echo "Agent-run harness present: pass^k and confusion-matrix grading active (§4.2)."
+          else
+            echo "::notice::agent-run harness (ci/scripts/run-agent-eval.sh) not present — structural grading only; lane/trigger outcomes, pass^k, and the confusion matrix land with M1 (§4.2, §14)."
+          fi
+          sh ci/scripts/grade-evals.sh
+
+  model-graded:
+    name: model-graded rubric (advisory)
+    runs-on: ubuntu-latest
+    # Advisory by design (§4.2): a failure here is information for the
+    # rules author, never a merge blocker. Graduation to blocking has a
+    # measurable bar — judge TPR/TNR against maintainer labels (§15
+    # preamble, former q.6).
+    continue-on-error: true
+    needs: mechanical-grade
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run model-graded rubric if the harness is present
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Reuse the cap and canon the mechanical job computed, so the
+          # `full-eval` label, nightly uncapped runs, and the pin apply
+          # to this lane too.
+          EVAL_FIXTURE_CAP: ${{ needs.mechanical-grade.outputs.cap }}
+          CANON_PIN_SHA: ${{ needs.mechanical-grade.outputs.canon }}
+        run: |
+          set -euo pipefail
+          HARNESS="ci/scripts/grade-evals-model.sh"
+          if [ ! -x "$HARNESS" ] && [ ! -f "$HARNESS" ]; then
+            {
+              echo "## Model-graded rubric: pending the M1 harness"
+              echo
+              echo "Salvage-decomposition quality and contributor-response tone are"
+              echo "graded by a model rubric over actual agent output (§4.2): binary"
+              echo "rubric, chain-of-thought before verdict, a judge model distinct"
+              echo "from the triage model. That requires running the agent over the"
+              echo "fixtures, which lands with the M1 eval-harness milestone (§14)."
+              echo "No model grading ran; this advisory job reports 'pending', not"
+              echo "'pass'."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::model-graded rubric pending — harness ($HARNESS) lands with M1 (§4.2, §14). This is 'not yet run', not a pass."
+            exit 0
+          fi
+          if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+            echo "::warning::ANTHROPIC_API_KEY secret not configured; skipping model-graded rubric (advisory lane skipped, not failed)."
+            echo "Model-graded rubric skipped: ANTHROPIC_API_KEY secret not configured." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          sh "$HARNESS"

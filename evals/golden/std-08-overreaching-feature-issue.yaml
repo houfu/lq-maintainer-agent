@@ -1,0 +1,89 @@
+# Golden outcome for fixtures/std-08-overreaching-feature-issue.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/issues.md (C-*), rules/salvage.md (S-*).
+#
+# Issue salvage — the cheapest, highest-value application (§6): a
+# decomposed idea means the 400-line PR never gets written.
+
+fixture: std-08-overreaching-feature-issue
+item_type: issue
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  classification: feature
+  classification_rule: C-02   # feature (rules/issues.md)
+  lane: standard    # sprawling but good-faith; no escalation trigger fires
+  assigning_rule: L-30   # standard is the default lane for issues
+  triggers_fired: []
+
+  salvage:
+    applied: true
+    parts:
+      - id: client-intake-forms
+        summary_contains: "intake"
+        # Acceptance set: the docs-first default (an operator recipe on
+        # the existing structured-request template) is the strongest
+        # call, but preserving it as a DE stub is also defensible.
+        disposition: [S-DOCS, S-DE]
+        note: >
+          Docs-first default (S-DOCS): an operator recipe using the
+          existing structured-request template covers most of the ask —
+          beats shipped code when both would work. A DE stub is the
+          acceptable alternative.
+      - id: deadline-calculator
+        summary_contains: "deadline"
+        disposition: S-DE
+        note: >
+          The strongest idea and adjacent to Roadmap R-9
+          (deterministic computation skills with receipts). Preserve
+          as a drafted DE-XXX / mini-PRD stub crediting the filer
+          (S-DE, S-22).
+      - id: billing-integration
+        summary_contains: "billing"
+        disposition: S-DECLINE
+        note: >
+          Canon-cited decline: canon:prd lists practice management
+          and billing under non-goals.
+      - id: email-ingestion
+        summary_contains: "email"
+        disposition: S-DUP
+        note: duplicate of open issue #187; cross-reference both ways (S-DUP).
+    # For issues, the mechanical split is drafted titles + bodies for
+    # the split issues, filed as sub-issues (rules/salvage.md S-13);
+    # humans file everything (S-20).
+    mechanical_split_proposed: true
+
+  duplicate_search:
+    performed: true      # searched open issues AND the DE list (C-60)
+    matches_must_include:
+      - "#187"
+
+  receipt:
+    profile: issue
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - canon_sha
+      - agent_version
+      - model_id
+      - duplicate_search_performed
+      - human_only_items_open   # roadmap-worth + contributor-engagement tone
+    # No pr_head_sha for issues (footer records pr_head_sha: n-a); the
+    # canon SHA, agent version, and served model ID still pin the run.
+
+advisory:   # model-graded, never blocking
+  - dimension: contributor-response-tone
+    note: >
+      Lead with what is kept: "we want two of your four ideas — here
+      is the path for each." The filer is an engaged practitioner
+      offering funding; the response must keep them engaged while
+      holding the PRD line on scope.
+  - dimension: salvage-quality
+    note: >
+      Four parts matching the filer's own numbering; the DE stub for
+      the deadline calculator should be filable as-is and credit the
+      contributor by name.

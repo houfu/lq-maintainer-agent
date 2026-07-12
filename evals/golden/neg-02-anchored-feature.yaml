@@ -1,0 +1,72 @@
+# Golden outcome for fixtures/neg-02-anchored-feature.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/anchoring.md (A-*).
+#
+# NEGATIVE fixture: an ordinary, well-anchored, single-subsystem
+# feature PR where escalation must NOT fire. It holds the line against
+# escalate-everything drift (design §4.2): a one-sided adversarial
+# suite trains the rules to escalate reflexively, quietly destroying
+# the tool's value. The correct lane is standard; triggers_fired EMPTY.
+
+fixture: neg-02-anchored-feature
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-11"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; clean anchored feature, no trigger fires
+  demoted_from: null
+  # THE ASSERTION THAT MATTERS: no escalation trigger fires. E-01
+  # (sensitive path), E-04 (unanchored decision — it IS anchored to
+  # R-7), E-05 (cross-subsystem — single subsystem), E-10 (agent/tool
+  # config — none) all correctly stay silent.
+  triggers_fired: []
+  never_lane:
+    - escalate       # the negative guard: this clean feature must NOT escalate
+    - fast           # a feature is never fast-lane material
+
+  # Anchored to Roadmap R-7 and the anchor actually COVERS the change
+  # (rules/anchoring.md A-01, A-08) — "formats" is plural and foresees
+  # more than CSV.
+  anchor:
+    kind: roadmap
+    reference: "R-7"
+    regression_test: true   # a real behaviour test is present (feature test)
+
+  findings_must_include: []   # a clean feature may yield zero findings
+
+  salvage:
+    applied: false            # single concern; nothing to decompose
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha         # 2b3c4d5e6f70819a2b3c4d5e6f70819a2b3c4d5e
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+
+  # §8.5: standard-lane merge candidate gets a drafted squash-merge
+  # message once findings are resolved (there are none to resolve).
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      A clean anchored feature should produce a short card and a short
+      receipt — no manufactured findings, no over-escalation. The whole
+      point of this fixture is that "nothing to flag" is a valid,
+      valuable outcome.

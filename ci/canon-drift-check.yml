@@ -1,0 +1,236 @@
+# canon-drift-check.yml — design doc §4.3 (drift check) + §3.4 (the CI
+# canon pin and its scheduled advance).
+#
+# CI canon is PINNED (§3.4): ci/canon-pin.txt records the lq-ai commit
+# that every PR-triggered check resolves against, so agent-repo CI is
+# deterministic and does not break because lq-ai merged something an
+# hour ago. The nightly scheduled job is the pin ADVANCE: it resolves
+# lq-ai's current main HEAD, runs the drift check against that
+# candidate canon, and — when the head has moved — opens a PR updating
+# the pin. The advance is itself a PR, so canon updates to the agent's
+# world-model are visible and reviewed (§3.4), and "lq-ai moved a doc"
+# surfaces as a failing, fixable PR in THIS repo rather than as a
+# silently wrong triage six weeks later (§4.3). ci/canon-pin.txt is in
+# this workflow's (and eval-run's) pull_request paths, so the
+# pin-advance PR gets both checks.
+#
+# The check itself (ci/scripts/check-canon-drift.sh) fails on:
+#   - dangling canon references (drift, §4.3), and
+#   - canon citations written outside rules/canon-map.md — the §2.2
+#     portability lint: canon-map is the only file allowed to encode
+#     lq-ai structure.
+#
+# TOKEN NOTE: pull requests opened with the default GITHUB_TOKEN do not
+# trigger other workflows. Configure a fine-grained PAT (or GitHub App
+# token) with contents+pull-requests write as the CANON_PIN_TOKEN
+# secret so the pin-advance PR gets its own drift-check and eval-run
+# results; without it the PR still opens, and the scheduled run's own
+# drift result (reported in the PR body and in the run status) stands
+# in until someone pushes to the PR branch.
+#
+# NOTE — file location: GitHub Actions only discovers workflows under
+# .github/workflows/. The design layout (§3.1) keeps CI under ci/ as
+# the reviewed source of truth; a byte-identical copy ships at
+# .github/workflows/canon-drift-check.yml (symlinks are not followed).
+# The first step of each job fails if the two copies diverge, so "keep
+# the two in sync" is enforced, not aspirational: edit ci/, then copy
+# to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): all third-party actions are pinned by
+# full commit SHA (resolved 2026-07-11 from the upstream tags noted
+# beside each pin). Repo-wide OpenSSF Scorecard and zizmor runs are a
+# standing §3.6 requirement; they audit ALL workflows and belong in
+# their own hygiene workflow, not inside this one.
+
+name: canon-drift-check
+
+on:
+  pull_request:
+    paths:
+      - "rules/**"
+      - "templates/**"
+      - "skills/**"
+      - "ci/canon-pin.txt"
+      - "ci/canon-drift-check.yml"
+      - "ci/scripts/check-canon-drift.sh"
+      - ".github/workflows/canon-drift-check.yml"
+  schedule:
+    # Nightly canon-pin advance (02:17 UTC) — §3.4.
+    - cron: "17 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: canon-drift-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  drift-check:
+    name: resolve canon citations against the pinned lq-ai reference
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/canon-drift-check.yml .github/workflows/canon-drift-check.yml; then
+            echo "::error file=ci/canon-drift-check.yml::ci/canon-drift-check.yml and .github/workflows/canon-drift-check.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Read the canon pin
+        id: canon
+        run: |
+          set -euo pipefail
+          SHA="$(grep -m1 -oE '^[0-9a-f]{40}$' ci/canon-pin.txt || true)"
+          if [ -z "$SHA" ]; then
+            echo "::error file=ci/canon-pin.txt::canon pin missing or invalid — ci/canon-pin.txt must contain the 40-hex lq-ai commit SHA CI is pinned to (§3.4). The scheduled canon-pin-advance job in this workflow maintains it."
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Canon for this run: legalquants/lq-ai@${SHA} (pinned — ci/canon-pin.txt, §3.4)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Shallow-fetch lq-ai at the pinned SHA
+        run: |
+          set -euo pipefail
+          git init -q lq-ai-canon
+          git -C lq-ai-canon remote add origin https://github.com/legalquants/lq-ai.git
+          git -C lq-ai-canon fetch -q --depth 1 origin "${{ steps.canon.outputs.sha }}"
+          git -C lq-ai-canon checkout -q FETCH_HEAD
+
+      - name: Resolve every citation in rules/, templates/, and skills/ (drift + §2.2 portability lint)
+        run: bash ci/scripts/check-canon-drift.sh lq-ai-canon "${{ steps.canon.outputs.sha }}"
+
+  canon-pin-advance:
+    name: nightly canon-pin advance (opens a PR when lq-ai main moved)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          token: ${{ secrets.CANON_PIN_TOKEN || github.token }}
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/canon-drift-check.yml .github/workflows/canon-drift-check.yml; then
+            echo "::error file=ci/canon-drift-check.yml::ci/canon-drift-check.yml and .github/workflows/canon-drift-check.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin."
+            exit 1
+          fi
+
+      - name: Read the current canon pin
+        id: pin
+        run: |
+          set -euo pipefail
+          SHA="$(grep -m1 -oE '^[0-9a-f]{40}$' ci/canon-pin.txt || true)"
+          if [ -z "$SHA" ]; then
+            echo "::error file=ci/canon-pin.txt::canon pin missing or invalid — expected a 40-hex lq-ai commit SHA (§3.4)."
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Resolve lq-ai main HEAD (the candidate canon)
+        id: head
+        run: |
+          set -euo pipefail
+          SHA="$(git ls-remote https://github.com/legalquants/lq-ai.git refs/heads/main | cut -f1)"
+          if ! printf '%s' "$SHA" | grep -qE '^[0-9a-f]{40}$'; then
+            echo "::error::could not resolve legalquants/lq-ai main HEAD"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Pin: ${{ steps.pin.outputs.sha }} — lq-ai main HEAD now: ${SHA}" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Shallow-fetch lq-ai at the candidate canon
+        run: |
+          set -euo pipefail
+          git init -q lq-ai-canon
+          git -C lq-ai-canon remote add origin https://github.com/legalquants/lq-ai.git
+          git -C lq-ai-canon fetch -q --depth 1 origin "${{ steps.head.outputs.sha }}"
+          git -C lq-ai-canon checkout -q FETCH_HEAD
+
+      - name: Drift check against the candidate canon
+        id: drift
+        run: |
+          set -uo pipefail
+          if bash ci/scripts/check-canon-drift.sh lq-ai-canon "${{ steps.head.outputs.sha }}"; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+            echo "::warning::drift check FAILS against lq-ai@${{ steps.head.outputs.sha }} — the pin-advance PR is the fix vehicle (§4.3)."
+          fi
+
+      - name: Pin already current — nightly assurance only
+        if: steps.head.outputs.sha == steps.pin.outputs.sha
+        run: echo "Canon pin is current (lq-ai main has not moved). Tonight's drift check ran against the pinned canon (§2 nightly assurance); no PR opened." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Open the pin-advance PR
+        if: steps.head.outputs.sha != steps.pin.outputs.sha
+        env:
+          GH_TOKEN: ${{ secrets.CANON_PIN_TOKEN || github.token }}
+          OLD_SHA: ${{ steps.pin.outputs.sha }}
+          NEW_SHA: ${{ steps.head.outputs.sha }}
+          DRIFT_RESULT: ${{ steps.drift.outputs.result }}
+        run: |
+          set -euo pipefail
+          BRANCH="canon-pin/advance-${NEW_SHA:0:12}"
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+            echo "::notice::pin-advance branch ${BRANCH} already exists — a PR for this canon SHA is already open or awaiting review; not opening another."
+            exit 0
+          fi
+          {
+            echo "# lq-ai canon pin — the CI canon reference (design doc §3.4)."
+            echo "# The first 40-hex line below is the legalquants/lq-ai commit that the"
+            echo "# drift check (§4.3) and the eval fixtures (§4.2) resolve against."
+            echo "# Advanced only by the scheduled canon-pin-advance job in"
+            echo "# ci/canon-drift-check.yml, which opens a PR: review that PR with its"
+            echo "# drift-check result and the goldens it re-flags."
+            echo "${NEW_SHA}"
+          } > ci/canon-pin.txt
+          if [ "$DRIFT_RESULT" = "fail" ]; then
+            DRIFT_NOTE="**FAILING.** lq-ai moved or removed something this repo cites. Fix \`rules/canon-map.md\` in this PR until the drift check passes (§4.3; the canon is the API, §11)."
+          else
+            DRIFT_NOTE="Passing — every citation resolves against the new canon."
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$BRANCH"
+          git add ci/canon-pin.txt
+          git commit -s \
+            -m "Advance canon pin to lq-ai@${NEW_SHA:0:12}" \
+            -m "Scheduled canon-pin advance (design doc §3.4). Drift check against the candidate canon: ${DRIFT_RESULT}."
+          git push origin "$BRANCH"
+          BODY="$(mktemp)"
+          cat > "$BODY" <<EOF
+          Scheduled canon-pin advance (design doc §3.4): \`legalquants/lq-ai\` main has moved.
+
+          | | SHA |
+          |---|---|
+          | previous pin | \`${OLD_SHA}\` |
+          | new pin | \`${NEW_SHA}\` |
+
+          **Drift check against the new canon (§4.3):** ${DRIFT_NOTE}
+
+          **Review checklist**
+          - [ ] Drift check passes on this PR (fix \`rules/canon-map.md\` here if not).
+          - [ ] eval-run's re-flag warnings reviewed: goldens adjudicated under the previous canon SHA may have a changed correct answer — re-adjudicate them (§4.2).
+          EOF
+          gh pr create \
+            --title "Advance canon pin to lq-ai@${NEW_SHA:0:12}" \
+            --body-file "$BODY"
+          echo "Opened pin-advance PR from branch ${BRANCH} (drift: ${DRIFT_RESULT})." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Surface a failing nightly drift result
+        if: steps.drift.outputs.result == 'fail'
+        run: |
+          echo "::error::nightly drift check failed against lq-ai main HEAD ${{ steps.head.outputs.sha }} — fix rules/canon-map.md via the pin-advance PR (§4.3)."
+          exit 1
