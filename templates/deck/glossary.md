@@ -287,3 +287,42 @@ reuse existing code instead.
 ### burden:safety:next
 Resolve the residual risk: pin or narrow the dependency range, or add a lockfile so
 a concrete version is vetted; check the affected area against the vetting playbook.
+
+---
+
+## The issue deck — recommendation & references
+
+An issue is not graded on the burden axes (there is no code diff). Its deck
+headlines one **recommendation** — is this ready to act on? — over a
+rule-grounded preview of the PR it would become. Headlines and their decision
+lines below (`rules/issues.md` IV-NN).
+
+### recommendation:proceed
+Ready to proceed — clear, in scope, and grounded
+→ A single, anchored ask a contributor could pick up. Decide whether it is worth
+doing; nothing blocks acting on it.
+
+### recommendation:needs-info
+Needs more information before it can be acted on
+→ A key piece is missing — reproduction steps for a bug, or a design anchor for a
+feature. Post the drafted request to the reporter; you cannot act until it is
+answered.
+
+### recommendation:decompose
+Decompose into smaller issues first
+→ This sprawls across several concerns. Split it into the drafted sub-issues so each
+piece can move on its own — a decomposed idea means the oversized PR never gets
+written.
+
+### recommendation:escalate
+Escalate — take this to a meeting, don't decide it alone
+→ A trigger fired that puts this beyond a single maintainer (an unanchored
+direction call, or a sensitive area). Route it to the committee/security review.
+
+### issue:obstacles
+A preview of what a PR built from this issue would run into. Each line is a fact
+about what the project's own rules would do — not a guess about unwritten code.
+
+### issue:references
+Where this issue already touches the project: existing duplicates, open PRs in
+flight, and the roadmap or deferred-enhancement entry the ask maps to.

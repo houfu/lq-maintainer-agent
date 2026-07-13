@@ -17,12 +17,14 @@ human decides, every time. The verdict never implies a merge, approval,
 close, or post occurred.
 
 **Scope: burden is a PR verdict.** Its five axes grade a code diff,
-which an issue does not have. Issues carry **no `burden` block**; their
-cost-to-you signal is the classification, repro assessment, duplicate
-result, and the RI-08 human-only judgments (`rules/issues.md` C-81,
-`templates/receipt-issue.md` RI-11). The conduct standard (`rules/conduct.md`)
-and the Next-steps idea (`B-14`) *do* apply to issues; the five-axis
-grade does not.
+which an issue does not have. Issues carry **no `burden` block** and are
+never graded on these axes. An issue instead gets its **own** deck and a
+verdict-first headline — a categorical **triage recommendation**
+(`needs-info` / `decompose` / `proceed` / `escalate`) over a rule-grounded
+preview of the PR it would become — defined in `rules/issues.md` `IV-NN`
+and rendered per `templates/receipt-issue.md` RI-11 (design §8.6a). The
+conduct standard (`rules/conduct.md`) and the Next-steps idea (`B-14`)
+apply to issues too; only the five-axis grade does not.
 
 ## 0. Grounding and the two layers
 

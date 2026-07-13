@@ -500,12 +500,14 @@ it, as an **additive** roll-up of signals the other rules already
 produce — it introduces no new judgment about the code, and (like lanes,
 `L-01`) it recommends, never rules.
 
-**Burden is a PR verdict.** Its five axes grade a code diff; an issue has
-none, so issues carry no burden block and no reading deck — their
-cost-to-you signal is classification + repro + duplicate + the RI-08
-human-only judgments (`rules/issues.md` C-81). What *does* carry across
-to issues is the conduct standard (§8) and the Next-steps idea (`B-14`):
-every drafted issue reply is CoC-bound and names the maintainer's
+**Burden is a PR verdict.** Its five axes grade a code diff, which an issue
+does not have — so an issue carries **no five-axis burden block**. But an
+issue gets its own deck and its own verdict-first headline: a categorical
+**triage recommendation** (§8.6a, `rules/issues.md` `IV-NN`) — one of
+`needs-info` / `decompose` / `proceed` / `escalate` — over a **rule-grounded
+preview of the PR the issue would become**, not a graded roll-up. What *does*
+carry across to issues is the conduct standard (§8) and the Next-steps idea
+(`B-14`): every drafted issue reply is CoC-bound and names the maintainer's
 follow-ups.
 
 **Grounded in lq-ai canon, not generic standards** (`B-00`). Every axis
@@ -645,9 +647,10 @@ conservatively:
 
 Classify (bug / feature / question / vulnerability-suspect /
 spam-suspect §6.1), then: bugs → repro-completeness, subsystem
-pointers, duplicate detection against open issues *and* the DE list,
-severity suggestion, drafted request for missing repro pieces
-calibrated for non-engineer filers; features → anchor check,
+pointers, **cross-reference against open issues, open PRs, the DE list,
+*and* the roadmap** (the grounding that feeds the deck's References
+section, §8.6a), severity suggestion, drafted request for missing repro
+pieces calibrated for non-engineer filers; features → anchor check,
 DE/mini-PRD promotion pipeline with drafted stubs, salvage where
 overreaching, EASIEST-CONTRIBUTIONS/P1 routing; questions → drafted
 answers cited to canon, or routing to Discussions;
@@ -868,6 +871,70 @@ The **burden block** rides the §8.4 footer as enumerated fields only
 (`overall`, `blockers[]`, the five axis levels); the deck's driver
 phrasing is derived at render time from the glossary, never stored in the
 footer.
+
+### 8.6a The issue reading deck *(new)*
+
+Issues get a deck too — but not the burden deck. The five burden axes grade a
+diff an issue does not have (§5.2), and the maintainer's need for an issue is
+different: not "what will accepting this code cost me?" but **"is this ready to
+act on, and what would the PR it becomes run into?"** So the issue deck answers
+three questions, and grades nothing.
+
+- **A verdict-first recommendation.** The headline is one enumerated state,
+  derived from signals the issue rules already produce (`rules/issues.md`
+  `IV-01`) — it introduces no new judgment, exactly as burden is additive over
+  lanes:
+  - **`escalate`** — an escalation trigger fired (unanchored decision `E-04`,
+    sensitive path `E-01`, etc.): take it to the committee/meeting, don't decide
+    it alone.
+  - **`needs-info`** — a bug whose repro is absent/partial, or a feature whose
+    anchor is unverified: it cannot be acted on until the reporter fills the
+    gap. The drafted repro/clarification request is the next step.
+  - **`decompose`** — the ask sprawls across concerns (salvage applies): split
+    it into sub-issues first (§6, `S-13`) so the 400-line PR never gets written.
+  - **`proceed`** — clear, grounded, single-concern: ready for a contributor to
+    pick up.
+
+  Precedence is worst-first — `escalate` > `needs-info` > `decompose` >
+  `proceed` — and co-occurring conditions still appear in the obstacle list
+  below regardless of which won the headline.
+
+- **A rule-grounded preview of the PR this issue would become**, as a *list, not
+  a grade* (`IV-02`). Each predicted obstacle names the rule or canon fact that
+  *would fire* if the issue were submitted as-is: "unanchored decision → would
+  escalate (`E-04`)"; "billing is a `canon:prd` non-goal → would be declined
+  (`S-DECLINE`)"; "duplicate of #187 (`S-DUP`)"; "four concerns → would need
+  decomposition." This deliberately avoids grading a diff that does not exist:
+  the obstacles are facts about what *the agent's own rules* would do, not
+  speculation about unwritten code. There is no worst-of level and no axis tile.
+
+- **A References section** (`IV-03`) grounding the item in the project: the
+  duplicate-search result (open issues + the DE list, `C-60`) extended to
+  **related open PRs and roadmap entries** the ask maps to. Every reference and
+  every canon citation in the obstacle list renders as a **click-through link** a
+  maintainer or contributor can follow — canon docs pinned to the canon SHA,
+  issues/PRs by number — built from `canon:repo`'s web base per
+  `rules/canon-map.md`. Links are **agent-constructed from validated sources
+  only** (the canon-map base + a canon path, or an API-verified item number); a
+  URL lifted from contributor text is never emitted as a link. In the posted
+  **receipt** these are ordinary markdown links (clickable in the GitHub
+  comment); in the **deck** the deterministic renderer emits the anchors — so the
+  grounding travels with both surfaces.
+
+- **Sub-issue recommendation** (`IV-04`): when the state is `decompose`, the
+  deck carries the drafted split (titles, one line each) that will be filed as
+  sub-issues (`S-13`) — humans file everything.
+
+Everything else is inherited from the PR deck unchanged: it is a **private local
+view, never a published artifact**; it is a **deterministic render** from the
+receipt's enumerated footer (the sole new field is `recommendation`; obstacles
+and references are visible-body free text, never the footer — §8.4 injection
+discipline); the coverage statement (runtime behaviour — the agent never runs
+repro steps — never checked), the permanently-open human-only judgments
+(roadmap-worth, engagement-tone), the pinned fields, and the conduct-bound
+drafting all render and can never read as resolved. **A vulnerability-suspect
+issue gets no deck at all** — the same absolute carve-out as its receipt (§8.3,
+`rules/issues.md` C-40): the only output is the private-advisory redirect.
 
 ## 9. Behavior: multi-agent deep dives
 

@@ -19,8 +19,12 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   and any demotion with the demoting rule. Recommended, not ruled —
   the receipt never presents the lane as a decision.
 - **RP-02 — Anchor determination.** Kind, reference, and verification
-  result per `rules/anchoring.md`, with citations a human can check
-  in one click.
+  result per `rules/anchoring.md`. Every canon and item citation here
+  (and in findings, RP-05) renders as a **click-through link** — canon
+  docs pinned to the canon SHA, issues/PRs by number — built per
+  `rules/canon-map.md`'s link rule from validated sources only (never a
+  URL lifted from contributor text). "Check it in one click" is literal:
+  the link is present.
 - **RP-03 — Deterministic gate (dependency items).** For dependency
   bumps, render **all seven §5.1 checks** pass/fail (n/a only when the
   item is not a dependency bump). The check keys are fixed by this

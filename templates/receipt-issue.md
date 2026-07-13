@@ -18,9 +18,14 @@ file states only the issue-profile deltas.
   question / spam-suspect) + assigning rule ID (C-NN,
   `rules/issues.md`), **and** a lane + assigning rule like any other
   item (issues are never fast; most commonly standard or escalate).
-- **RI-02 — Duplicate-search record.** What was searched — open
-  issues AND the DE list (routed via `rules/canon-map.md`) — and what
-  matched, cross-referenced both directions. "Nothing matched" is a
+- **RI-02 — References / cross-reference record (`C-60`, `IV-03`).** What
+  was searched — open issues, open PRs, the DE list, and the roadmap
+  (routed via `rules/canon-map.md`) — and what matched: duplicates
+  (cross-referenced both directions), related open PRs in flight, and the
+  roadmap/DE entry the ask maps to (or its absence). Every match and every
+  canon citation renders as a **click-through link** (`rules/canon-map.md`
+  link rule — canon docs pinned to the canon SHA, issues/PRs by number,
+  agent-constructed from validated sources only). "Nothing matched" is a
   recordable result; an unperformed search is not.
 - **RI-03 — Repro assessment (bugs).** Complete / partial / absent,
   itemized (versions, steps, expected vs. actual, logs), with the
@@ -63,19 +68,36 @@ file states only the issue-profile deltas.
   steps for the issue (C-81) — post the repro request, route the
   advisory, link the duplicate, promote the DE, or make the RI-08
   human-only calls.
-- **RI-11 — No burden block.** The maintainer-burden verdict
-  (`rules/burden.md`, §5.2) is a **PR** verdict — its five axes grade a
-  code diff, which an issue does not have. The issue footer carries **no
-  `burden` block**; the issue's cost-to-you signal is its classification
-  (RI-01), repro assessment (RI-03), duplicate result (RI-02), and the
-  RI-08 human-only judgments. The reading deck (§8.6) is likewise
-  PR-oriented for now; issues are delivered as the digest classification
-  and the drafted responses, not a merge-framed deck.
+- **RI-11 — Recommendation, obstacles, references (the issue deck,
+  §8.6a).** The issue carries **no five-axis `burden` block** — those axes
+  grade a code diff an issue does not have (`rules/burden.md` scope note).
+  It carries instead the issue-deck fields (`rules/issues.md` `IV-NN`):
+  - a **Recommendation** headline — one enumerated state
+    (`needs-info` / `decompose` / `proceed` / `escalate`, `IV-01`),
+    derived from the classification, repro/anchor status, salvage, and any
+    escalation trigger, and recorded in the footer as the single
+    `recommendation` field (`IV-06`);
+  - a **Predicted obstacles** list (`IV-02`) — a rule-grounded preview of
+    what a PR built from this issue would run into, each obstacle citing
+    the rule/canon that would fire; **visible body only, never the
+    footer**, and never a graded level;
+  - a **References** section (`IV-03`) — the `C-60` cross-reference:
+    matched duplicates (open issues + DE list), related open PRs, and the
+    roadmap/DE entry the ask maps to.
+
+  All other honesty rails are unchanged (`IV-05`): the deck is a private
+  local view, coverage lists runtime as never-checked (RI-06), and the
+  RI-08 human-only judgments render permanently open. A
+  **vulnerability-suspect** issue gets no receipt and no deck at all
+  (C-04/C-40) — recommendation included.
 
 ## Template
 
 ```markdown
 ## Triage Receipt — issue #<n>: <title>
+
+**Recommendation:** <Needs info | Decompose | Proceed | Escalate>
+(rule: IV-01) — <one-line plain-language reason>
 
 **Classification:** <bug | feature | question | spam-suspect>
 (rule: <C-NN>) · **Lane:** <docs | standard | escalate>
@@ -86,11 +108,23 @@ file states only the issue-profile deltas.
 > This item is marked human-only; the agent drafts nothing further for
 > it except at explicit maintainer request. A maintainer will respond.
 
-### Duplicate search
+### Predicted obstacles — if this became a PR (IV-02)
 
-Searched: open issues; the DE list (via the canon map).
-Matched: <none | list of #n / DE-XXX with one-line relation each,
-cross-referenced both directions>
+A rule-grounded preview, not a grade. Each line names the rule or canon
+fact that would fire if the ask were submitted as-is.
+
+- <obstacle> — <rule/canon that would fire, e.g. E-04 / S-DECLINE / S-DUP #n>
+<or, if none: "None foreseen — a single, anchored, in-scope ask.">
+
+### References (IV-03)
+
+Searched: open issues; open PRs; the DE list; the roadmap (via the canon
+map).
+- **Duplicates:** <none | #n / DE-XXX with one-line relation each,
+  cross-referenced both directions>
+- **Related open PRs:** <none | #n with one-line relation each>
+- **Roadmap / DE:** <the accepted entry the ask maps to, or "no entry —
+  unanchored (A-06/E-04)">
 
 ### Repro assessment (bugs; n/a otherwise)
 
@@ -157,6 +191,7 @@ demoted_from: <lane or null>
 triggers: [<E-NN>, ...]
 classification: <bug|feature|question|spam-suspect>
 classification_rule: <C-NN>
+recommendation: <needs-info|decompose|proceed|escalate>
 held: <true|false>
 pinned:
   pr_head_sha: n-a

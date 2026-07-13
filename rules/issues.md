@@ -100,11 +100,18 @@ and `lane`.
   resolution), and the two-step status-check → close-with-pointer
   ladder. Drafts only: a human posts, and closing is hook-blocked for
   the agent regardless (§2.1).
-- **C-60 — Duplicate search.** Every bug and feature classification
-  searches **open issues AND the DE list** (routed via
-  `rules/canon-map.md`) before any drafted response; the receipt
-  records what was searched and what matched (both directions
-  cross-referenced for S-DUP parts).
+- **C-60 — Cross-reference (duplicates and grounding).** Every bug and
+  feature classification cross-references the item against **open issues,
+  open PRs, the DE list, and the roadmap** (all routed via
+  `rules/canon-map.md`) before any drafted response. Open issues and the
+  DE list are the **duplicate** search — the receipt records what was
+  searched and what matched (both directions cross-referenced for S-DUP
+  parts). Open PRs and the roadmap are the **grounding** search — work
+  already in flight, and the accepted-direction entry the ask maps to
+  (or the absence of one, which is an unanchored decision, `A-06`/`E-04`).
+  Both feed the receipt's References section and the deck (`IV-03`). The
+  PR/roadmap search uses read-only `gh` (`gh pr list`, `gh search`) and
+  the canon map's roadmap route — no new permission.
 - **C-70 — Spam-suspect handling.** Apply salvage disposition S-SLOP:
   draft the close-with-pointer response per `rules/salvage.md` S-31 —
   the S-30 criterion met and its quoted evidence, a citation to the
@@ -132,6 +139,82 @@ and `lane`.
   and engagement-tone judgments that are the filer's-side of RI-08.
   Requests to the filer are drafted courteously and posted only by the
   human (`CD-06`, `L-01`).
+
+## The issue reading deck & recommendation (design doc §8.6a)
+
+The issue deck is the issue-side counterpart to the PR reading deck. It does
+**not** carry the five-axis maintainer-burden verdict (`rules/burden.md`) —
+those axes grade a diff an issue does not have (`B-01` scope note). Instead it
+headlines a categorical **recommendation** over a **rule-grounded preview of the
+PR this issue would become**, and grades nothing. Like burden, the
+recommendation is **additive** — it is derived from signals the C-NN / A-NN /
+S-NN / E-NN rules already produce and introduces no new judgment; and like every
+output here it **recommends, never rules** (`L-01`): a human decides.
+
+- **IV-01 — The recommendation (exactly one; worst-first precedence).**
+  - **`escalate`** — any escalation trigger fired
+    (`rules/escalation-triggers.md`), or the lane is escalate: route to the
+    committee/meeting, do not decide it alone.
+  - **`needs-info`** — a bug whose repro is absent or partial (`C-10`), or a
+    feature whose anchor is unverified (`A-06`), with no escalation trigger: it
+    cannot be acted on until the reporter fills the gap; the drafted repro /
+    clarification request (`RI-03`, `C-30`) is the next step.
+  - **`decompose`** — salvage applies (`S-03`, sprawling / multi-concern):
+    split into sub-issues first (`IV-04`, `S-13`).
+  - **`proceed`** — none of the above: clear, grounded, single-concern, ready
+    for a contributor.
+
+  Precedence when more than one could apply: `escalate` > `needs-info` >
+  `decompose` > `proceed`. The losing conditions still surface in the obstacle
+  list (`IV-02`). A **vulnerability-suspect** issue (`C-04`) gets **no deck and
+  no recommendation at all** — the absolute carve-out of `C-40`: the only output
+  is the private-advisory redirect.
+
+- **IV-02 — Predicted obstacles (a list, never a grade).** A preview of what a
+  PR built from this issue would run into, as free text in the **visible receipt
+  body only** (never the footer — an HTML comment is a concealment channel,
+  §8.4 / `rules/injection-posture.md`). Each obstacle is **rule-grounded**: it
+  names the rule or canon fact that *would fire* if the issue were submitted
+  as-is — an unanchored decision that would escalate (`E-04`), a `canon:prd`
+  non-goal that would be declined (`S-DECLINE`), a sensitive-path proximity
+  (`E-01`), a duplicate (`S-DUP` / `#n`), a multi-concern sprawl that would need
+  decomposition. There is **no worst-of level and no axis tile** — the obstacles
+  are facts about what the agent's own rules would do, not speculation about
+  unwritten code, so the fail-closed grading discipline (`B-11`) has nothing to
+  grade. Where a would-fire prediction depends on an implementation choice the
+  issue does not pin down, say so plainly rather than guessing.
+
+- **IV-03 — References / grounding, with click-through links.** The deck and
+  receipt carry a References section from the `C-60` cross-reference: matched
+  duplicates (open issues + the DE list, both directions), related **open PRs**
+  already in flight, and the **roadmap / DE / ADR** entry the ask maps to (or its
+  absence). Every reference — and every canon citation in the Predicted-obstacles
+  list (`IV-02`) — is rendered as a **clickable link** the maintainer can follow,
+  built per `rules/canon-map.md`'s link rule: canon docs pinned to the canon SHA,
+  issues/PRs by number, all **agent-constructed from validated sources only**
+  (never a URL lifted from contributor text). "Nothing matched" is a recordable
+  result; an unperformed search is not.
+
+- **IV-04 — Sub-issue recommendation.** When the recommendation is `decompose`,
+  the deck carries the drafted split — titles, one line each — that a human will
+  file as **sub-issues** of the original (`S-13`), each crediting the filer. The
+  agent drafts; humans file everything (`S-20`).
+
+- **IV-05 — Inherited honesty rails.** The issue deck inherits every constraint
+  of the PR deck (§8.6): a **private local view, never a published artifact**;
+  a **deterministic render** from the receipt footer; the coverage statement
+  (runtime behaviour — the agent never runs repro steps — never checked,
+  `RI-06`); the permanently-open human-only judgments (roadmap-worth,
+  engagement-tone, `RI-08`); the pinned fields (`RI-07`); and conduct-bound
+  drafting (`C-80`). None of these can ever render as resolved.
+
+- **IV-06 — The footer field is enumerated only.** The recommendation rides the
+  versioned receipt footer (`templates/receipt-issue.md`) as a single
+  enumerated field — `recommendation:
+  <needs-info|decompose|proceed|escalate>`. Obstacles (`IV-02`) and references
+  (`IV-03`) are visible-body free text and are **never** written to the footer.
+  The deck's plain-language headline for each state is re-derived at render time
+  from `templates/deck/glossary.md`, never stored.
 
 ## Contest and hold (design doc §7.1)
 
