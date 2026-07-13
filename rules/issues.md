@@ -114,6 +114,25 @@ and `lane`.
   escalation-trigger evaluation (S-32). The human posts the close or
   doesn't; the agent cannot close (§2.1).
 
+## Conduct and next steps
+
+- **C-80 — Conduct binds every issue reply.** All drafted issue outputs
+  — repro requests, canon-cited answers, DE/mini-PRD promotion stubs,
+  close-with-pointer replies, and the vulnerability redirect — meet
+  `rules/conduct.md` (`CD-NN`) and `canon:code-of-conduct`: critique the
+  ask never the filer, assume good faith, acknowledge a genuine effort,
+  calibrate the register to a possibly non-engineer filer. This is the
+  normative source of the "never an insult / never authorship as the
+  accusation" bar already stated in C-05, C-70, and S-35.
+- **C-81 — Say what happens next.** The issue receipt (and the digest
+  line) names the maintainer's follow-ups (`rules/burden.md` `B-14`, as
+  it applies to issues): post the drafted repro request, route a
+  vulnerability to the private advisory, link and close a duplicate,
+  promote a worth-keeping idea to a DE-XXX, or decide the roadmap-worth
+  and engagement-tone judgments that are the filer's-side of RI-08.
+  Requests to the filer are drafted courteously and posted only by the
+  human (`CD-06`, `L-01`).
+
 ## Contest and hold (design doc §7.1)
 
 These rules apply to **PRs and issues alike** — they live in this

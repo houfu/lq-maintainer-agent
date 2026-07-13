@@ -231,6 +231,14 @@ coverage:
   - {item: salvage, status: <covered|not-covered|n-a>}
   - {item: runtime-behavior, status: never-by-design}
   - {item: package-contents, status: <never-by-design|n-a>}
+burden:
+  overall: <blocked|low|medium|high>
+  blockers: [<ci-red|known-vuln|data-harm|missing-dco|incompatible-license|attack-escalation|vuln-suspect>, ...]
+  scope: <low|medium|high>
+  review: <low|medium|high>
+  tests: <low|medium|high>
+  carry: <low|medium|high>
+  safety: <low|medium|high>
 -->
 ```
 
@@ -255,6 +263,13 @@ eval-grading interface (`evals/run-checks.md`).
 - `split_verified` is **always `false`** — the agent never verifies a
   split compiles (design doc §6 step 4); the field exists so a parser
   cannot assume otherwise.
+- **`burden`** (design doc §5.2, `rules/burden.md`): enumerated only —
+  `overall` (`blocked`/`low`/`medium`/`high`), `blockers` (a list of the
+  `B-02` slugs, empty if none), and the five axis levels (`scope`,
+  `review`, `tests`, `carry`, `safety`, each `low`/`medium`/`high`). The
+  worst-of roll-up (`B-08`) and the render-time driver phrasing are
+  **not** stored — the block carries state, never prose. The reading
+  deck (§8.6) is rendered from this block.
 - Issue-profile deltas (`templates/receipt-issue.md`): `profile:
   issue`; `classification` + `classification_rule` set (C-NN);
   `pinned.pr_head_sha: n-a`; `deterministic_checks` all `n-a`; the

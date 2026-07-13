@@ -57,6 +57,20 @@ file states only the issue-profile deltas.
   resolved.
 - **RI-09 — Contest/hold, attribution, footer, update ping.** Exactly
   as `templates/receipt-pr.md` RP-10–RP-14.
+- **RI-10 — Conduct + next steps.** The receipt and every drafted reply
+  meet `rules/conduct.md` (`CD-NN`) / `canon:code-of-conduct`
+  (`rules/issues.md` C-80), and the receipt names the maintainer's next
+  steps for the issue (C-81) — post the repro request, route the
+  advisory, link the duplicate, promote the DE, or make the RI-08
+  human-only calls.
+- **RI-11 — No burden block.** The maintainer-burden verdict
+  (`rules/burden.md`, §5.2) is a **PR** verdict — its five axes grade a
+  code diff, which an issue does not have. The issue footer carries **no
+  `burden` block**; the issue's cost-to-you signal is its classification
+  (RI-01), repro assessment (RI-03), duplicate result (RI-02), and the
+  RI-08 human-only judgments. The reading deck (§8.6) is likewise
+  PR-oriented for now; issues are delivered as the digest classification
+  and the drafted responses, not a merge-framed deck.
 
 ## Template
 

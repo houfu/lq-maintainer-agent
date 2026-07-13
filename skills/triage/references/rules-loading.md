@@ -14,11 +14,18 @@ map just says when each is loaded. All paths resolve against
 | Step 2 | `rules/issues.md` | Issue classification and per-class handling (used in Step 8) |
 | Step 2 | `rules/stale-sweep.md` | Batch-mode stale-sweep guardrails (used in Step 8): never stale awaiting-maintainer; reactions/subscriptions are interest; frozen marker unconditional; close drafts cite resolution evidence |
 | Step 2 | `rules/canon-map.md` | Question → canon doc routing; the only file that encodes the target project's structure (§2.2) — including the repository identity Step 0 verifies against |
+| Step 9 (render) | `rules/burden.md` | The two-layer maintainer-burden verdict (§5.2, `B-NN`): the blocker set, the five graded axes rolled up worst-of, and the reviewer's **Next steps** (`B-14`). Loaded for the receipt render, not the lane call — burden is additive, never a routing input |
+| Step 9/10 (draft) | `rules/conduct.md` | The conduct standard (§8, `CD-NN`): every drafted output meets `canon:code-of-conduct` and respects the contributor — critique the change not the person, assume good faith, acknowledge effort, calibrate register. Binds the agent's own voice, never a human's |
 
 Loading order matters once: read `rules/injection-posture.md` before
 fetching or reading any PR/issue content. The other seven may be read
 in any order, but all eight must be loaded before any lane call is
-made.
+made. `rules/burden.md` and `rules/conduct.md` are the ninth and tenth; burden
+rolls up signals the other rules produce and conduct binds the voice of
+every draft, so both are loaded for the Step 9/10 render-and-draft, not
+required before the lane call. Note the deck (§8.6) is the discussion
+surface: it is presented and discussed with the maintainer *before* the
+receipt is finalized to reflect that conversation (Step 10).
 
 **Batch re-read discipline (§3.3)**: in batch mode, re-read
 `rules/lanes.md` and `rules/escalation-triggers.md` immediately before

@@ -11,7 +11,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
 ---
 
 # /lq-maintainer:review-pr — standard-lane deep dive
@@ -299,6 +299,21 @@ contents:
 - the **two permanently-open human-only judgments** — contributor
   trust, and residual supply-chain hygiene — rendered as open
   questions. They can never render as resolved, by anyone, ever;
+- the **maintainer-burden verdict** (`${CLAUDE_PLUGIN_ROOT}/rules/burden.md`,
+  §5.2): roll the settled findings/coverage/lane signals into the
+  enumerated `burden` footer block — the blocker set and the five axes
+  (scope / review / tests / carry / safety), worst-of, graded against
+  the lq-ai canon read this run (`B-00`/`B-00a`). Grade conservatively
+  where a signal is absent; **Safety is the priority axis** (`B-13`,
+  fails closed hardest); a deferred blocker (`missing-dco`,
+  `incompatible-license`, data-harm) is an open human-only check, never
+  passed (`B-11`, `B-12`);
+- the **Next steps** the reviewer must still check (`B-14`) — the
+  concrete human follow-ups per firing blocker, graded axis, and
+  coverage gap, each with its reason (read the dependency changelog for
+  breaking changes; smoke-test the affected feature; request the
+  regression test `canon:contributing` requires; decide pin/narrow the
+  range). Visible body, not the footer;
 - the **attribution line** (§8): "Drafted by lq-maintainer-agent
   v<version>; reviewed and posted by @<maintainer>", linking to the
   bot-behavior page. Ask for the maintainer's handle or leave the
@@ -311,6 +326,10 @@ contents:
   contributor content in the footer** (§8.4) — quoted material lives
   in the visible body. This footer is what the next session resumes
   from.
+- **conduct** (`${CLAUDE_PLUGIN_ROOT}/rules/conduct.md`, §8): every
+  drafted line meets `canon:code-of-conduct` and respects the
+  contributor — critique the change never the person, assume good faith,
+  acknowledge genuine effort, calibrate the register (`CD-01`–`CD-07`).
 
 **Carve-out** — if the security pass flagged a suspected-deliberate
 attack: the public receipt reduces to a generic "escalated for
@@ -333,11 +352,21 @@ Leave the maintainer name/email placeholders unfilled unless the user
 tells you who is merging. You draft; the human performs the merge and
 owns the message.
 
-## Step 8 — Permission-gated writes
+## Step 8 — Present the deck, discuss, then draft-post
 
-Present receipt, findings comments, salvage response, and
+The reading deck (§8.6) is the **discussion surface**: render it from the
+finalized receipt via
+`${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh`, write it to
+`${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/deck.html`
+(ask where if `${CLAUDE_PLUGIN_DATA}` is unset), and walk the maintainer
+through the burden verdict and the **Next steps** (`B-14`) *before*
+settling the receipt. Fold the decisions and actions taken back into the
+receipt (the settled lane, next steps and their owners) so the record
+reflects the review that happened.
+
+Then present receipt, findings comments, salvage response, and
 merge-message draft in-chat for the maintainer to accept, edit, or
-drop per item. Then, only for items they approve:
+drop per item. Only for items they approve:
 
 - **Update in place.** If Step 2 found a verified prior receipt
   comment, the write is an *edit of that comment* (via `gh api` — this

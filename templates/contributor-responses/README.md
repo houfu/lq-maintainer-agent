@@ -18,6 +18,13 @@ reply** — the agent never posts, closes, or labels (design doc §2.1,
   reword the reply freely; the attribution line stays.
 - **CR-05 — No exploit detail, ever,** in any reply
   (`rules/issues.md` C-40 / `rules/escalation-triggers.md` E-08).
+- **CR-06 — Bound by the conduct standard.** Every pattern is the
+  contributor-facing expression of `rules/conduct.md` (`CD-NN`): it
+  meets `canon:code-of-conduct` (the project's Contributor Covenant) and
+  respects the contributor — critique the change never the person,
+  assume good faith, acknowledge genuine effort, and phrase next-step
+  asks as courteous requests that explain why (`CD-06`). CR-02 is the
+  register rule; CR-06 is its normative source.
 
 | Scenario | Pattern |
 | --- | --- |

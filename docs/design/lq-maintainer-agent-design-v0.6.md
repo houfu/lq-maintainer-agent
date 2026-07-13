@@ -490,6 +490,101 @@ Two hard rules ride along:
   rides the coverage statement (§8) and keeps the human-only
   supply-chain-hygiene judgment honest.
 
+### 5.2 The maintainer-burden verdict *(new)*
+
+Full spec in `rules/burden.md` (`B-NN`); this is the operative summary.
+
+Lanes route; they do not answer the question a part-time maintainer most
+needs: **what will accepting this cost me?** The burden verdict answers
+it, as an **additive** roll-up of signals the other rules already
+produce — it introduces no new judgment about the code, and (like lanes,
+`L-01`) it recommends, never rules.
+
+**Burden is a PR verdict.** Its five axes grade a code diff; an issue has
+none, so issues carry no burden block and no reading deck — their
+cost-to-you signal is classification + repro + duplicate + the RI-08
+human-only judgments (`rules/issues.md` C-81). What *does* carry across
+to issues is the conduct standard (§8) and the Next-steps idea (`B-14`):
+every drafted issue reply is CoC-bound and names the maintainer's
+follow-ups.
+
+**Grounded in lq-ai canon, not generic standards** (`B-00`). Every axis
+and blocker grades against the maintained project's own canon, routed by
+`rules/canon-map.md` and cited by `canon:<key>`: what counts as "in
+scope" is what `canon:prd`/`canon:roadmap`/`canon:de-list`/`canon:adr`
+say; "adequately tested" is what `canon:contributing` requires (down to
+its regression-test-for-bug-fixes rule); "clean" is `canon:claude-md`'s
+conventions and documented pitfalls; "sensitive/risky" is
+`canon:vetting-playbook` + `canon:codeowners`. Where the governing canon
+is **absent**, that absence is surfaced (an unanchored decision escalates,
+`E-04`) and burden grades conservatively — never by an improvised
+standard. The canon must be **read this run** — in the clone Step 0
+verified, at the pinned SHA, never recalled (`B-00a`, the §3.3 batch
+discipline); a run outside the clone grades conservatively and says the
+canon was unavailable, rather than grading from memory.
+
+**Safety / risk is the priority axis** (`B-13`). Worst-of already gives a
+high Safety axis the overall verdict; on top of that it is never trimmed
+for budget, its canon (`canon:vetting-playbook`, `canon:codeowners`) is
+read every run, and it **fails closed hardest** — an unresolvable
+supply-chain question (a check that could not run against a concrete
+version) is `medium` at least, never `low`, and the data-harm taxonomy
+that sharpens it leads the `B-12` build order.
+
+**Two layers.** *Layer 1* is a set of binary **blockers** — CI not green
+(`F-07`), a known-vulnerable dependency (`F-05`), a
+deliberate-attack/agent-config trigger (§10.2), a vulnerability-suspect
+issue, a blocking-severity data-harm finding, missing DCO/CLA sign-off,
+or an incompatible license. Any one ⇒ the verdict is **`blocked`**
+("resolve first"), and **no burden level shows until it clears** —
+"can't merge yet" is kept distinct from "costs you work". *Layer 2* is a
+**burden** graded `low`/`medium`/`high` across five axes:
+
+- **Scope** — anchored and single-concern (`low`) → unanchored or
+  overreaching (`high`); reads anchoring (`A-NN`) and salvage.
+- **Review effort** — small/one subsystem → large/many subsystems or a
+  bundled refactor (`L-32`).
+- **Tests** — covered, or no runtime behaviour to test (`low`) →
+  untested new behaviour or assert-nothing tests (`high`).
+- **Carry cost** — clean, no new surface → adds dependencies/surface you
+  maintain forever, or duplicative (`L-32`).
+- **Safety / risk** — the residual-risk axis for what does **not** rise
+  to a blocker: an unpinned/widened dependency range, a borderline-fresh
+  release, a sensitive surface. A confirmed vulnerability is a blocker,
+  not this axis.
+
+**Roll-up is worst-of** — overall burden is the highest single axis; one
+serious axis is not diluted by four calm ones. Burden **inherits the
+fail-closed posture** (§5.1): where a signal can't be computed, the axis
+grades up, not down.
+
+**It leads the reading deck** (§8.6): the deck headlines the overall
+burden (`Blocked` / `Low` / `Medium` / `High`) with the five axes as
+glance tiles, and the lane becomes a supporting detail — but the receipt
+still cites lane + assigning rule; burden is added, not substituted. The
+state rides the receipt footer as an **enumerated-only** block (§8.4):
+`overall`, `blockers[]` (slugs), and the five axis levels — never free
+text (the driver phrasing is derived at render time from the glossary).
+
+**It says what to check next** (`B-14`). Grading is not enough; the human
+needs the follow-ups only they can do. Every receipt and deck carry a
+**Next steps** list — one concrete action per firing blocker, graded
+axis, and coverage gap, each with its reason: *read the dependency's
+changelog for breaking changes* (a major bump), *smoke-test the affected
+feature* (runtime never checked), *request the regression test
+`canon:contributing` requires* (an untested bug fix), *decide pin /
+narrow / lockfile* (an unpinned range). Next steps are free text (visible
+body and deck, never the footer); where one is a request to the
+contributor it is drafted courteously (§8 conduct) and posted only by the
+human.
+
+**Honest about its gaps** *(`B-12`)*: the `missing-dco`,
+`incompatible-license`, and data-harm-taxonomy signals are **not yet
+computed**. Until they land, Layer 1 runs on the live signals and the
+deferred blockers appear as open human-only checks — never silently
+passed. This is the §2 legal-compliance and data-harm coverage gap made
+visible in the verdict rather than papered over.
+
 ## 6. Behavior: the salvage protocol
 
 Applied to **both PRs and issues** whenever an item overreaches
@@ -596,6 +691,21 @@ posted by @maintainer" — linking to `docs/bot-behavior.md`. Until M4
 receipts post from maintainers' own accounts, and per-artifact honesty
 is what keeps that from reading as ghost-writing. This also aligns with
 the emerging `Assisted-by:` trailer convention (§8.5).
+
+**Conduct — the receipt is bound by the project's own Code of Conduct**
+*(new; `rules/conduct.md`, `CD-NN`)*. Every receipt and drafted response
+meets `canon:code-of-conduct` (lq-ai follows the Contributor Covenant):
+be kind, assume good faith, focus on the work, disagree substantively
+rather than personally. Concretely — critique the change, never the
+contributor (`CD-02`, extending L-02's diff-not-narrative rule to the
+*voice* of the output); assume good faith even for flawed or AI-assisted
+work, salvaging what is usable rather than disparaging it (`CD-03`);
+acknowledge genuine effort specifically (`CD-04`); calibrate the register
+to the reader (`CD-05`). This binds the agent's **own** conduct only — it
+never adjudicates a human's (the agent scores changes, never people, L-02;
+CoC enforcement against participants routes to a maintainer). Respectful
+tone is a property of every output, never scored or traded off against
+burden or time (`CD-07`).
 
 Two profiles:
 
@@ -705,6 +815,59 @@ maintained. Honest limitation: trailers cover **merged** work only;
 rejected PRs and declined issues leave their record in comments and,
 for sensitive cases, committee packets — acceptable, because the
 supply-chain audit question is "what got in and how."
+
+### 8.6 The reading deck — the discussion surface, then the receipt *(new)*
+
+The receipt is built for auditability: dense pass/fail tables, rule IDs,
+the machine-readable footer. That is correct for the record and for a
+technical reviewer, but it reads as noise to a non-engineer maintainer
+deciding a merge. The **reading deck** is a plain-language,
+verdict-first HTML rendering of the triage — a private local *view*, not
+a new published artifact.
+
+**Ordering: deck first, receipt after** *(decided)*. The deck is the
+**discussion surface**, not a post-hoc render of a finished receipt. The
+flow is: the agent computes the triage facts → renders the deck (burden
+verdict, the five axes, the coverage gaps, and the **Next steps** the
+reviewer must check, §5.2 `B-14`) → **discusses it with the maintainer**,
+who reacts, reassigns a lane if warranted (`L-01`), accepts or relays
+findings, and records what they will do or ask → **then** the agent
+finalises the **receipt** to reflect that conversation: the decisions
+taken, the next steps agreed, and who owns each. The receipt is the
+settled record of a review that happened, not a verdict handed down
+before one. It still carries everything §8 mandates (pinned fields,
+coverage, human-only judgments, footer), and is drafted under the §8
+conduct rules; posting stays human-gated (§10, Step 10). The deck renders
+from the same computed facts throughout, so the two never disagree.
+
+- **It is a private, local view — never a published artifact.** The
+  markdown receipt remains the thing posted to GitHub (§8); the deck is
+  written to the `${CLAUDE_PLUGIN_DATA}` cache (§3.5), gitignored, out of
+  the repo tree. It is not the M4 publication surface and is never posted
+  by the agent. Hosting it (e.g. a maintainer's own GitHub Pages) is a
+  human choice left open, not a plugin behaviour.
+- **Deterministic render, not freehand.** A stdlib script
+  (`skills/triage/scripts/render-deck.sh`) parses the receipt's
+  enumerated footer and renders self-contained HTML — inline CSS, native
+  `<details>`, **no JavaScript, no network**. The model does not write
+  bespoke HTML per run: this keeps the deck and receipt from disagreeing
+  and keeps untrusted contributor text out of executable markup. All
+  contributor-derived spans (title, findings) are normalised
+  (§10.2, I-10), stripped of invisible/bidi/tag characters (visibly
+  flagged if any were present), then HTML-escaped — shown as data, never
+  interpreted.
+- **It leads with burden (§5.2)** and preserves every honesty
+  constraint: the four pinned fields, the "never checked by design"
+  coverage, and the permanently-open human-only judgments all render and
+  can never read as resolved. Plain-language captions live in a reviewable
+  `templates/deck/glossary.md` — normative content (a wrong gloss
+  misrepresents a security decision), edited under the same bar as
+  `rules/`.
+
+The **burden block** rides the §8.4 footer as enumerated fields only
+(`overall`, `blockers[]`, the five axis levels); the deck's driver
+phrasing is derived at render time from the glossary, never stored in the
+footer.
 
 ## 9. Behavior: multi-agent deep dives
 
@@ -986,8 +1149,12 @@ published; receipt templates with the versioned machine-readable
 footer, human-pasted (the footer works fine in a pasted comment —
 resume-from-receipt lands before publication is automated);
 merge-message drafting with the §8.5 trailer including the model
-field. Eval corpus grows with each real triage that a maintainer
-corrects (corrections become fixtures). *Exit: the 30-minute session
+field; the §5.2 burden block in the footer and the §8.6 reading deck
+rendered from it (burden computed from the live signals; the deferred
+`missing-dco`/`incompatible-license`/data-harm signals of `B-12`
+surface as open human-only checks until §15 resolves them). Eval corpus
+grows with each real triage that a maintainer corrects (corrections
+become fixtures). *Exit: the 30-minute session
 works end to end on real backlog, and a second maintainer can resume a
 first maintainer's partial review from the receipt alone.*
 
@@ -1042,3 +1209,17 @@ Still open:
 6. **Non-human-author policy** — what lq-ai actually wants to say to
    autonomous-agent contributions (§6.1) beyond "never fast-lane."
    Governance call, likely an lq-ai CONTRIBUTING addition.
+7. **Burden's deferred signals** *(new, §5.2 `B-12`)* — the
+   `missing-dco` and `incompatible-license` blockers and the data-harm
+   taxonomy that sharpens the `data-harm` blocker and the Safety axis.
+   These close the §2 legal-compliance and data/privacy coverage gaps;
+   until built they surface as open human-only checks, never silently
+   passed. Scope: a DCO/CLA sign-off check and a new-dependency license
+   check ride alongside the §5.1 dependency gate (which already fetches
+   registry metadata); the harm taxonomy is a finding-classification
+   addition. Sequencing call.
+8. **Burden weighting** *(new, §5.2)* — the roll-up is worst-of by
+   decision. Whether any axis should ever be maintainer-weighted (e.g.
+   a project that weights Tests harder) is deferred: worst-of keeps two
+   runs comparable and is the conservative default; revisit only if a
+   real project's priorities demand it.

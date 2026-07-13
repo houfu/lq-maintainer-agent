@@ -10,7 +10,9 @@ or receipt — MUST cite the assigning rule by ID: the most specific
 rule that produced the assignment (or the demotion). Companion rule
 sets: `rules/anchoring.md` (A-NN), `rules/escalation-triggers.md`
 (E-NN), `rules/salvage.md` (S-NN), `rules/injection-posture.md`
-(I-NN), `rules/stale-sweep.md` (the §7 sweep guardrails). Canon
+(I-NN), `rules/stale-sweep.md` (the §7 sweep guardrails),
+`rules/burden.md` (B-NN, the §5.2 maintainer-burden roll-up),
+`rules/conduct.md` (CD-NN, the §8 conduct standard for drafted outputs). Canon
 locations referenced below resolve via their `canon:<key>` entries in
 `rules/canon-map.md` — the only file that names the maintained
 project's paths — and are verified by the canon-drift check.
