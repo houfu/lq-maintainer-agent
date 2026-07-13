@@ -319,6 +319,22 @@ Escalate — take this to a meeting, don't decide it alone
 → A trigger fired that puts this beyond a single maintainer (an unanchored
 direction call, or a sensitive area). Route it to the committee/security review.
 
+### recommendation:proceed:next
+Decide whether it is worth doing; if so, mark it ready (or good-first-issue) so a
+contributor can pick it up. Nothing blocks acting on it.
+
+### recommendation:needs-info:next
+Post the drafted request for the missing pieces — reproduction steps for a bug, a
+design anchor for a feature. The issue is parked until the reporter answers.
+
+### recommendation:decompose:next
+File the drafted sub-issues (crediting the reporter) and cross-link them, so each
+part can move on its own.
+
+### recommendation:escalate:next
+Put the underlying decision on a committee / roadmap agenda. Stage the evidence for
+the meeting; do not accept or decline it solo.
+
 ### issue:obstacles
 A preview of what a PR built from this issue would run into. Each line is a fact
 about what the project's own rules would do — not a guess about unwritten code.

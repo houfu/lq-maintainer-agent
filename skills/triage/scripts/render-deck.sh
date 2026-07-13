@@ -148,6 +148,117 @@ def render_inline(s):
     return txt, hidden
 
 
+# --------------------------------------------------------------------------
+# Click-through links -- agent-authored citations, allow-listed at render.
+# --------------------------------------------------------------------------
+# The receipt body carries References and citations as markdown links the
+# agent constructed from rules/canon-map.md's `canon:repo` base + validated
+# item numbers (design doc §8.6a, canon-map link rule). We re-validate the
+# SHAPE of every link target here so a URL that somehow reached the body from
+# contributor text is never emitted as a live href -- defence in depth on top
+# of the agent-side rule. Nothing here fetches; links are inert markup.
+
+def repo_base():
+    """The `canon:repo` web base from rules/canon-map.md (the single place the
+    base URL lives). Falls back to the github host if canon-map is unreadable
+    -- links then still must match the github blob/tree/issues/pull shape."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if not root:
+        root = os.path.abspath(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+    try:
+        with open(os.path.join(root, "rules", "canon-map.md"), encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError:
+        return "https://github.com/"
+    m = re.search(r"`canon:repo`.*?web base `(https://[^\s`]+)`", text, re.DOTALL)
+    return (m.group(1).rstrip("/") + "/") if m else "https://github.com/"
+
+
+_URL_OK = re.compile(r"^https://[^\s\"'<>]+$")
+_GH_ITEM = re.compile(r"^https://github\.com/[^/\s]+/[^/\s]+/(issues|pull|blob|tree)/")
+
+
+def _url_allowed(url, base):
+    """Emit a link only for agent-constructable targets: under the canon:repo
+    base, or a github.com blob/tree/issues/pull URL. Anything else (other host,
+    javascript:/data:, a bare contributor URL) is dropped to inert text."""
+    u = (url or "").strip()
+    if not _URL_OK.match(u):
+        return False
+    return u.startswith(base) or bool(_GH_ITEM.match(u))
+
+
+_MDLINK = re.compile(r"\[([^\]]+)\]\((\S+?)\)")
+
+
+def render_linked(raw, base):
+    """Render agent-authored reference/citation text: sanitise EVERYTHING as
+    data, and turn only allow-listed markdown links into anchors -- a
+    disallowed link collapses to its (sanitised) label, never a live href.
+    Returns (html, had_hidden_chars)."""
+    out, hidden, pos = [], False, 0
+    for m in _MDLINK.finditer(raw):
+        pre, h = sanitize(raw[pos:m.start()])
+        out.append(pre); hidden = hidden or h
+        label, h2 = sanitize(m.group(1)); hidden = hidden or h2
+        url = m.group(2).strip()
+        if _url_allowed(url, base):
+            out.append('<a href="%s">%s</a>' % (html.escape(url, quote=True), label))
+        else:
+            out.append(label)
+        pos = m.end()
+    tail, h3 = sanitize(raw[pos:]); hidden = hidden or h3
+    txt = re.sub(r"`([^`]+)`", r"<code>\1</code>", "".join(out))
+    txt = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", txt)
+    return txt, hidden
+
+
+def extract_section(md, header_re):
+    """Raw markdown body of a '### <header_re>...' section (to the next ### /
+    --- / EOF), or '' if absent. header_re is a regex fragment."""
+    m = re.search(r"^###\s+" + header_re + r"[^\n]*\n(.*?)(?=^###\s|^---\s*$|\Z)",
+                  md, re.MULTILINE | re.DOTALL)
+    return m.group(1).strip() if m else ""
+
+
+def render_grounding_card(md, base, header_re, css_cls, title):
+    """A visible grounding card (References / Predicted obstacles) built from a
+    receipt body section: a plain intro paragraph plus the '- ' bullet lines,
+    each sanitised and link-rendered. Returns '' if the section is absent."""
+    raw = extract_section(md, header_re)
+    if not raw:
+        return ""
+    intro_parts, items = [], []
+    for line in raw.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith("- "):
+            body = s[2:].strip()
+            mlead = re.match(r"\*\*([^*]+)\*\*\s*(.*)$", body, re.DOTALL)
+            if mlead:
+                rest, _ = render_linked(mlead.group(2), base)
+                items.append('<span class="refk">%s</span> %s'
+                             % (esc(mlead.group(1)), rest))
+            else:
+                rest, _ = render_linked(body, base)
+                items.append(rest)
+        else:
+            para, _ = render_linked(s, base)
+            intro_parts.append(para)
+    out = ['<section class="card grounding %s">' % css_cls]
+    out.append('<h2>%s</h2>' % esc(title))
+    if intro_parts:
+        out.append('<p class="intro">%s</p>' % " ".join(intro_parts))
+    if items:
+        out.append('<ul>')
+        out.extend('<li>%s</li>' % it for it in items)
+        out.append('</ul>')
+    out.append('</section>')
+    return "".join(out)
+
+
 def parse_footer(text):
     """Indentation parser for the bounded v1 schema: top-level scalars, the
     2-space nested maps (pinned / deterministic_checks / salvage), and lists
@@ -458,6 +569,18 @@ pre.receipt{
 .foot .prov dt{font-weight:600; color:var(--ink-soft)}
 .foot .prov dd{margin:0; font-family:var(--mono); font-size:12px; color:var(--ink-soft); word-break:break-all}
 .foot a{color:var(--accent-ink)}
+/* grounding cards: References + Predicted obstacles (visible, not collapsed) */
+.grounding{padding:22px 24px; margin-bottom:14px}
+.grounding h2{font-family:var(--serif); font-size:20px; font-weight:600; margin:0 0 3px}
+.grounding .intro{margin:0 0 10px; font-size:14px; color:var(--ink-soft)}
+.grounding ul{list-style:none; margin:0; padding:0}
+.grounding li{position:relative; padding:11px 0 11px 24px; border-top:1px solid var(--line-soft); font-size:15px}
+.grounding li:first-child{border-top:0}
+.grounding li::before{position:absolute; left:2px; top:12px; font-size:14px}
+.grounding.g-ref li::before{content:"\2192"; color:var(--info)}
+.grounding.g-obs li::before{content:"\25B8"; color:var(--warn)}
+.grounding .refk{font-weight:600}
+.grounding a, .dd a, .nextsteps a, .decision a, .cov a{color:var(--accent-ink); text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:560px){
@@ -474,6 +597,10 @@ def build_deck(md, g):
     r = parse_footer(extract_footer(md) or "")
     if not r.get("lane") or not isinstance(r.get("pinned"), dict):
         raise ValueError("no parseable receipt:v1 footer (missing lane/pinned)")
+
+    base = repo_base()
+    if r.get("profile") == "issue":
+        return build_issue_deck(r, md, g, base)
 
     lane = r.get("lane")
     demoted = r.get("demoted_from")
@@ -683,6 +810,9 @@ def build_deck(md, g):
             A('<li>%s</li>' % esc(s))
         A('</ul></section>')
 
+    # references / grounding (RP-15) — agent-performed cross-reference, linked
+    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+
     # ---- drill-downs ----
     A('<p class="sec-h">The detail, on demand</p>')
 
@@ -712,16 +842,19 @@ def build_deck(md, g):
     # what was NOT checked
     A('<details class="dd" open><summary>What was <em>not</em> checked (on purpose)'
       '<span class="tag g-bad">read this</span></summary><div class="body">')
-    A('<p class="intro">Some things are never machine-checked here. They stay a human judgment '
-      'and can never be marked done.</p><ul class="cov">')
+    A('<p class="intro">Two kinds live here: items <b>never machine-checked by design</b> — a '
+      'human judgment that can never be marked done — and passes <b>not yet run this session</b>, '
+      'which a later run can still cover.</p><ul class="cov">')
     for c in coverage:
         st = _cov_status(c)
         if st not in ("never-by-design", "not-covered"):
             continue
         it = _cov_item(c)
-        A('<li><span class="never">Never checked</span> '
-          '<span class="h">%s</span><div class="d">%s</div></li>'
-          % (esc(_cov_title(it)), esc(g.dec("coverage:" + it) or g.cap("coverage:" + it, ""))))
+        badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
+                 else '<span class="open">Not yet — resumable</span>')
+        A('<li>%s <span class="h">%s</span><div class="d">%s</div></li>'
+          % (badge, esc(_cov_title(it)),
+             esc(g.dec("coverage:" + it) or g.cap("coverage:" + it, ""))))
     for hk, htitle in (("human:contributor-trust", "Do you trust this contributor"),
                        ("human:supply-chain-hygiene", "Do you trust this dependency")):
         A('<li><span class="open">Human-only</span> <span class="h">%s</span>'
@@ -749,7 +882,7 @@ def build_deck(md, g):
             disp = str(f.get("disposition", ""))
             real_text = ftext_map.get(fid.replace(" ", "").upper())
             if real_text:
-                txt_html, _ = render_inline(real_text)
+                txt_html, _ = render_linked(real_text, base)
             else:
                 txt_html = esc(g.cap("severity:" + sev, ""))
             A('<li><span class="ci c-fail">!</span><div>'
@@ -779,6 +912,200 @@ def build_deck(md, g):
     A('</footer>')
 
     return "".join(out)
+
+
+def build_issue_deck(r, md, g, base):
+    """Issue-profile deck (design §8.6a): a categorical recommendation over a
+    rule-grounded PR-obstacle preview, plus a grounded, four-bucket References
+    section. No burden axes, no safety-gate dots, no auto-merge tiles -- an
+    issue has no diff to grade (rules/issues.md IV-NN)."""
+    reco = str(r.get("recommendation")).strip() if r.get("recommendation") else None
+    lane = r.get("lane")
+    held = r.get("held") is True
+    classn = r.get("classification")
+    coverage = r.get("coverage") or []
+    findings = r.get("findings") or []
+    pinned = r.get("pinned") or {}
+    item = r.get("item") or ""
+    ftext_map = extract_findings_text(md)
+
+    num = ""
+    mnum = re.search(r"#(\d+)", item)
+    if mnum:
+        num = mnum.group(1)
+    title_raw = ""
+    mtitle = re.search(r"^##\s*Triage Receipt\s*[—-]\s*(?:PR|issue)\s*#\d+:\s*(.+)$",
+                       md, re.MULTILINE | re.IGNORECASE)
+    if mtitle:
+        title_raw = mtitle.group(1).strip()
+    title, title_hidden = sanitize(title_raw)
+
+    RSTATE = {"escalate": "s-bad", "needs-info": "s-warn",
+              "decompose": "s-warn", "proceed": "s-ok"}
+    if held:
+        state, headline = "s-warn", g.cap("held:true", "On hold — a person answers this")
+    elif reco:
+        state = RSTATE.get(reco, "s-warn")
+        headline = g.cap("recommendation:%s" % reco, "Needs your review")
+    else:
+        state, headline = "s-warn", "Needs your review"
+    lede = (g.dec("recommendation:%s" % reco) or "") if reco else ""
+
+    out = []
+    A = out.append
+
+    # verdict hero
+    A('<header class="card verdict %s">' % state)
+    eyebrow = "Triage reading view"
+    if num:
+        eyebrow += " · Issue #%s" % esc(num)
+    if classn:
+        eyebrow += " · %s" % esc(str(classn))
+    if lane:
+        eyebrow += " · %s lane" % esc(str(lane))
+    A('<p class="eyebrow">%s</p>' % eyebrow)
+    A('<h1>%s</h1>' % esc(headline))
+    if lede:
+        A('<p class="lede">%s</p>' % esc(lede))
+    if title:
+        A('<p class="lede" style="margin-top:10px;font-size:15px;color:var(--ink-faint)">%s</p>'
+          % title)
+    A('<div class="pinrow">')
+    A('<span><b>Item</b> <code>%s</code></span>' % esc(("#" + num) if num else "issue"))
+    A('<span><b>Against canon</b> <code>%s</code></span>' % _short(pinned.get("canon_sha")))
+    A('<span><b>Agent</b> <code>%s</code></span>' % esc(str(pinned.get("agent_version") or "?")))
+    A('</div>')
+    A('</header>')
+
+    if title_hidden:
+        A('<div class="flagline">⚠ Hidden characters were found in the title and removed '
+          'before display. Treat the original text with suspicion.</div>')
+
+    if held:
+        A('<div class="alert"><span class="mark">⚠</span><p>'
+          '<strong>On hold at the contributor’s request.</strong> The agent has stood down and '
+          'drafted nothing further. Read their message in the receipt and answer it yourself.</p></div>')
+
+    # predicted obstacles (IV-02) — rule-grounded, no grade
+    A(render_grounding_card(md, base, r"Predicted obstacles", "g-obs",
+                            "Predicted obstacles — if this became a PR"))
+    # references (IV-03) — agent-performed four-bucket cross-reference, linked
+    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+
+    # decision box
+    A('<section class="card decision">')
+    A('<h2>Your call</h2>')
+    A('<p>%s</p>' % esc(_issue_decision_line(reco, held)))
+    A('<p class="standing">The agent has not filed, labelled, closed, or posted anything. '
+      'Every GitHub action here is yours to take.</p>')
+    A('</section>')
+
+    # next steps — derived from the recommendation + never-checked coverage gaps
+    steps = []
+    if reco:
+        d = g.cap("recommendation:%s:next" % reco, "")
+        if d:
+            steps.append(d)
+    for c in coverage:
+        if _cov_status(c) == "never-by-design":
+            d = g.dec("coverage:%s" % _cov_item(c))
+            if d:
+                steps.append(d)
+    seen, uniq = set(), []
+    for s in steps:
+        k = s.strip()
+        if k and k not in seen:
+            seen.add(k)
+            uniq.append(s)
+    if uniq:
+        A('<section class="card nextsteps"><h2>Next steps to check</h2>'
+          '<p class="ns-intro">The follow-ups only you can do before acting.</p><ul>')
+        for s in uniq:
+            A('<li>%s</li>' % esc(s))
+        A('</ul></section>')
+
+    A('<p class="sec-h">The detail, on demand</p>')
+
+    # what was NOT checked + the permanently-open human-only judgments
+    A('<details class="dd" open><summary>What was <em>not</em> checked'
+      '<span class="tag g-bad">read this</span></summary><div class="body">')
+    A('<p class="intro">An issue is a proposal, not a change — nothing here is validated by '
+      'running it, and these stay human judgments.</p><ul class="cov">')
+    for c in coverage:
+        st = _cov_status(c)
+        if st not in ("never-by-design", "not-covered"):
+            continue
+        it = _cov_item(c)
+        badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
+                 else '<span class="open">Not yet — resumable</span>')
+        A('<li>%s <span class="h">%s</span><div class="d">%s</div></li>'
+          % (badge, esc(_cov_title(it)),
+             esc(g.dec("coverage:" + it) or g.cap("coverage:" + it, ""))))
+    for hk, htitle in (("human:roadmap-worth", "Worth roadmap space"),
+                       ("human:engagement-tone", "Engagement tone")):
+        A('<li><span class="open">Human-only</span> <span class="h">%s</span>'
+          '<div class="d">%s</div></li>' % (esc(htitle), esc(g.cap(hk, ""))))
+    A('</ul></div></details>')
+
+    # findings (issues may carry them)
+    if findings:
+        A('<details class="dd"><summary>Findings'
+          '<span class="tag g-warn">%d</span></summary><div class="body">' % len(findings))
+        A('<p class="intro">Points the triage raised on this issue.</p><ul class="checks">')
+        for f in findings:
+            fid = str(f.get("id", "F"))
+            sev = str(f.get("severity", "minor"))
+            disp = str(f.get("disposition", ""))
+            real_text = ftext_map.get(fid.replace(" ", "").upper())
+            if real_text:
+                txt_html, _ = render_linked(real_text, base)
+            else:
+                txt_html = esc(g.cap("severity:" + sev, ""))
+            A('<li><span class="ci c-fail">!</span><div>'
+              '<div class="name">%s <span class="id">%s%s</span></div>'
+              '<div class="txt">%s</div></div></li>'
+              % (esc(sev.title()), esc(fid), (" · " + esc(disp)) if disp else "", txt_html))
+        A('</ul></div></details>')
+
+    # full technical receipt (verbatim, escaped)
+    receipt_txt, _ = sanitize(md.strip())
+    A('<details class="dd"><summary>The full technical receipt'
+      '<span class="tag g-mute">for auditors</span></summary><div class="body">')
+    A('<p class="intro">The exact receipt as posted to GitHub — the auditable record.</p>')
+    A('<pre class="receipt">%s</pre></div></details>' % receipt_txt)
+
+    # provenance footer
+    A('<footer class="foot"><dl class="prov">')
+    A('<dt>PR head SHA</dt><dd>%s</dd>' % _sanidd(pinned.get("pr_head_sha")))
+    A('<dt>Canon SHA</dt><dd>%s</dd>' % _sanidd(pinned.get("canon_sha")))
+    A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
+    A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
+    A('</dl>')
+    A('<p>A plain-language reading view of the issue Triage Receipt, generated by '
+      'lq-maintainer-agent. It reformats the receipt only — the receipt is the record. A '
+      'human decides, every time. This is a private local view, never posted to GitHub.</p>')
+    A('</footer>')
+
+    return "".join(out)
+
+
+def _issue_decision_line(reco, held):
+    if held:
+        return ("The contributor asked for a human. Read their message in the receipt and "
+                "respond yourself; the agent has drafted nothing further.")
+    if reco == "escalate":
+        return ("Route the underlying decision to the right people (a committee or a roadmap "
+                "call). Do not accept or decline it on your own.")
+    if reco == "needs-info":
+        return ("Post the drafted request to the reporter. You cannot act on this until the "
+                "missing pieces — reproduction, or a design anchor — come back.")
+    if reco == "decompose":
+        return ("Decide which drafted sub-issues to file, then split this so each piece can "
+                "move on its own. Filing and closing are yours.")
+    if reco == "proceed":
+        return ("Decide whether this is worth doing. It is clear and grounded — nothing blocks "
+                "acting on it — but the priority call is yours.")
+    return "Read the obstacles and references below, then decide how to handle this issue."
 
 
 def _short(sha):

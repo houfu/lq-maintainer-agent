@@ -412,15 +412,18 @@ not a verdict handed down before one.
    receipt markdown through
    `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh` and write
    the HTML to
-   `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/deck.html`
+   `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<item-number>/<head-sha-or-issue>/deck.html`
    (if `${CLAUDE_PLUGIN_DATA}` is unset, ask the maintainer where to
-   write it — never the repo tree). It leads with the burden verdict
-   (`B-09`), the five axes, the coverage gaps, and the **Next steps** the
-   reviewer must check (`B-14`). Tell the maintainer the path. The deck
-   is a **PR** view (its burden verdict grades a diff); an issue has no
-   burden block or deck — deliver issues as their classification and
-   drafted responses instead (`rules/issues.md` C-81). **Batch: one deck
-   per PR.**
+   write it — never the repo tree). The renderer picks the profile from
+   the receipt footer: a **PR** deck leads with the burden verdict
+   (`B-09`), the five axes, the coverage gaps, and the **Next steps**
+   (`B-14`); an **issue** deck leads with the recommendation
+   (`needs-info`/`decompose`/`proceed`/`escalate`, `IV-01`) over the
+   rule-grounded Predicted-obstacles preview and the four-bucket
+   References, no burden axes (§8.6a). Both render the References and
+   citations as click-through links. Tell the maintainer the path. A
+   **vulnerability-suspect** issue gets no receipt and no deck (C-40).
+   **Batch: one deck per item (PR or issue).**
 2. **Discuss it with the maintainer.** Walk the verdict and the Next
    steps. The maintainer may reassign a lane (`L-01`), accept or relay
    findings, agree to run a next step (read the changelog, smoke-test,
@@ -444,6 +447,7 @@ assigning rules and deterministic-check results; standard cards;
 committee packets; issue classifications; held items with their quoted
 objections; stale-sweep drafts) — pagination/`--since` deferred until
 scale hurts (design §15 q.3), list everything open for now — then a deck
-per **PR**, and discuss-then-finalize per the steps above. Issues in the
-batch are delivered as their classification lines and drafted responses,
-CoC-bound (`rules/conduct.md`), with their next steps named (C-81).
+per **item** (PR *and* issue, except vulnerability-suspect issues which
+get neither receipt nor deck, C-40), and discuss-then-finalize per the
+steps above. Every drafted line is CoC-bound (`rules/conduct.md`) with
+its next steps named (C-81/`B-14`).
