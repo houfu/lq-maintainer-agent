@@ -1,0 +1,62 @@
+# render-deck-test.yml — unit + adversarial tests for the reading-deck
+# renderer (skills/triage/scripts/render-deck.sh; design doc §8.6/§8.6a).
+#
+# BLOCKING. Deterministic and cheap: pure python3 stdlib, no API tokens, no
+# canon clone, no network. Guards two properties that must never regress:
+#   1. Both deck profiles render from a receipt:v1 footer (PR burden deck +
+#      issue recommendation deck), and the renderer fails closed on a bad
+#      footer.
+#   2. Click-through links are emitted ONLY for allow-listed, agent-
+#      constructable targets (rules/canon-map.md link rule); a URL from
+#      contributor text is dropped to inert text, never a live href
+#      (rules/injection-posture.md). This is a security invariant — a
+#      regression here would turn the deck into an injection surface.
+#
+# NOTE — file location (§3.1): GitHub Actions only discovers workflows under
+# .github/workflows/. ci/ is the reviewed source of truth; a byte-identical
+# copy ships at .github/workflows/render-deck-test.yml. The first step fails
+# if the two diverge — edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): third-party actions pinned by full commit SHA.
+
+name: render-deck-test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "skills/triage/scripts/render-deck.sh"
+      - "templates/deck/glossary.md"
+      - "rules/canon-map.md"
+      - "ci/scripts/test-render-deck.sh"
+      - "ci/render-deck-test.yml"
+      - ".github/workflows/render-deck-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-deck-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-deck-test:
+    name: renderer tests (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/render-deck-test.yml .github/workflows/render-deck-test.yml; then
+            echo "::error file=ci/render-deck-test.yml::ci/render-deck-test.yml and .github/workflows/render-deck-test.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Run renderer unit + adversarial tests
+        run: |
+          set -euo pipefail
+          python3 ci/scripts/test-render-deck.sh
