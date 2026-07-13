@@ -114,3 +114,62 @@ declined regardless of its other merits.
   (design doc §3.6).
 - Releases are tagged with a changelog; version bumps happen at release
   time, not per PR.
+
+## Releasing
+
+Claude Code installs plugins by **git-cloning this repo** into its local
+cache and reading `.claude-plugin/marketplace.json` + `plugin.json`. It
+does **not** use the GitHub Releases API. Two consequences drive the
+whole release process:
+
+1. **The `version` in `plugin.json` is the delivery mechanism, not just
+   a label.** On `/plugin update`, Claude Code compares the newly
+   resolved version string against the cached one; **if they match, the
+   update is skipped.** Version resolves from, in order: `version` in
+   `plugin.json`, then `version` in the plugin's `marketplace.json`
+   entry, then the source commit SHA. Since `plugin.json` sets it,
+   pushing new commits **without bumping `version` ships nothing** —
+   users on the old version never see the fix. Bump `version` in the
+   same PR as any change you want to reach installed users.
+
+2. **The GitHub "pre-release" checkbox has no effect on install or
+   update.** Because resolution is git-clone, not the Releases API, the
+   pre-release flag is invisible to Claude Code — it will not hide a
+   build from `/plugin` or gate `/plugin update`. Use it as a
+   human-facing signal only. To actually control what users receive, use
+   the **git side**: don't bump `version`, and/or pin the marketplace
+   plugin `source` to a stable `ref`/`sha` (per-plugin sources support
+   both; the top-level marketplace source supports `ref` only). By
+   default a source with no `ref` tracks the repo's default-branch HEAD.
+
+Release steps:
+
+1. Land all changes on `main` via PR (two maintainer reviews for the
+   permission surfaces, as above).
+2. Bump `version` in `plugin.json` to the next SemVer. **Never move an
+   already-published tag** — if `vX.Y.Z` is already pushed, cut
+   `vX.Y.(Z+1)`; moving a tag breaks anyone pinned to it.
+3. Update the changelog.
+4. Tag the release commit `vX.Y.Z` and push the tag. The tag is the only
+   step that makes a build "official"; a branch push does not.
+
+### Testing a build locally (no release, no version bump)
+
+To exercise a working branch without publishing anything, point Claude
+Code at your local checkout instead of the GitHub repo:
+
+```
+/plugin marketplace add /absolute/path/to/lq-maintainer-agent
+/plugin install lq-maintainer@lq-maintainer-agent
+```
+
+Iterate, then reload the local marketplace to pick up changes:
+
+```
+/plugin marketplace update lq-maintainer-agent
+```
+
+Because the source is a local path, updates track your working tree
+directly — no tag, no `version` bump, no push required. Remove it with
+`/plugin marketplace remove lq-maintainer-agent` when done so you don't
+shadow the real marketplace entry.
