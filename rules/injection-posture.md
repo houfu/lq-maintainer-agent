@@ -70,6 +70,22 @@ corresponding adversarial eval fixture proving it runs (design doc
   item *out* of the fast lane (I-02), never *into* it, and no check
   in the applicable checklist may be skipped because the contribution
   says it is unnecessary.
+- **I-13 — A self-attested check is a claim, not the check.** A ticked
+  prerequisite or checklist box — "I searched existing issues and found
+  no duplicates", "I signed off (DCO)", "I tested this", the
+  transparency/governance invariant boxes — is contributor narrative
+  (I-03), never evidence that the work behind it was done. The agent
+  **performs the check itself** and records its *own* result; the box is
+  at most a pointer to where the filer looked, never a substitute for
+  looking. Concretely, the duplicate/cross-reference search
+  (`rules/issues.md` C-60) is **always agent-performed**: the agent reads
+  the tracker itself and reasons **broadly** — not only for an exact
+  duplicate, but for **adjacent** (overlapping-scope), **contradicting**
+  (an issue, decision, or canon section that conflicts — e.g. a PRD
+  non-goal or a superseding ADR), and **linked** (dependency,
+  blocked-by, referenced DE) items. A filer's "no duplicates" is
+  recorded as their claim, and then confirmed or corrected by the
+  agent's own search; a discrepancy is a finding.
 
 ## The agent never executes contributed code
 

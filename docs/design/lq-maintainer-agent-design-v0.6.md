@@ -647,9 +647,14 @@ conservatively:
 
 Classify (bug / feature / question / vulnerability-suspect /
 spam-suspect §6.1), then: bugs → repro-completeness, subsystem
-pointers, **cross-reference against open issues, open PRs, the DE list,
-*and* the roadmap** (the grounding that feeds the deck's References
-section, §8.6a), severity suggestion, drafted request for missing repro
+pointers, an **agent-performed cross-reference against open issues, open
+PRs, the DE list, *and* the roadmap** — sorted into duplicate / adjacent
+/ contradicting / linked buckets, never the filer's self-attested "I
+searched" claim (§10, injection posture; a ticked prerequisite box is a
+claim, not the check), and feeding the deck's linked References section
+(§8.6a). The same agent-performed, four-bucket grounding is carried on
+**PR** receipts too (their References section), so both surfaces are
+grounded. Then: severity suggestion, drafted request for missing repro
 pieces calibrated for non-engineer filers; features → anchor check,
 DE/mini-PRD promotion pipeline with drafted stubs, salvage where
 overreaching, EASIEST-CONTRIBUTIONS/P1 routing; questions → drafted

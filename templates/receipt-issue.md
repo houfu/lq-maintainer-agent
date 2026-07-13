@@ -18,15 +18,18 @@ file states only the issue-profile deltas.
   question / spam-suspect) + assigning rule ID (C-NN,
   `rules/issues.md`), **and** a lane + assigning rule like any other
   item (issues are never fast; most commonly standard or escalate).
-- **RI-02 — References / cross-reference record (`C-60`, `IV-03`).** What
-  was searched — open issues, open PRs, the DE list, and the roadmap
-  (routed via `rules/canon-map.md`) — and what matched: duplicates
-  (cross-referenced both directions), related open PRs in flight, and the
-  roadmap/DE entry the ask maps to (or its absence). Every match and every
-  canon citation renders as a **click-through link** (`rules/canon-map.md`
-  link rule — canon docs pinned to the canon SHA, issues/PRs by number,
-  agent-constructed from validated sources only). "Nothing matched" is a
-  recordable result; an unperformed search is not.
+- **RI-02 — References / cross-reference record (`C-60`, `IV-03`).** The
+  **agent-performed** cross-reference (never the filer's self-attested
+  search, `I-13`), sorted into four buckets — **duplicate**, **adjacent**,
+  **contradicting**, **linked** — over open issues, open PRs, the DE list,
+  and the roadmap (routed via `rules/canon-map.md`). The filer's "I
+  searched, no duplicates" claim is recorded and then confirmed or
+  corrected by the agent's own read; a discrepancy is a finding. Every
+  match and every canon citation renders as a **click-through link**
+  (`rules/canon-map.md` link rule — canon docs pinned to the canon SHA,
+  issues/PRs by number, agent-constructed from validated sources only).
+  "Nothing matched in a bucket" is a recordable result; an unperformed
+  search is not.
 - **RI-03 — Repro assessment (bugs).** Complete / partial / absent,
   itemized (versions, steps, expected vs. actual, logs), with the
   drafted request for missing pieces rendered from
@@ -118,13 +121,17 @@ fact that would fire if the ask were submitted as-is.
 
 ### References (IV-03)
 
-Searched: open issues; open PRs; the DE list; the roadmap (via the canon
-map).
-- **Duplicates:** <none | #n / DE-XXX with one-line relation each,
+Searched **by the agent** (not the filer's self-attestation, I-13): open
+issues; open PRs; the DE list; the roadmap. Filer's claim: <"searched, no
+duplicates" | none> — <confirmed | corrected: …>. Every entry links.
+- **Duplicate:** <none | [#n](link) / [DE-XXX](link) with one-line relation,
   cross-referenced both directions>
-- **Related open PRs:** <none | #n with one-line relation each>
-- **Roadmap / DE:** <the accepted entry the ask maps to, or "no entry —
-  unanchored (A-06/E-04)">
+- **Adjacent:** <none | [#n](link) / [PR #n](link) / roadmap item — overlapping
+  scope, one line each>
+- **Contradicting:** <none | [canon:prd §x](link) non-goal / superseding
+  [ADR-NNN](link) / declined DE — the conflict that may force escalate (E-04)>
+- **Linked:** <none | [DE-XXX](link) / [#n](link) — dependency / blocked-by /
+  referenced, one line each>
 
 ### Repro assessment (bugs; n/a otherwise)
 
