@@ -1,13 +1,16 @@
 ---
 name: triage
 description: >
-  Triage the target project's PRs and issues into recommended lanes and
-  draft Triage Receipts. Use ONLY when the user explicitly runs
-  /lq-maintainer:triage (batch digest across all open PRs and issues),
-  /lq-maintainer:triage pr N (single PR), or
-  /lq-maintainer:triage issue N (single issue). Skill invocation is
-  namespaced by the plugin — there is no bare /triage. Never invoke
-  proactively or mid-conversation without an explicit command.
+  Triage the target project's open queue: the batch router that sorts every
+  open PR and issue into recommended lanes and draws a digest. Use ONLY when
+  the user explicitly runs /lq-maintainer:triage (batch digest across all
+  open PRs and issues) or /lq-maintainer:triage pr N (a single PR's quick
+  card). Skill invocation is namespaced by the plugin — there is no bare
+  /triage. Never invoke proactively or mid-conversation without an explicit
+  command. For the considered single-item REVIEW (deck, drafted receipt and
+  responses), the user runs /lq-maintainer:review-pr N or
+  /lq-maintainer:review-issue N — triage sorts the queue; the review skills
+  go deep on one item.
 disable-model-invocation: true
 allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Read, Grep, Glob
 ---
@@ -65,11 +68,16 @@ version + served model ID**.
 ## Step 1 — Parse the mode
 
 - `/lq-maintainer:triage` → **batch**: digest across all open PRs and
-  all open issues.
-- `/lq-maintainer:triage pr N` → **single PR** N.
-- `/lq-maintainer:triage issue N` → **single issue** N.
+  all open issues (the queue router — quick per-item lane + recommendation
+  lines).
+- `/lq-maintainer:triage pr N` → **single PR** N, quick card.
+- `/lq-maintainer:triage issue N` → this is a **review**, not triage:
+  tell the maintainer to run `/lq-maintainer:review-issue N` (the
+  single-issue reviewer, design §8.6a) and stop. Do not produce the full
+  issue review here — the batch digest still classifies and recommends
+  every open issue, and the deep single-issue path is `review-issue`.
 
-Anything else: ask the maintainer to pick one of the three forms.
+Anything else: ask the maintainer to pick one of these forms.
 
 ## Step 2 — Load the rules
 

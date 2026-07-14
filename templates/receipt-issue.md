@@ -1,6 +1,7 @@
 # Template — Triage Receipt, issue profile
 
-Rendered by `skills/triage/SKILL.md` (Steps 7–8) for every triaged
+Rendered by `skills/review-issue/SKILL.md` (Step 7; and the batch path in
+`skills/triage/SKILL.md`) for every triaged
 issue **except vulnerability-suspect items, which get no public
 receipt at all** (`rules/issues.md` C-40 — the only output there is
 the drafted private-advisory redirect,

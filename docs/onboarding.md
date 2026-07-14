@@ -44,8 +44,9 @@ That's it. The plugin declares the two skills and the PreToolUse safety
 hooks ([hooks/hooks.json](../hooks/hooks.json)) that block
 merge/approve/close/push/PR-checkout in your session. **Skill
 invocation is namespaced by the plugin name**: the commands are
-`/lq-maintainer:triage` and `/lq-maintainer:review-pr` — there is no
-bare `/triage`, and this guide never promises one.
+`/lq-maintainer:triage`, `/lq-maintainer:review-pr`, and
+`/lq-maintainer:review-issue` — there is no bare `/triage`, and this
+guide never promises one.
 
 The repo also carries a reference copy of the same block for lq-ai's
 own `.claude/` ([settings/claude-settings.json](../settings/claude-settings.json)),
@@ -157,11 +158,28 @@ hour.
    each finding.** Then approve the posting of the Triage Receipt and
    whichever comments you kept — one permission prompt per write.
 
-5. **Forward the committee packets** to wherever your governance
+5. **Take one substantive issue deeper.** For a feature proposal or a
+   tangled bug report, run:
+
+   ```
+   /lq-maintainer:review-issue <number>
+   ```
+
+   You get the **recommendation deck** — needs-info / decompose /
+   proceed / escalate — over a rule-grounded preview of the obstacles a
+   PR from this issue would hit, plus a four-bucket References section
+   (duplicate / adjacent / contradicting / linked) the agent searched
+   **itself** (a filer's "I checked for duplicates" box is a claim, not
+   the search). Discuss it, then approve the drafted receipt and
+   responses — one prompt per write. (`triage` sorts the queue;
+   `review-issue` is the single-issue reviewer, the counterpart to
+   `review-pr`.)
+
+6. **Forward the committee packets** to wherever your governance
    discussion lives (destination is open question §15 q.1). The agent
    drafts; you route.
 
-6. **Done.** If you ran out of time mid-review, that is fine and
+7. **Done.** If you ran out of time mid-review, that is fine and
    first-class: post the receipt with its honest coverage statement
    ("covered: vetting checklist, anchor; not yet: code-quality pass").
    The next maintainer's `/lq-maintainer:triage` resumes from the

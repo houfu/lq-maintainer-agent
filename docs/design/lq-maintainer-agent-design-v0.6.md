@@ -162,15 +162,19 @@ lq-maintainer-agent/
 │                                 #   permission rules)
 ├── skills/
 │   ├── triage/
-│   │   ├── SKILL.md              # /lq-maintainer:triage — batch +
-│   │   │                         #   single, PRs & issues
+│   │   ├── SKILL.md              # /lq-maintainer:triage — the batch
+│   │   │                         #   queue router (PRs & issues) +
+│   │   │                         #   the single-PR quick card
 │   │   ├── scripts/              # deterministic fast-lane checks
-│   │   │                         #   (§5.1): semver parse, OSV batch
-│   │   │                         #   lookup, registry release-age
+│   │   │                         #   (§5.1) + render-deck.sh (§8.6)
 │   │   └── references/           # pointers into rules/ and templates/
-│   └── review-pr/
-│       └── SKILL.md              # /lq-maintainer:review-pr — deep
-│                                 #   dive, multi-agent
+│   ├── review-pr/
+│   │   └── SKILL.md              # /lq-maintainer:review-pr N — deep
+│   │                             #   dive, multi-agent (code)
+│   └── review-issue/
+│       └── SKILL.md              # /lq-maintainer:review-issue N — the
+│                                 #   single-issue reviewer (§8.6a):
+│                                 #   recommendation deck + drafts
 ├── rules/                        # DATA, not prose-in-prompt (§3.2)
 │   ├── lanes.md                  # lane definitions + assignment rules
 │   │                             #   incl. the §5.1 deterministic gate
@@ -235,8 +239,10 @@ This buys three things:
 
 Maintainers install the agent once as a Claude Code plugin (the repo
 is added as a plugin marketplace source; `plugin.json` declares the
-skills and hooks). They then run `/lq-maintainer:triage` and
-`/lq-maintainer:review-pr` **from inside their own lq-ai clone**, which
+skills and hooks). They then run `/lq-maintainer:triage` (the batch
+queue router) and the single-item reviewers `/lq-maintainer:review-pr`
+and `/lq-maintainer:review-issue` **from inside their own lq-ai clone**,
+which
 is what gives the agent local read access to the canon and to `main`.
 (Skill invocation is namespaced by the plugin name — docs and
 onboarding must not promise a bare `/triage`.)
@@ -1167,15 +1173,16 @@ spend ceiling that pauses the schedule rather than degrading judgment.
 `/lq-maintainer:triage` from inside the lq-ai clone → digest
 (fast-lane one-liners with assigning rules and deterministic-check
 results; standard cards; committee packets; issue classifications).
-Clear the fast lane — every merge is a human click. One standard item →
-`/lq-maintainer:review-pr N` → accept/edit/drop findings → approve the
-posting of the receipt and chosen comments (permission prompt per
-write). Forward packets. Done.
+Clear the fast lane — every merge is a human click. One standard PR →
+`/lq-maintainer:review-pr N`; one substantive issue →
+`/lq-maintainer:review-issue N` → accept/edit/drop, approve the posting
+of the receipt and chosen comments (permission prompt per write).
+Forward packets. Done.
 
-**Salvage session:** an overreaching PR or issue lands → decomposition,
-per-part dispositions, drafted contributor response arrive with the
-card → maintainer edits tone, approves the post, files the drafted DE
-stub in lq-ai.
+**Salvage session:** an overreaching PR (`review-pr`) or issue
+(`review-issue`) lands → decomposition, per-part dispositions, drafted
+contributor response arrive with the deck → maintainer edits tone,
+approves the post, files the drafted DE stub in lq-ai.
 
 **Contest handling:** a contributor objects to a lane call or asks for
 human-only handling (§7.1) → the item is marked held, the objection is

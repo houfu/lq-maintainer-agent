@@ -1,7 +1,8 @@
 # Issues — classification, per-class handling, contest/hold
 
 Normative data for the LQ Maintainer Agent (design doc §7, §7.1).
-Loaded at runtime by `skills/triage/SKILL.md`. Every rule carries a
+Loaded at runtime by `skills/review-issue/SKILL.md` (the single-issue
+reviewer) and `skills/triage/SKILL.md` (the batch router). Every rule carries a
 stable ID (`C-NN`; contest/hold rules `H-NN`); the classification row
 of `templates/receipt-issue.md` and every digest classification line
 cite the assigning rule by ID. Companion rule sets: `rules/lanes.md`
