@@ -23,6 +23,7 @@ import importlib.util
 import os
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
@@ -42,14 +43,14 @@ def check(name, cond, detail=""):
         _fail.append(name)
 
 
-def run(md, extra_env=None):
+def run(md, extra_env=None, args=None):
     """Render md through the real script as a subprocess; return (rc, stdout)."""
     env = dict(os.environ)
     env["CLAUDE_PLUGIN_ROOT"] = ROOT  # so glossary + canon:repo base load
     if extra_env:
         env.update(extra_env)
-    p = subprocess.run([sys.executable, RENDER], input=md, env=env,
-                       capture_output=True, text=True)
+    p = subprocess.run([sys.executable, RENDER] + list(args or []), input=md,
+                       env=env, capture_output=True, text=True)
     return p.returncode, p.stdout
 
 
@@ -125,6 +126,56 @@ ISSUE_DECOMPOSE = ISSUE_ESCALATE.replace(
     "recommendation: escalate", "recommendation: decompose"
 ).replace("**Recommendation:** Escalate", "**Recommendation:** Decompose")
 
+# v2 receipts — the decision_scoping block (rules/decision-scoping.md D-12).
+PR_ESCALATE_V2 = PR_BLOCKED.replace(
+    "lq-maintainer-agent:receipt:v1", "lq-maintainer-agent:receipt:v2"
+).replace(
+    "  scope: high\n  review: high\n  tests: high\n  carry: high\n  safety: high\n",
+    "  scope: high\n  review: high\n  tests: high\n  carry: high\n  safety: high\n"
+    "decision_scoping:\n  applied: full\n  questions: 1\n  settled: 1\n"
+    "  residual: 1\n  reserved_human: 0\n  residuals:\n"
+    "    - {id: R-1, kind: structural, artifact: adr-draft}\n"
+)
+
+PR_CLEAN_V2 = (
+    "## Triage Receipt — PR #903: clean standard item\n"
+    "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#903\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "findings: []\nfindings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "decision_scoping:\n  applied: n-a\n"
+    "-->\n"
+)
+
+ISSUE_ESCALATE_V2 = ISSUE_ESCALATE.replace(
+    "lq-maintainer-agent:receipt:v1", "lq-maintainer-agent:receipt:v2"
+).replace(
+    "findings: []\nfindings_filtered: 0\n",
+    "findings: []\nfindings_filtered: 0\n"
+    "decision_scoping:\n  applied: partial\n  questions: 1\n  settled: 0\n"
+    "  residual: 1\n  reserved_human: 0\n  residuals:\n"
+    "    - {id: R-1, kind: forward-looking, artifact: de-stub}\n"
+)
+
+# Deep-dive cache report carrying a '### Below threshold' section (deck-only
+# enrichment, skills/review-pr/SKILL.md Step 5). Includes an adversarial link:
+# the link allow-list must hold in this section too.
+REPORT_BELOW = (
+    "# Long-form report — PR #900\n"
+    "### Findings\n"
+    "**F-1 — major** — the receipt-visible finding.\n"
+    "### Below threshold\n"
+    "- `gateway/app/client.py:44` — naming could match the module convention "
+    "(code-quality pass, low confidence)\n"
+    "- `docs/x.md:9` — see [ref](https://github.com/LegalQuants/lq-ai/issues/12) "
+    "and [bad](https://evil.example.com/p) (anchor pass, low confidence)\n"
+    "### Coverage notes\n"
+    "- not part of the below-threshold section\n"
+)
+
 HIDDEN_TITLE = (
     "## Triage Receipt — issue #902: clean​title‮here\n"
     "**Recommendation:** Proceed (rule: IV-01)\n"
@@ -170,6 +221,35 @@ def main():
     check("render_linked: allowed -> anchor",
           "<a href=\"%sissues/9\">good</a>" % base in html_out)
 
+    # --- unit: render_linked must never lose text (regression: dropped tail /
+    # empty output for link-free lines silently gutted the grounding cards) ---
+    html_out, _ = mod.render_linked(
+        "lead [ok](%sissues/9)). The tail after the last link survives." % base, base)
+    check("render_linked: tail after last link kept",
+          "The tail after the last link survives." in html_out, html_out)
+    html_out, _ = mod.render_linked("no links at all — plain analysis text.", base)
+    check("render_linked: link-free line kept verbatim",
+          "no links at all — plain analysis text." in html_out, html_out)
+
+    # --- unit: grounding card keeps intro, bucket text, and nested entries ---
+    gmd = ("### References (IV-03)\n\n"
+           "Searched **by the agent** (not the filer's claim).\n\n"
+           "- **Duplicate:** none — no open issue proposes this.\n"
+           "- **Adjacent:**\n"
+           "  - [#287](https://github.com/LegalQuants/lq-ai/issues/287) — research-surface pressure.\n")
+    ghtml = mod.render_grounding_card(gmd, base, r"References", "g-ref", "References")
+    check("grounding: intro text kept", "Searched" in ghtml)
+    check("grounding: bucket-line text kept", "none — no open issue proposes this." in ghtml)
+    check("grounding: nested entry text kept", "research-surface pressure." in ghtml)
+
+    # --- unit: CSS content glyphs are real escapes, not python-octal mangling ---
+    import re as _re
+    glyphs = dict((m.group(1), m.group(2)) for m in _re.finditer(
+        r'grounding\.g-(ref|obs) li::before\{content:"([^"]*)"', mod.CSS))
+    check("css: grounding glyphs are CSS escapes",
+          glyphs.get("ref") == "\\2192" and glyphs.get("obs") == "\\25B8",
+          repr(glyphs))
+
     # --- e2e: PR blocked deck ---
     rc, out = run(PR_BLOCKED)
     check("PR: exit 0", rc == 0, "rc=%d" % rc)
@@ -184,11 +264,56 @@ def main():
           'href="https://github.com/LegalQuants/lq-ai/issues/7"' in out)
     check("PR: coverage distinguishes never vs not-yet",
           "Never checked" in out and "Not yet — resumable" in out)
+    check("PR v1: no Decisions-to-make panel (absent block == n-a)",
+          "Decisions to make" not in out)
+
+    # --- e2e: v2 decision-scoping panel (D-13) ---
+    rc, out = run(PR_ESCALATE_V2)
+    check("PR v2 escalate: exit 0", rc == 0, "rc=%d" % rc)
+    check("PR v2 escalate: Decisions-to-make panel present", "Decisions to make" in out)
+    check("PR v2 escalate: counts headline",
+          "1 decisions to make" in out and "1 found settled" in out)
+    check("PR v2 escalate: residual row with id", "R-1" in out)
+    rc, out = run(PR_CLEAN_V2)
+    check("PR v2 clean: exit 0", rc == 0, "rc=%d" % rc)
+    check("PR v2 clean: no Decisions-to-make panel (D-00/RP-17)",
+          "Decisions to make" not in out)
+    rc, out = run(ISSUE_ESCALATE_V2)
+    check("issue v2 escalate: exit 0", rc == 0, "rc=%d" % rc)
+    check("issue v2 escalate: panel present", "Decisions to make" in out)
+    check("issue v2 escalate: partial surfaced", "partial" in out)
+
+    # --- e2e: below-threshold card (deck-only, from the cache report) ---
+    check("PR without report arg: no below-threshold card",
+          "Below threshold" not in run(PR_BLOCKED)[1])
+    with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as tf:
+        tf.write(REPORT_BELOW)
+        report_path = tf.name
+    try:
+        rc, out = run(PR_BLOCKED, args=[report_path])
+        check("PR with report: exit 0", rc == 0, "rc=%d" % rc)
+        check("PR with report: below-threshold card present",
+              "Below threshold — low-confidence notes" in out)
+        check("PR with report: both bullets rendered, section-bounded",
+              out.count('class="ci c-na"') == 2
+              and "not part of the below-threshold section" not in out,
+              "count=%d" % out.count('class="ci c-na"'))
+        check("PR with report: marked deck-only", "deck only" in out)
+        check("PR with report: allowed link emitted",
+              'href="https://github.com/LegalQuants/lq-ai/issues/12"' in out)
+        check("PR with report: evil URL in report NOT a live link",
+              'href="https://evil' not in out)
+    finally:
+        os.unlink(report_path)
+    rc, out = run(PR_BLOCKED, args=["/nonexistent/report.md"])
+    check("PR with missing report: fail-open exit 0, no card",
+          rc == 0 and "Below threshold" not in out, "rc=%d" % rc)
 
     # --- e2e: issue escalate deck ---
     rc, out = run(ISSUE_ESCALATE)
     check("issue: exit 0", rc == 0, "rc=%d" % rc)
-    check("issue: Escalate headline", "Escalate — take this to a meeting" in out)
+    check("issue: Escalate headline",
+          "Escalate — a named set of decisions needs more than one person" in out)
     check("issue: obstacles + references cards", 'grounding g-obs' in out and 'grounding g-ref' in out)
     check("issue: NO burden tiles element", '<div class="tiles' not in out)
     check("issue: NO safety-gate element", 'Safety gate</span>' not in out and '<div class="meter"' not in out)

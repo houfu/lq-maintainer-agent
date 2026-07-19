@@ -94,6 +94,17 @@ file states only the issue-profile deltas.
   RI-08 human-only judgments render permanently open. A
   **vulnerability-suspect** issue gets no receipt and no deck at all
   (C-04/C-40) — recommendation included.
+- **RI-12 — Decision scoping (escalated issues only).** As
+  `templates/receipt-pr.md` RP-17, rendered if and only if the
+  recommendation is `escalate` / a trigger fired
+  (`rules/decision-scoping.md` D-00); absent otherwise, with the
+  footer's `decision_scoping.applied: n-a`. Additionally, a Predicted
+  obstacles line (IV-02) may take the sanctioned split form of D-14 —
+  `settled: <part> — settled by [canon:<key> §x](link); open: R-<i> —
+  <atomic sentence>` — still a rule-grounded fact (what canon has
+  decided, verifiable at the citation), never speculation. The footer
+  schema delta is defined in `templates/receipt-pr.md` (v2,
+  `decision_scoping` block).
 
 ## Template
 
@@ -118,6 +129,8 @@ A rule-grounded preview, not a grade. Each line names the rule or canon
 fact that would fire if the ask were submitted as-is.
 
 - <obstacle> — <rule/canon that would fire, e.g. E-04 / S-DECLINE / S-DUP #n>
+- <where canon settles part of the ask (D-14): settled: <part> —
+  settled by [canon:<key> §x](link); open: R-<i> — <atomic sentence>>
 <or, if none: "None foreseen — a single, anchored, in-scope ask.">
 
 ### References (IV-03)
@@ -164,6 +177,22 @@ Suggested severity: <one of the project's severity levels>
 Drafted split issues (to be filed as sub-issues of this one, by a
 human): <titles, one line each; full bodies delivered in-session>.
 
+### Decision scoping (escalated items only — omitted otherwise)
+
+Escalation narrowed per rules/decision-scoping.md, at canon `<sha>`:
+<s> sub-question(s) found settled · <r> residual decision(s) ·
+<h> reserved-human. Settled entries are the agent's findings —
+verify by click; a contested entry becomes an open decision (D-04).
+Full ledger and drafted artifacts: committee packet (CP-03a/CP-08).
+
+- Settled: <one line per entry — <sub-question> — settled by
+  [canon:<key> §x / ADR-NNN / DE-XXX](link)> <or: none — nothing this
+  escalation raises is already decided>
+- **R-<i> — <atomic ratifiable sentence>** [drafted: ADR-XXXX (DRAFT)
+  | DE stub | none — reserved-human]
+- Reserved-human: <judgment — reserving citation> <or: none put at
+  issue by this escalation>
+
 ### Coverage statement
 
 Covered: <e.g. classification, duplicate search, repro assessment>
@@ -189,7 +218,7 @@ execute repro steps or contributed code.
 *Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 
-<!-- lq-maintainer-agent:receipt:v1
+<!-- lq-maintainer-agent:receipt:v2
 profile: issue
 item: <owner>/<repo>#<n>
 lane: <docs|standard|escalate>
@@ -231,6 +260,14 @@ coverage:
   - {item: anchor, status: <covered|not-covered|n-a>}
   - {item: salvage, status: <covered|not-covered|n-a>}
   - {item: runtime-behavior, status: never-by-design}
+decision_scoping:
+  applied: <full|partial|n-a>
+  questions: <integer>
+  settled: <integer>
+  residual: <integer>
+  reserved_human: <integer>
+  residuals:
+    - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
 -->
 ```
 

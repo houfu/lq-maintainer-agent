@@ -38,8 +38,15 @@ A documentation-only change. Light review — check that it's accurate and lands
 the right place.
 
 ### lane:escalate
-Escalated. This needs more than one person — a committee or a security review.
-→ Do not decide this one alone; route it to the right people.
+Escalated. This needs more than one person — but not an open-ended
+architecture debate: the packet separates what the agent found the
+project's own canon already settles (each with a citation you can click
+and should verify) from the named decisions still open, each drafted —
+or, from a batch run, named — for ratify / amend / reject.
+→ Do not decide this one alone. The drafted residual decisions are the
+agenda; a "settled" row is the agent's finding, not a ruling —
+challenging one is always in order, and a challenged row becomes
+another open decision.
 
 ### held:true
 On hold at the contributor's request — they contested a call or asked for a human.
@@ -315,9 +322,10 @@ piece can move on its own — a decomposed idea means the oversized PR never get
 written.
 
 ### recommendation:escalate
-Escalate — take this to a meeting, don't decide it alone
-→ A trigger fired that puts this beyond a single maintainer (an unanchored
-direction call, or a sensitive area). Route it to the committee/security review.
+Escalate — a named set of decisions needs more than one person
+→ A trigger fired that puts this beyond a single maintainer. The packet
+lists what the agent found canon already settles (verify the citations)
+and states each open decision for ratify / amend / reject.
 
 ### recommendation:proceed:next
 Decide whether it is worth doing; if so, mark it ready (or good-first-issue) so a
@@ -332,8 +340,12 @@ File the drafted sub-issues (crediting the reporter) and cross-link them, so eac
 part can move on its own.
 
 ### recommendation:escalate:next
-Put the underlying decision on a committee / roadmap agenda. Stage the evidence for
-the meeting; do not accept or decline it solo.
+Put the drafted residual decisions on the committee / roadmap agenda —
+the meeting's job is to ratify, amend, or reject each one (drafted in
+full by the single-item review; a batch run names them and defers the
+drafts), not to "discuss architecture." The settled ledger is the
+pre-read — verify it, don't just defer to it. Do not accept or decline
+the item solo.
 
 ### issue:obstacles
 A preview of what a PR built from this issue would run into. Each line is a fact
@@ -342,3 +354,47 @@ about what the project's own rules would do — not a guess about unwritten code
 ### issue:references
 Where this issue already touches the project: existing duplicates, open PRs in
 flight, and the roadmap or deferred-enhancement entry the ask maps to.
+
+---
+
+## Decision scoping — the escalation ledger
+
+Rendered for escalated items from the receipt's decision_scoping footer
+block (rules/decision-scoping.md). The counts headline reads
+"<r> decisions to make · <s> found settled".
+
+### scoping:settled
+Sub-questions the agent found already answered by the project's
+existing decisions — each with its citation, pinned to the exact canon
+version reviewed. Click it to verify: settled is the agent's finding,
+not a ruling. If the quote doesn't cover the question, or canon has
+moved since the pin, treat the row as open.
+
+### scoping:residual
+A decision no canon makes yet, stated in one sentence. The agent
+drafted the decision text for you to ratify, amend, or reject (batch
+runs name the decision and leave the draft to the single-item review).
+→ The agent drafted; a human decides. Always.
+
+### scoping:reserved
+Permanently a human call by the project's own rules — contributor
+trust, roadmap worth, the merge click. Never narrowed, never resolvable
+by the agent.
+
+### scoping:none-residual
+Everything this escalation raised is, on the agent's search, already
+settled by the cited canon. The committee's act is verifying that —
+confirm the citations cover their questions, anchor the item where the
+agent found uncited coverage, and contest any row that doesn't hold up
+(a contested row becomes an open decision).
+→ The item stays escalated: a fired trigger is never un-fired.
+
+### artifact:draft-adr
+An agent-drafted, watermarked, unadopted decision record with a
+placeholder number. It anchors nothing and decides nothing until a
+maintainer adopts, numbers, and merges it.
+
+### artifact:de-stub
+An agent-drafted deferred-enhancement / mini-PRD stub (sometimes
+annotated as amending an existing entry or proposing a workflow
+convention), crediting the contributor. A human files it — or doesn't.

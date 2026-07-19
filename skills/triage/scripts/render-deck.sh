@@ -17,8 +17,15 @@ is missing it exits 1 (the receipt is unaffected). Run it as
 
 Input  : the rendered receipt markdown on stdin (the exact text Step 9 of
          skills/triage/SKILL.md produces -- it contains the versioned
-         `lq-maintainer-agent:receipt:v1` footer, which is the single
-         source of truth for the structured facts).
+         `lq-maintainer-agent:receipt:v1`/`v2` footer, which is the
+         single source of truth for the structured facts).
+         Optional argv[1]: the path of the deep-dive cache report
+         (skills/review-pr/SKILL.md Step 4). Only its `### Below threshold`
+         section is read -- the low-confidence findings the Step 5 filter
+         kept out of the public receipt -- and rendered as a deck-only
+         collapsed card. Missing/unreadable file or absent section: the deck
+         simply has no such card (fail-open; this input is a maintainer-only
+         enrichment, never the record).
 Output : a complete, self-contained HTML document on stdout (inline CSS,
          native <details> disclosure, NO JavaScript, NO external resource,
          NO network) -- open it in a browser or drop it on a static host.
@@ -82,7 +89,7 @@ def sanitize(s):
 
 
 # --------------------------------------------------------------------------
-# Footer parsing -- the enumerated lq-maintainer-agent:receipt:v1 schema only.
+# Footer parsing -- the enumerated lq-maintainer-agent:receipt:v1/v2 schema only.
 # --------------------------------------------------------------------------
 
 def _scalar(v):
@@ -116,9 +123,9 @@ def _inline_dict(s):
 
 
 def extract_footer(md):
-    """Return the raw text lines inside the receipt:v1 HTML comment, or None."""
+    """Return the raw text lines inside the receipt:v1/v2 HTML comment, or None."""
     m = re.search(
-        r"<!--\s*lq-maintainer-agent:receipt:v1\s*\n(.*?)-->",
+        r"<!--\s*lq-maintainer-agent:receipt:v[12]\s*\n(.*?)-->",
         md, re.DOTALL,
     )
     return m.group(1) if m else None
@@ -209,6 +216,7 @@ def render_linked(raw, base):
             out.append(label)
         pos = m.end()
     tail, h3 = sanitize(raw[pos:]); hidden = hidden or h3
+    out.append(tail)
     txt = re.sub(r"`([^`]+)`", r"<code>\1</code>", "".join(out))
     txt = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", txt)
     return txt, hidden
@@ -257,6 +265,30 @@ def render_grounding_card(md, base, header_re, css_cls, title):
         out.append('</ul>')
     out.append('</section>')
     return "".join(out)
+
+
+def load_below_threshold(path):
+    """Bullet lines of the report's '### Below threshold' section (the
+    low-confidence findings the receipt filter held back -- deck-only, per
+    design §9 as decided 2026-07). Fail-open: no path / unreadable file /
+    absent section -> [] and the deck just lacks the card. The content is
+    contributor-adjacent free text and is sanitised at render time like
+    every finding."""
+    if not path:
+        return []
+    try:
+        with open(path, encoding="utf-8") as fh:
+            text = fh.read()
+    except OSError as exc:
+        sys.stderr.write("render-deck: report not readable (%s); "
+                         "skipping below-threshold card\n" % exc)
+        return []
+    m = re.search(r"^###\s+Below threshold\s*$(.*?)(?=^###\s|^---\s*$|\Z)",
+                  text, re.MULTILINE | re.DOTALL)
+    if not m:
+        return []
+    return [s.strip()[2:].strip() for s in m.group(1).splitlines()
+            if s.strip().startswith("- ")]
 
 
 def parse_footer(text):
@@ -577,8 +609,8 @@ pre.receipt{
 .grounding li{position:relative; padding:11px 0 11px 24px; border-top:1px solid var(--line-soft); font-size:15px}
 .grounding li:first-child{border-top:0}
 .grounding li::before{position:absolute; left:2px; top:12px; font-size:14px}
-.grounding.g-ref li::before{content:"\2192"; color:var(--info)}
-.grounding.g-obs li::before{content:"\25B8"; color:var(--warn)}
+.grounding.g-ref li::before{content:"\\2192"; color:var(--info)}
+.grounding.g-obs li::before{content:"\\25B8"; color:var(--warn)}
 .grounding .refk{font-weight:600}
 .grounding a, .dd a, .nextsteps a, .decision a, .cov a{color:var(--accent-ink); text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
@@ -593,10 +625,10 @@ STATE_WORD = {"pass": ("c-pass", "✓"), "fail": ("c-fail", "✗"), "n-a": ("c-n
 DOT_WORD = {"pass": ("d-pass", "✓"), "fail": ("d-fail", "✗"), "n-a": ("d-na", "–")}
 
 
-def build_deck(md, g):
+def build_deck(md, g, below=None):
     r = parse_footer(extract_footer(md) or "")
     if not r.get("lane") or not isinstance(r.get("pinned"), dict):
-        raise ValueError("no parseable receipt:v1 footer (missing lane/pinned)")
+        raise ValueError("no parseable receipt:v1/v2 footer (missing lane/pinned)")
 
     base = repo_base()
     if r.get("profile") == "issue":
@@ -813,6 +845,9 @@ def build_deck(md, g):
     # references / grounding (RP-15) — agent-performed cross-reference, linked
     A(render_grounding_card(md, base, r"References", "g-ref", "References"))
 
+    # decisions to make (D-13) — escalated v2 receipts only
+    A(build_scoping_card(r, g))
+
     # ---- drill-downs ----
     A('<p class="sec-h">The detail, on demand</p>')
 
@@ -892,6 +927,23 @@ def build_deck(md, g):
         A('</ul>')
     A('</div></details>')
 
+    # below-threshold card (deck-only; decided 2026-07): the low-confidence
+    # non-security findings the Step 5 filter kept out of the public receipt.
+    if below:
+        A('<details class="dd"><summary>Below threshold — low-confidence notes'
+          '<span class="tag g-mute">%d · deck only</span></summary><div class="body">'
+          % len(below))
+        A('<p class="intro">Notes the review filter held back from the public receipt '
+          'for low confidence (none are security-relevant — those always surface). '
+          'Shown only in this private deck so you see everything; the full set lives '
+          'in the cached report.</p>')
+        A('<ul class="checks">')
+        for raw in below:
+            txt_html, _ = render_linked(raw, base)
+            A('<li><span class="ci c-na">?</span><div><div class="txt">%s</div></div></li>'
+              % txt_html)
+        A('</ul></div></details>')
+
     # full technical receipt (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
     A('<details class="dd"><summary>The full technical receipt'
@@ -912,6 +964,40 @@ def build_deck(md, g):
     A('</footer>')
 
     return "".join(out)
+
+
+def build_scoping_card(r, g):
+    """The 'Decisions to make' panel (rules/decision-scoping.md D-13),
+    rendered from the receipt:v2 decision_scoping footer block. Returns ''
+    for v1 footers (absent block == applied n-a) and for clean items
+    (D-00: no fired trigger -> no scoping output), so those decks render
+    exactly as before."""
+    ds = r.get("decision_scoping")
+    if not isinstance(ds, dict):
+        return ""
+    escalated = bool(r.get("triggers")) or r.get("lane") == "escalate" \
+        or r.get("recommendation") == "escalate"   # D-00: trigger fired, or IV-01 = escalate
+    if ds.get("applied") in (None, "n-a") or not escalated:
+        return ""
+    settled = ds.get("settled") or 0
+    residual = ds.get("residual") or 0
+    head = "%s decisions to make · %s found settled" % (residual, settled)
+    if ds.get("applied") == "partial":
+        head += " — partial: the single-item review completes the ledger"
+    rows = []
+    for res in (ds.get("residuals") or []):
+        if not isinstance(res, dict):
+            continue
+        art = str(res.get("artifact") or "")
+        art_key = "artifact:draft-adr" if art == "adr-draft" else "artifact:" + art
+        rows.append('<li><span class="refk">%s</span> — %s · %s</li>' % (
+            esc(str(res.get("id", ""))), esc(str(res.get("kind", ""))),
+            esc(g.cap(art_key, art))))
+    body = ('<ul>%s</ul>' % "".join(rows)) if rows else (
+        '<p class="intro">%s</p>' % esc(g.cap("scoping:none-residual")))
+    return ('<section class="card grounding g-obs"><h2>Decisions to make</h2>'
+            '<p class="intro">%s</p><p class="intro">%s</p>%s</section>'
+            % (esc(head), esc(g.cap("scoping:settled")), body))
 
 
 def build_issue_deck(r, md, g, base):
@@ -991,6 +1077,9 @@ def build_issue_deck(r, md, g, base):
                             "Predicted obstacles — if this became a PR"))
     # references (IV-03) — agent-performed four-bucket cross-reference, linked
     A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+
+    # decisions to make (D-13) — escalated v2 receipts only
+    A(build_scoping_card(r, g))
 
     # decision box
     A('<section class="card decision">')
@@ -1208,8 +1297,9 @@ def main():
         glossary_root = os.path.abspath(
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
     g = Gloss(load_glossary(os.path.join(glossary_root, "templates", "deck", "glossary.md")))
+    below = load_below_threshold(sys.argv[1] if len(sys.argv) > 1 else None)
     try:
-        body = build_deck(md, g)
+        body = build_deck(md, g, below)
     except Exception as exc:  # fail closed: never emit a confidently-wrong deck
         sys.stderr.write("render-deck: %s\n" % exc)
         sys.stdout.write(error_page("This receipt could not be parsed (%s)." % html.escape(str(exc))))

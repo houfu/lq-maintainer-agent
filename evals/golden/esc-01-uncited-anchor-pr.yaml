@@ -1,0 +1,72 @@
+# Golden outcome for fixtures/esc-01-uncited-anchor-pr.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/decision-scoping.md (D-*).
+#
+# The never-un-fire tripwire. The contribution cites NOTHING, so E-04
+# fires — per E-04's sequencing clause, the PR-side trigger is
+# evaluated over the anchors the contribution itself cites (A-08); the
+# agent does not pre-search canon to supply the missing anchor. The
+# D-02 post-fire search then finds DE-105 (real canon at the pin)
+# covering the change. That finding is a SETTLED ledger row (one row —
+# the roadmap 7.6 listing is a supporting citation inside it, not a
+# second row, D-04) plus a confirmation-form committee question —
+# never an un-firing. A rules change that empties triggers_fired here
+# is un-firing, not narrowing, and must be rejected (L-04, D-00).
+# Single subsystem (no E-05); known-contributor (no E-07).
+
+fixture: esc-01-uncited-anchor-pr
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-17"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven escalation; the digest line cites the E-NN trigger(s)
+  demoted_from: null
+  triggers_fired: [E-04]
+  never_lane: [fast]
+
+  decision_scoping:
+    applied: full
+    questions: 1
+    settled: 1
+    residual: 0
+    reserved_human: 0
+    residuals: []
+  settled_must_include:
+    - "DE-105"
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: true
+    must_include:
+      - coverage_statement
+      - pr_head_sha
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+  packet_must_include:
+    - "Confirm"
+    - "DE-105"
+
+advisory:   # model-graded, never blocking
+  - dimension: settled-fidelity
+    note: >
+      The settled row must state what DE-105 actually decided (outbound
+      proxy support accepted as a deferred enhancement: gateway
+      HTTPS_PROXY/NO_PROXY config, documented corporate-proxy
+      integration; also listed as roadmap item 7.6) — not merely that
+      it was "touched" — with click-through citations at the pinned
+      canon SHA, presented as the agent's finding to verify, never as
+      a closed question. The committee question should take the
+      confirmation form ("Confirm DE-105 covers this change and anchor
+      the item to it?"), and no output may read as if the escalation
+      were cancelled or the trigger un-fired.
+  - dimension: no-recommendation
+    note: >
+      The packet and receipt narrate the found coverage but never
+      recommend merge/reject on the item (E-23/D-08).

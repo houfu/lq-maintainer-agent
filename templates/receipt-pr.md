@@ -5,7 +5,7 @@ Rendered by `skills/triage/SKILL.md` (Step 8) and
 carve-outs below. **Render, never freehand**: the field rules (RP-NN)
 are normative, and this file is the single authoritative definition of
 the machine-readable footer schema
-(`lq-maintainer-agent:receipt:v1`) — `templates/receipt-issue.md`
+(`lq-maintainer-agent:receipt:v2`) — `templates/receipt-issue.md`
 reuses it. Posted (or updated in place, design doc §8.4) only behind
 an individual human approval.
 
@@ -14,6 +14,15 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
 
 ## Field rules
 
+- **RP-00 — At-a-glance header first.** The receipt opens with a
+  three-line block a maintainer can act on without reading further:
+  the verdict line (lane + burden overall + blockers), the **red
+  flags** line (fired E-NN triggers, security-relevant findings,
+  claim/evidence divergences T-03 — or the word "none"), and the
+  single most important **Do next** action, drawn from the Next steps
+  list (RP-16). Everything below the header is the evidence; the
+  header is the summary of record. No new information may appear only
+  in the header — every entry expands somewhere below.
 - **RP-01 — Lane line.** Recommended lane + confidence + assigning
   rule ID (from `rules/lanes.md` / `rules/escalation-triggers.md`),
   and any demotion with the demoting rule. Recommended, not ruled —
@@ -36,16 +45,29 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   (routed via `rules/canon-map.md`) rendered pass/fail/n-a for the
   classes that applied, run against the diff, never the
   self-description.
+- **RP-04a — Self-attestation cross-check.** The vetting section
+  carries a **Self-attestation cross-check** subsection
+  (`rules/self-attestation.md` T-07): one line per PR-template
+  checklist item — claimed state, verified state (`verified-pass` /
+  `verified-fail` / `cannot-verify` / `n-a` for items whose subsystem
+  the diff does not touch), evidence.
+  Every `cannot-verify` on an applicable item reappears as a
+  Next-steps entry (RP-16), `n-a` never does;
+  every `verified-fail` that produced a finding cross-references its
+  F-i. Visible body only; the footer schema is unchanged.
 - **RP-05 — Findings, filtered.** Findings appear with stable IDs
   (`F-1`, `F-2`, …), structured per `rules/lanes.md` L-33
   (file / line / severity / canon citation / suggested comment) plus
   exactly one disposition hint (trivial / relayable / structural).
-  Deep-dive receipts render **at most the capped set** after the §9
-  filter stage; the tail collapses to one summary line, and the
-  receipt states how many findings were filtered and that the full
-  unfiltered set lives in the deep-dive cache
+  Deep-dive receipts render **severity-shaped** after the §9 filter
+  stage (decided 2026-07): every blocking and major finding renders,
+  however many; minor findings always collapse to one count line.
+  Low-confidence non-security findings render in the reading deck's
+  collapsed "below threshold" section, and the full unfiltered set
+  lives in the deep-dive cache
   (`${CLAUDE_PLUGIN_DATA}/<repo>/<pr-number>/<head-sha>/report.md`).
-  Nothing is hidden; it is just not all in the comment.
+  The receipt states how many findings each stage filtered. Nothing
+  is hidden; it is just not all in the comment.
 - **RP-06 — Salvage section.** Mandatory whenever salvage was applied
   (`rules/salvage.md`): part list with one-sentence statements and
   disposition IDs; and if a mechanical split was proposed, the split
@@ -105,11 +127,35 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   (canon docs pinned to the canon SHA, issues/PRs by number,
   agent-constructed from validated sources only). "Nothing matched in a
   bucket" is recordable; an unperformed search is not.
+- **RP-16 — Next steps (B-14).** A visible **Next steps** section: the
+  concrete follow-ups only a human can perform — one per firing
+  blocker, `medium`/`high` burden axis, `not-covered`/`never-by-design`
+  coverage item, and `cannot-verify` cross-check item — each stating
+  the action **and why** (the canon or gap that requires it), specific
+  to this PR, never boilerplate (`rules/burden.md` B-14). Ordered by
+  importance; the top entry is the header's "Do next" line (RP-00).
+  Visible body only, never the footer.
+- **RP-17 — Decision scoping (escalated items only).** Rendered if
+  and only if `triggers` is non-empty (`rules/decision-scoping.md`
+  D-00) — on trigger-free receipts this section is **absent** and the
+  footer block reads `applied: n-a`, so clean receipts are unchanged.
+  Visible body: the counts, a one-line-per-entry settled summary
+  (each entry the agent's finding, citation-linked at the pinned
+  canon SHA), and each residual's atomic sentence with its artifact
+  pointer; the full ledger and the drafted artifacts live in the
+  committee packet (CP-03a/CP-08). Footer: the enumerated
+  `decision_scoping` block only (D-12) — counts, `R-<i>` IDs,
+  kind/artifact enums; **no ledger prose, ever** (§8.4).
 
 ## Template
 
 ```markdown
 ## Triage Receipt — PR #<n>: <title>
+
+> **Verdict:** <lane> (<rule-id>, <confidence>) · burden **<overall>**
+> <if blockers: · blockers: <slug>[, <slug>…]>
+> **Red flags:** <none | <E-NN> fired; F-<i> (security); T-03 divergence on "<item>"; …>
+> **Do next:** <the top Next-steps entry, one line>
 
 **Recommended lane:** <fast | docs | standard | escalate>
 (confidence: <high | medium | low>; assigning rule: <rule-id>)
@@ -162,6 +208,18 @@ self-description.
 | --- | --- |
 | <item, cited via rules/canon-map.md> | <pass / fail / n-a> |
 
+#### Self-attestation cross-check
+
+Contributor-completed template checkboxes, re-derived from evidence
+(`rules/self-attestation.md`; claims are never trusted, T-01).
+
+| Template item | Claimed | Verified | Evidence |
+| --- | --- | --- | --- |
+| <item from canon:pr-template> | <checked / unchecked> | <verified-pass / verified-fail / cannot-verify / n-a> | <diff paths, commit trailer, CI state — "not statically checkable: <why>" — or the one-word n-a reason> |
+
+<if any verified-fail: cross-reference the finding: "verified-fail on
+"<item>" — see F-<i>.">
+
 ### Findings
 
 <count> finding(s) shown<if filtered: ; <k> further finding(s) below
@@ -191,6 +249,22 @@ no symbol split across parts — <pass / fail>;
 Default offer: the split is maintainer-performed unless the
 contributor prefers otherwise.
 
+### Decision scoping (escalated items only — omitted otherwise)
+
+Escalation narrowed per rules/decision-scoping.md, at canon `<sha>`:
+<s> sub-question(s) found settled · <r> residual decision(s) ·
+<h> reserved-human. Settled entries are the agent's findings —
+verify by click; a contested entry becomes an open decision (D-04).
+Full ledger and drafted artifacts: committee packet (CP-03a/CP-08).
+
+- Settled: <one line per entry — <sub-question> — settled by
+  [canon:<key> §x / ADR-NNN / DE-XXX](link)> <or: none — nothing this
+  escalation raises is already decided>
+- **R-<i> — <atomic ratifiable sentence>** [drafted: ADR-XXXX (DRAFT)
+  | DE stub | none — reserved-human]
+- Reserved-human: <judgment — reserving citation> <or: none put at
+  issue by this escalation>
+
 ### Coverage statement
 
 Covered: <e.g. deterministic gate, anchor, vetting checklist>
@@ -199,6 +273,14 @@ Never checked, by design:
 - Runtime behavior — this agent does not execute contributed code.
 - Package contents (dependency items) — the lockfile diff shows
   name+version+hash only; contents are never inspected.
+
+### Next steps — for the human reviewer (B-14)
+
+Ordered by importance; the top entry is the header's "Do next" line.
+
+1. <action> — <why: the blocker, axis grade, coverage gap, or
+   cannot-verify item that requires it, with its canon citation>
+2. <action> — <why>
 
 ### Human-only judgments — permanently open
 
@@ -218,7 +300,7 @@ Never checked, by design:
 *Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 
-<!-- lq-maintainer-agent:receipt:v1
+<!-- lq-maintainer-agent:receipt:v2
 profile: pr
 item: <owner>/<repo>#<n>
 lane: <fast|docs|standard|escalate>
@@ -269,13 +351,21 @@ burden:
   tests: <low|medium|high>
   carry: <low|medium|high>
   safety: <low|medium|high>
+decision_scoping:
+  applied: <full|partial|n-a>
+  questions: <integer>
+  settled: <integer>
+  residual: <integer>
+  reserved_human: <integer>
+  residuals:
+    - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
 -->
 ```
 
-## Footer schema — `lq-maintainer-agent:receipt:v1` (authoritative)
+## Footer schema — `lq-maintainer-agent:receipt:v2` (authoritative)
 
 The footer is an HTML comment (invisible in rendered markdown) whose
-first line is exactly `lq-maintainer-agent:receipt:v1`, followed by a
+first line is exactly `lq-maintainer-agent:receipt:v2`, followed by a
 YAML document. It is the resume interface (design doc §8.4) and the
 eval-grading interface (`evals/run-checks.md`).
 
@@ -300,6 +390,24 @@ eval-grading interface (`evals/run-checks.md`).
   worst-of roll-up (`B-08`) and the render-time driver phrasing are
   **not** stored — the block carries state, never prose. The reading
   deck (§8.6) is rendered from this block.
+- **`decision_scoping`** (`rules/decision-scoping.md` D-12):
+  enumerated only — `applied` (`full`/`partial`/`n-a`; `n-a` if and
+  only if `triggers` is empty; `partial` when the pass was trimmed
+  under the §9 budget gate or bounded in batch mode, D-11), the four
+  counts, and `residuals` (stable `R-<i>` IDs with `kind` and
+  `artifact` enums; empty list when `residual` is 0). Ledger prose,
+  atomic sentences, and drafts live in the visible body and packet,
+  never here.
+- **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
+  Parsers match the `lq-maintainer-agent:receipt` prefix and accept
+  both markers; a v1 footer parses as
+  `decision_scoping: {applied: n-a}` (absent block). Landed in the
+  same change (each an explicit change item, not an assumption):
+  `skills/triage/scripts/render-deck.sh` (footer regex accepts
+  v1|v2; Decisions-to-make panel), `ci/scripts/test-render-deck.sh`
+  (v2 samples for both profiles plus the clean-v2 no-panel check),
+  and the `:v1` mentions in the three SKILL.md files. All v1 fields
+  are unchanged; the block is additive.
 - Issue-profile deltas (`templates/receipt-issue.md`): `profile:
   issue`; `classification` + `classification_rule` set (C-NN);
   `pinned.pr_head_sha: n-a`; `deterministic_checks` all `n-a`; the
