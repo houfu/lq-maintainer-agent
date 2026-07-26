@@ -3,12 +3,19 @@
 Rendered by `skills/triage/SKILL.md` (Step 5/8) for every standard-
 and docs-lane PR, and by `skills/review-pr/SKILL.md` (Step 0) when no
 card exists yet. The card is a **session artifact for the
-maintainer** — it is not posted to GitHub (the receipt is the public
-artifact) — but it carries the same pinned fields so anything the
-maintainer copies out of it stays auditable.
+maintainer** — it is not posted to GitHub (the deck is the public
+artifact and `templates/pr-comment.md` the posted note; the receipt is
+internal evidence, design doc v0.7 §8) — but it carries the same
+pinned fields so anything the maintainer copies out of it stays
+auditable.
 
 ## Field rules
 
+- **TC-00 — Headline first.** The card opens with the outcome (the
+  `rules/tiers.md` TR-05 vocabulary) and its undo path
+  (`rules/reversibility.md` RV-05), before the lane recommendation —
+  the same "action first, burden internal" posture as the receipt
+  (`templates/receipt-pr.md` RP-00, design doc v0.7 §7).
 - **TC-01 — Header line.** Item, title, author + author class
   (determined via the GitHub API, never from display/branch names or
   the item's own text; non-human authors are their own class,
@@ -33,11 +40,19 @@ maintainer copies out of it stays auditable.
 - **TC-07 — Salvage summary** when applied: the part/disposition
   table, with the full decomposition in the receipt.
 - **TC-08 — Maintainer next actions.** The card ends with the
-  concrete choices in front of the human: approve receipt post, relay
-  finding F-N, reassign lane, run the deep dive, etc. Phrased as
-  options, never as done deeds.
+  concrete choices in front of the human: approve the short comment
+  for posting (`templates/pr-comment.md`), relay finding F-N,
+  reassign lane/category/tier, run the deep dive, etc. Phrased as
+  options, never as done deeds. The receipt is saved automatically as
+  internal evidence (design doc v0.7 §8) — it is never posted and
+  needs no separate approval.
 - **TC-09 — Pinned fields.** PR head SHA, canon SHA, agent version,
   served model ID — same four as the receipt.
+- **TC-10 — Category and tier.** Every card carries the category call
+  (`rules/change-categories.md` G-NN, with confidence) and, for
+  standard-lane category-2/3 items, the tier (`rules/tiers.md` TR-NN)
+  with its entering condition when Tier 2 —
+  `skills/triage/references/output-templates.md`'s promised fields.
 
 ## Template
 
@@ -46,6 +61,16 @@ maintainer copies out of it stays auditable.
 
 Author: <login> (<author class: maintainer | known contributor |
 external | dependabot/renovate App | non-human agent>)
+
+**Outcome:** <merge | merge-after: <one-clause fix> | discuss:
+<specific question> | route-to-design | hold | security-escalate>
+— undo: <one-clause undo path, or "n/a — not graded yet" for hold /
+security-escalate> (`rules/tiers.md` TR-05, `rules/reversibility.md` RV-05)
+
+**Category:** <1 | 2 | 3 | 4> (rule: <G-NN>; confidence: <high |
+medium | low>)
+**Tier:** <0 | 1 | 2 | 3> (rule: <TR-NN>)<if tier 2: — entering:
+<TR-07 condition>>
 
 **Recommended lane:** <fast | docs | standard | escalate>
 (confidence: <high | medium | low>; rule: <rule-id>)
@@ -68,9 +93,14 @@ external | dependabot/renovate App | non-human agent>)
 | P-<i> | <sentence> | <S-*> |
 
 **For you to decide:**
-- [ ] <option — e.g. approve posting the receipt draft>
+- [ ] <option — e.g. approve the short comment for posting
+  (templates/pr-comment.md)>
 - [ ] <option — e.g. relay F-1 as a review comment>
-- [ ] <option — e.g. reassign lane / request deep dive / hold>
+- [ ] <option — e.g. reassign lane/category/tier / request deep dive
+  / hold>
+
+_The receipt is saved as internal evidence automatically — it is not
+posted and needs no approval (design doc v0.7 §8)._
 
 Reviewed-at: pr-head `<sha>` · canon `<sha>` · agent `<x.y.z>` ·
 model `<served model ID>`

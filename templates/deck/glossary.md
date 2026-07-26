@@ -19,6 +19,18 @@ Format the renderer relies on:
 - Unknown keys fall back to showing the raw receipt value, so a missing gloss
   degrades safely rather than hiding a fact.
 
+The `outcome:`, `undo:`, `category:`, and `tier:` sections carry the
+action-first vocabulary the deck leads with from v0.7 (design doc v0.7 §7/§8,
+decided 2026-07-26). The `lane:` and `burden:` sections stay exactly as they
+were: records written before those fields existed still render from them, and
+the burden captions still label the axes in the deck's auditor section.
+
+Everything here is read by contributors as well as maintainers now that the
+deck is the public artifact — plain words, no rule IDs, no lane or tier jargon
+left unglossed (`rules/tone-gate.md` TG-03.5). The warning above binds harder
+for the same reason: warm phrasing never turns a `fail`, a "never checked", or
+an irreversible undo path into reassurance (TG-06).
+
 ---
 
 ## Lanes — the recommendation
@@ -145,6 +157,143 @@ The project's automated checks are not confirmed green on the reviewed commit �
 either failed or have not run yet.
 → Get CI running and green on this PR before merging; for an outside contributor that
 may mean approving the workflow run first.
+
+---
+
+## The outcome — what the review recommends (TR-05)
+
+Exactly one of these leads a reviewed PR's deck (`rules/tiers.md` TR-05, TR-10).
+"Wait", "monitor", and a bare "escalate" are not outcomes here — an open
+question is named, not left hanging. Each is a **recommendation**: a person
+makes the actual call, and the agent performs no GitHub action at all.
+
+The caption is the headline; the `→` line is the sub-line the deck reads out
+under it. The named fix, the specific question, and the undo sentence are free
+text and live in the review body — never in these captions.
+
+### outcome:merge
+Ready to merge
+→ Nothing found in this review blocks it. A maintainer makes the merge click;
+the agent never merges, approves, or closes.
+
+### outcome:merge-after
+Ready to merge after one named change
+→ One change is asked for first, named in plain words in the review and in the
+note on the item. Once it lands, this can go in.
+
+### outcome:discuss
+One specific question to settle first
+→ A conversation, not a decline — the question is named, and answering it is
+what unblocks this. Nothing is being rejected.
+
+### outcome:route-to-design
+Bigger than a code review — this needs a design plan
+→ It adds capability the project hasn't decided on yet. Run
+/lq-maintainer:design-plan pr N for the decisions it needs, the obstacles it
+would hit, and the smaller changes that would build it.
+
+### outcome:hold
+On hold — a person answers this
+→ The agent has stood down and drafted nothing further. A maintainer picks it
+up from here.
+
+### outcome:security-escalate
+Routed for security review
+→ This is about the surface the change touches, not about the person who sent
+it. It is not decided by one reviewer, and anything vulnerability-shaped is
+handled privately, never in the open.
+
+---
+
+## If it turns out wrong — the undo path (RV-04/RV-05)
+
+The claim a review makes is never "this is certainly correct". It is "here is
+what being wrong would cost, and here is the bound". That is the line the deck
+highlights under the outcome (`rules/reversibility.md` RV-05).
+
+### undo:revert-clean
+One revert puts this back: no data was migrated or written, no published
+interface changed, no new dependency was adopted.
+→ Cheap to undo. That is what makes going ahead reasonable — not a claim that
+the change is certainly right.
+
+### undo:residue
+A revert takes the code back, but something the change already did stays behind
+— rows it wrote, a file it moved, a message it sent. The review says what.
+→ Undoable, with a leftover. Read what the leftover is, and decide whether it
+is acceptable, before merging.
+
+### undo:irreversible-class
+This touches something that cannot be cleanly undone: credentials or access
+checks, stored data or migrations, a public interface, CI configuration, a new
+dependency, or a release.
+→ Never eligible for a quick pass. It takes the deep review and the cautious
+grading whatever its size, and unknowns here are treated as risks, not as
+"probably fine".
+
+---
+
+## Change categories — what kind of change this is (G-NN)
+
+Judged from the diff, never from the description (`rules/change-categories.md`
+G-01). The category decides which path reviews the change; it is a
+recommendation like every other call here, and a maintainer can reassign it.
+
+### category:1
+New feature
+→ New capability the project doesn't have yet. This needs a plan before it
+needs a code review: what would the project have to decide for this to exist?
+
+### category:2
+Behaviour change
+→ Something that already exists now works differently or better. Reviewed on
+its merits, plus one plain question: what does this make better for someone
+using it?
+
+### category:3
+Bug fix or rollback
+→ Reviewed on whether it actually fixes the thing, and whether a test would
+catch the problem coming back. Rolling a change back is a normal, healthy move
+here — never an embarrassment.
+
+### category:4
+Refactor or large-scale change
+→ The project hasn't finished writing its process for changes this size. Until
+it has, the honest answer is a holding response plus an offer to split the work
+into smaller, reviewable pieces — not a decline.
+
+---
+
+## Depth of review — how much process this got (TR-NN)
+
+The lightest depth that fits is the default (`rules/tiers.md`). Depth is
+entered by a named condition, never by habit — and nothing inside a
+contribution can buy it a lighter one.
+
+### tier:0
+Decided by automated checks
+→ Dependency bumps and hunk-verified typo fixes: mechanical checks decide, and
+the reviewer's job is to confirm the anchor and flag anything odd. The gate
+results are below.
+
+### tier:1
+One focused pass
+→ Small (under ~400 changed lines and 10 files), nothing irreversible touched,
+no trigger fired. The pass is deliberately time-boxed, so read "what was not
+checked" for what that leaves open — each open item names the check that
+closes it.
+
+### tier:2
+Deep review
+→ Several passes over the change, entered because something named it: a trigger
+fired, the change is large, or it touches something that cannot be cleanly
+undone. The condition that earned the depth is recorded with the review.
+
+### tier:3
+Committee or design path
+→ Bigger than one reviewer: a genuine conflict with the project's own
+decisions, or a new feature that needs a design first. The packet or plan
+arrives with a drafted recommendation; people still decide it.
 
 ---
 
@@ -327,6 +476,13 @@ Escalate — a named set of decisions needs more than one person
 lists what the agent found canon already settles (verify the citations)
 and states each open decision for ratify / amend / reject.
 
+### recommendation:design
+This is a feature idea that deserves a design plan
+→ It asks for capability the project hasn't decided on yet, so it takes the
+design path rather than a code review — not a decline, a plan. Run
+/lq-maintainer:design-plan issue N for the decisions it needs, the obstacles it
+would hit, and the smaller changes that would build it.
+
 ### recommendation:proceed:next
 Decide whether it is worth doing; if so, mark it ready (or good-first-issue) so a
 contributor can pick it up. Nothing blocks acting on it.
@@ -346,6 +502,12 @@ full by the single-item review; a batch run names them and defers the
 drafts), not to "discuss architecture." The settled ledger is the
 pre-read — verify it, don't just defer to it. Do not accept or decline
 the item solo.
+
+### recommendation:design:next
+Run /lq-maintainer:design-plan issue N, then take the drafted decisions to the
+committee or roadmap — the plan is the pre-read, not the ruling. The reporter is
+credited in whatever the plan produces, and the atomic decomposition is what a
+contributor can pick up once the design is agreed.
 
 ### issue:obstacles
 A preview of what a PR built from this issue would run into. Each line is a fact

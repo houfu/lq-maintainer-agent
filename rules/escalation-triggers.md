@@ -1,8 +1,12 @@
 # Escalation triggers — the mechanical list
 
 Normative data for the LQ Maintainer Agent (design doc §5, escalate
-lane; §10.2). Loaded at runtime by `skills/triage/SKILL.md` and
-`skills/review-pr/SKILL.md`.
+lane; §10.2; amended by design doc v0.7 §6). Loaded at runtime by
+`skills/triage/SKILL.md` and `skills/review-pr/SKILL.md`. Companion
+rule sets: `rules/change-categories.md` (G-NN), `rules/tiers.md`
+(TR-NN), `rules/reversibility.md` (RV-NN), `rules/decision-scoping.md`
+(D-NN — scoping consumes this file's fired-trigger list read-only and
+never alters it).
 
 Triggers are **mechanical**: each one is evaluated from the diff,
 paths, commit metadata, CI status, and author class only (lanes rule
@@ -14,6 +18,21 @@ each cited by its stable ID (`E-NN`), with the trigger text quoted in
 the packet. Escalation is one-way: a fired trigger is never un-fired
 within a review (L-04). Canon locations resolve via their
 `canon:<key>` entries in `rules/canon-map.md`.
+
+**The v0.7 split (design doc §6).** Two families of trigger now live
+in this file. The **security triggers** — E-01, E-02, E-03, E-07,
+E-08, E-09, E-10 — are **absolute and unchanged**: they fire on the
+same evidence, put the item in the escalate lane the same way, and
+keep the same output rules, regardless of the item's category
+(`rules/change-categories.md`) or tier (`rules/tiers.md`). The
+**decision-shaped triggers** — E-04, E-05, E-06 — are the ones the
+redesign softened: they no longer default to the same committee
+packet a security trigger gets. E-04 now fires only for category-1
+changes and routes to the design path; E-05 now mostly routes to
+Tier-2 depth instead of escalating; E-06 still fires exactly as
+before, but its packet now carries a recommendation (E-23 as
+amended). All three stay evaluated **mechanically**, from the diff —
+only their routing diverges from the security family's.
 
 ## The triggers
 
@@ -30,39 +49,81 @@ within a review (L-04). Canon locations resolve via their
   skills that lacks the human attestation the skill-attestation
   process (`canon:skill-attestation`) requires (see
   `rules/anchoring.md` A-05).
-- **E-04 — Unanchored decision.** A feature or structural change with
-  no verified canon anchor (PRD / ADR / Roadmap / DE-XXX) — per
-  `rules/anchoring.md` A-06/A-08. Reminder: an unanchored *bug fix*
-  does not fire this trigger (A-07).
-  **Sequencing.** For a PR — a change implementing a decision — this
-  trigger is evaluated over the anchors the contribution itself
-  cites, verified per A-08: anchoring is the contribution's duty
-  (`canon:contributing` asks PRs to link their DE/issue), and the
-  agent does not pre-search canon to supply a missing anchor at
-  trigger time — a silent agent-side substitution would let the agent
-  waive an escalation on its own judgment, the exact call the one-way
-  ratchet (L-04) keeps out of the agent's hands. The agent's own
-  post-fire canon search (`rules/decision-scoping.md` D-02) may find
-  a covering anchor the contribution never cited: the find is
-  recorded as a settled ledger row plus a confirmation-form committee
-  question ("confirm coverage and anchor the item to it?") and
-  **never un-fires this trigger** — the cost is one committee
-  confirmation click. On the **issue** side, an ask the agent's own
-  C-60 cross-reference matches to existing canon (a DE entry, a
-  roadmap item) is a duplicate/linked ask (`rules/issues.md`
-  C-20/C-60, salvage S-DUP), handled without escalation — the
-  classification-time search is part of the anchor determination for
-  asks, so this trigger simply does not fire and there is nothing to
-  un-fire.
-- **E-05 — Cross-subsystem change.** The diff spans more than one
-  subsystem. **Waiver:** when a single verified anchor explicitly
-  spans the subsystems touched, this trigger is waived down to a flag
-  — recorded on the triage card with the waiving anchor cited, no
-  escalation.
+- **E-04 — Unanchored decision (category 1 only)** *(RETIRED for
+  categories 2/3, decided 2026-07-26, design doc v0.7 §6)*. A
+  category-2 behavioral change or category-3 bug fix
+  (`rules/change-categories.md` G-03/G-04) with no verified canon
+  anchor does **not** escalate. The missing anchor is at most a flag
+  on the triage card; the item is reviewed on its merits, at whatever
+  tier it otherwise takes (`rules/tiers.md`), together with the G-10
+  necessity check for category 2 (category 3's necessity is the bug
+  itself, G-11 — no separate check). Reminder: an unanchored *bug fix*
+  never fired this trigger even in v0.6 (A-07) — the retirement above
+  extends the same treatment to category-2 behavioral changes.
+  For **category 1** — a feature or structural change per
+  `rules/change-categories.md` G-02 — with no verified canon anchor
+  (PRD / ADR / Roadmap / DE-XXX) per `rules/anchoring.md` A-06/A-08,
+  this trigger **fires**, and only here. Its effect changed too: the
+  item no longer arrives at a bare committee packet — it routes to
+  the **design path** (`skills/design-plan/`), which produces a plan
+  before the committee ever sees it: the ADR draft(s) the decision
+  needs, the predicted obstacles, and an atomic-change decomposition
+  (design doc v0.7 §9). The trigger's original job — nothing decides
+  policy silently — is preserved; the homework just arrives already
+  done.
+  **Sequencing (unchanged, and still scoped to category 1).** For a
+  PR — a change implementing a decision — this trigger is evaluated
+  over the anchors the contribution itself cites, verified per A-08:
+  anchoring is the contribution's duty (`canon:contributing` asks PRs
+  to link their DE/issue), and the agent does not pre-search canon to
+  supply a missing anchor at trigger time — a silent agent-side
+  substitution would let the agent waive an escalation on its own
+  judgment, the exact call the one-way ratchet (L-04) keeps out of
+  the agent's hands. The agent's own post-fire canon search
+  (`rules/decision-scoping.md` D-02) may find a covering anchor the
+  contribution never cited: the find is recorded as a settled ledger
+  row plus a confirmation-form question for whoever ratifies the
+  design ("confirm coverage and anchor the item to it?") and **never
+  un-fires this trigger** — the cost is one confirmation click. On
+  the **issue** side, an ask the agent's own C-60 cross-reference
+  matches to existing canon (a DE entry, a roadmap item) is a
+  duplicate/linked ask (`rules/issues.md` C-20/C-60, salvage S-DUP),
+  handled without escalation — the classification-time search is part
+  of the anchor determination for asks, so this trigger simply does
+  not fire and there is nothing to un-fire.
+- **E-05 — Cross-subsystem change (Tier-2 entry, not escalation)**
+  *(AMENDED, design doc v0.7 §6)*. A diff that spans more than one
+  subsystem no longer escalates by default. It instead **enters
+  Tier 2 directly** (`rules/tiers.md` TR-07 — adjacent to that rule's
+  condition 1, an escalation trigger firing, except E-05 now produces
+  the same Tier-2 entry without routing through the escalate lane):
+  the item takes Tier 2 regardless of size, cited on the triage card
+  and digest line as `E-05 (tier-2 entry, not escalation)`.
+  **Exception — irreversible class without a spanning anchor.** When
+  the cross-subsystem diff also touches an irreversible class
+  (`rules/reversibility.md` RV-02) and no verified anchor spans the
+  subsystems touched, E-05 still **escalates** in full — the escalate
+  lane (L-06), the committee packet (E-20), the human decision (E-23)
+  — because "touches more than one subsystem" and "the failure mode
+  cannot be undone" together are exactly what the softening was never
+  meant to cover. Where the irreversible class is touched but a
+  spanning anchor does cover it, the item stays at Tier-2 entry, not
+  escalated (the irreversible-class path alone still guarantees
+  Tier 2 or above under RV-03, on its own terms).
+  **Waiver (unchanged):** when a single verified anchor explicitly
+  spans the subsystems touched, this condition is waived down to a
+  flag — recorded on the triage card with the waiving anchor cited,
+  no Tier-2 entry and no escalation on cross-subsystem grounds alone.
 - **E-06 — ADR / governance-invariant contradiction.** The change
   contradicts an existing ADR (`canon:adr`) or a governance invariant
   and no superseding ADR exists. With a superseding ADR, the change
-  is anchored to it (A-01) and this trigger does not fire.
+  is anchored to it (A-01) and this trigger does not fire. Firing is
+  **unchanged** from v0.6; only the packet's content changed: per
+  E-23 as amended, the packet now carries the superseding-ADR draft
+  *plus* the agent's recommendation, clearly labeled, alongside the
+  evidence — `rules/decision-scoping.md` D-09 already drafts the
+  minimal delta; E-23 is what now lets that delta arrive with a
+  recommendation attached rather than as a bare attachment.
 - **E-07 — External author + sensitive class.** The author is outside
   the known-contributor set AND the change falls in a sensitive class
   — the vetting playbook's full-checklist condition
@@ -129,10 +190,17 @@ within a review (L-04). Canon locations resolve via their
   4. checklist results, where E-07 (or any trigger prescribing
      checks) ran;
   5. the human questions, phrased as questions — the judgments only
-     the committee can make, never pre-answered as recommendations;
+     the committee can make, never pre-answered *inside the questions
+     themselves*;
   6. the decision ledger and drafted decision artifacts per
      `rules/decision-scoping.md` (D-00–D-14): the settled/residual
-     partition (CP-03a) and one watermarked draft per residual (CP-08).
+     partition (CP-03a) and one watermarked draft per residual
+     (CP-08);
+  7. *(new, design doc v0.7 §6)* the agent's **recommended
+     resolution**, clearly labeled as a recommendation and kept
+     visually distinct from the evidence above it — one
+     recommendation per residual/question, or Alternatives A/B where
+     genuinely equal — per E-23 as amended.
 - **E-21 — Suspected-deliberate-attack carve-out.** Attack-shaped
   signals are **flagged by the agent, ruled on by the human** (decided
   2026-07): the agent presents the evidence in-chat and drafts **no
@@ -141,22 +209,41 @@ within a review (L-04). Canon locations resolve via their
   "escalated for security review" comment only; the full receipt and
   analysis go exclusively into the committee packet — do not teach an
   attacker to hide better (design doc §8 carve-outs). If the
-  maintainer rules it innocent, the normal receipt flow resumes with
-  the signal recorded as an ordinary finding.
+  maintainer rules it innocent, the normal v0.7 flow resumes — the
+  deck, the short public comment, and the internal evidence record
+  (design doc v0.7 §8) — with the signal recorded as an ordinary
+  finding.
 - **E-22 — Packet destination.** Where committee packets go
   (Discussion category / label + board / Slack) is an open governance
   call (design doc §15 q.1); the agent drafts the packet either way
   and hands it to the human to deliver. The destination, once chosen,
   also carries all sensitive review state (§3.5), so it must be
   access-controlled.
-- **E-23 — Human decides.** A packet is evidence, not a verdict. The
-  agent never recommends merge/reject on an escalated item, never
-  closes it, and never posts the packet itself — every write is a
-  human-approved act.
-  Narrowing is not resolving: stating what canon already settles, with
-  citations, and drafting the unratified decision text for what it
-  does not (`rules/decision-scoping.md`) are evidence assembly;
-  recommending merge/reject, treating a draft as adopted, or
-  presenting a settled ledger row as an un-firing of a trigger is the
-  verdict the agent never gives — and a settled row is itself a
-  finding a human may contest into an open decision (D-04).
+- **E-23 — Human decides — evidence plus a labeled recommendation**
+  *(AMENDED, design doc v0.7 §6)*. A packet is evidence — and, from
+  v0.7, evidence **plus** a recommended resolution, clearly labeled
+  as the agent's recommendation and kept visually distinct from the
+  evidence it sits beside. What is unchanged: the agent never
+  merges, approves, closes, or posts anything on an escalated item —
+  every write stays a human-approved act — and the human (committee
+  or maintainer) still makes the actual call: adopting, amending, or
+  rejecting the agent's recommendation is the human's act, exactly
+  as ratifying/amending/rejecting a drafted decision artifact
+  already was (`rules/decision-scoping.md` D-08 as amended). What is
+  removed is only the rule that the agent must arrive at the
+  committee empty-handed.
+  **Where two resolutions are genuinely equal** — the author's
+  approach and an alternative both satisfy the stated requirement,
+  with no deficiency to name in either — both are drafted as
+  Alternatives A/B, not ranked (design doc v0.7 P-3's own logic —
+  defer to the author where there is nothing to defer away from —
+  applied here to the committee).
+  Narrowing is still not resolving: stating what canon already
+  settles, with citations, and drafting the unratified decision text
+  for what it does not (`rules/decision-scoping.md`) remain evidence
+  assembly, and the recommendation is a separate, labeled layer on
+  top of that evidence, never folded into it. Treating a draft as
+  already adopted, or presenting a settled ledger row as an un-firing
+  of a trigger, is still the verdict the agent never gives — and a
+  settled row is itself a finding a human may contest into an open
+  decision (D-04), whether or not a recommendation follows it.

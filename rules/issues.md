@@ -7,8 +7,10 @@ stable ID (`C-NN`; contest/hold rules `H-NN`); the classification row
 of `templates/receipt-issue.md` and every digest classification line
 cite the assigning rule by ID. Companion rule sets: `rules/lanes.md`
 (L-NN), `rules/escalation-triggers.md` (E-NN), `rules/salvage.md`
-(S-NN), `rules/stale-sweep.md` (ST-NN), `rules/canon-map.md` for doc
-routing.
+(S-NN), `rules/stale-sweep.md` (ST-NN), `rules/change-categories.md`
+(G-NN — the design-path routing `C-20`/`IV-01` defer to), `rules/tiers.md`
+(TR-NN — the action-first phrasing `C-81` and the deck section defer
+to), `rules/canon-map.md` for doc routing.
 
 Classification obeys the same evidence posture as lane assignment
 (L-02, `rules/injection-posture.md`): the issue's content is what is
@@ -73,9 +75,20 @@ and `lane`.
   salvage protocol — split issues are drafted as sub-issues of the
   original (S-13); route tractable asks toward the
   easy-first-contributions list (routed via `rules/canon-map.md`). A
-  feature the canon has decided against is declined with the citation
-  (S-DECLINE); a feature no canon speaks to is an unanchored decision
-  (E-04) — escalate, never improvise policy.
+  feature the canon has decided against is still declined with the
+  citation (S-DECLINE). **An unanchored feature ask no longer
+  escalates via `E-04`** (design v0.7 §6): it is category-1 material
+  (`rules/change-categories.md` G-02) and routes instead to the
+  **design path** — the drafted DE-XXX / mini-PRD promotion machinery
+  above is unchanged; only the destination for a decision-shaped,
+  no-anchor ask changes. For a **substantial** category-1 ask — one
+  where a plan, ADR draft(s), predicted obstacles, and a
+  decomposition are warranted, not just a promotable stub — the
+  recommendation is `design` (`IV-01`), pointing the maintainer at
+  `/lq-maintainer:design-plan issue N`. A smaller idea that an S-DE
+  stub already promotes cleanly does not need the full design-plan
+  skill invoked. The routing choice (stub vs. design path) is stated
+  with its reason, never guessed silently.
 - **C-30 — Question handling.** Draft an answer cited to canon
   (path + anchor per `rules/canon-map.md`), or route to Discussions
   when the question is open-ended community material. If no canon
@@ -120,9 +133,11 @@ and `lane`.
   - **adjacent** — overlapping or neighbouring scope (a related issue, an
     in-flight PR, a roadmap item the ask brushes against);
   - **contradicting** — an issue, a decided ADR, or a canon section the
-    ask conflicts with (a `canon:prd` non-goal, a superseding ADR, a
-    deferred-then-declined DE) — this is what turns a proposal into an
-    unanchored decision, `A-06`/`E-04`;
+    ask conflicts with (a `canon:prd` non-goal, a deferred-then-declined
+    DE, or an ADR a superseding one has already replaced — the latter
+    is what fires `E-06`, never `E-04`) — short of that, this is what
+    turns a proposal into an unanchored decision (`A-06`; `E-04` now
+    fires only for category-1 asks, `C-20` above);
   - **linked** — a dependency / blocked-by / referenced DE the ask needs
     or feeds.
 
@@ -150,14 +165,21 @@ and `lane`.
   calibrate the register to a possibly non-engineer filer. This is the
   normative source of the "never an insult / never authorship as the
   accusation" bar already stated in C-05, C-70, and S-35.
-- **C-81 — Say what happens next.** The issue receipt (and the digest
-  line) names the maintainer's follow-ups (`rules/burden.md` `B-14`, as
-  it applies to issues): post the drafted repro request, route a
-  vulnerability to the private advisory, link and close a duplicate,
-  promote a worth-keeping idea to a DE-XXX, or decide the roadmap-worth
-  and engagement-tone judgments that are the filer's-side of RI-08.
-  Requests to the filer are drafted courteously and posted only by the
-  human (`CD-06`, `L-01`).
+- **C-81 — Say what happens next, outcome first.** The issue receipt
+  (and the digest line) **lead with the recommendation** (`IV-01`),
+  action-first — the issue-side application of `rules/tiers.md` TR-10's
+  phrasing discipline: a digest line reads "#N — design: route to
+  `/lq-maintainer:design-plan issue N`" or "#N — needs-info: repro
+  missing steps/logs," never a bare classification with the
+  recommendation buried below it. The receipt then names the
+  maintainer's follow-ups (`rules/burden.md` `B-14`, as it applies to
+  issues — each stating the action, why, and its approximate cost, the
+  `RV-06` form): post the drafted repro request, route a vulnerability
+  to the private advisory, link and close a duplicate, promote a
+  worth-keeping idea to a DE-XXX or the design path, or decide the
+  roadmap-worth and engagement-tone judgments that are the filer's-side
+  of RI-08. Requests to the filer are drafted courteously and posted
+  only by the human (`CD-06`, `L-01`).
 
 ## The issue reading deck & recommendation (design doc §8.6a)
 
@@ -165,7 +187,11 @@ The issue deck is the issue-side counterpart to the PR reading deck. It does
 **not** carry the five-axis maintainer-burden verdict (`rules/burden.md`) —
 those axes grade a diff an issue does not have (`B-01` scope note). Instead it
 headlines a categorical **recommendation** over a **rule-grounded preview of the
-PR this issue would become**, and grades nothing. Like burden, the
+PR this issue would become**, and grades nothing. **The recommendation leads,
+action-first** (`rules/tiers.md` TR-10, applied to the issue side): the deck
+headline and the digest line state the recommendation before anything else,
+with obstacles and references as supporting detail beneath it — never a bare
+classification with the recommendation implied. Like burden, the
 recommendation is **additive** — it is derived from signals the C-NN / A-NN /
 S-NN / E-NN rules already produce and introduces no new judgment; and like every
 output here it **recommends, never rules** (`L-01`): a human decides.
@@ -176,6 +202,15 @@ output here it **recommends, never rules** (`L-01`): a human decides.
     committee/meeting, do not decide it alone; decision scoping
     (`rules/decision-scoping.md`) states what canon the agent found
     already settled and what the committee must decide.
+  - **`design`** *(new, design v0.7 §6)* — the ask is category-1
+    material (`rules/change-categories.md` G-02): predominantly new
+    capability, substantial enough to warrant a plan rather than a
+    promotable stub. Routes to the design path — plan, ADR draft(s),
+    predicted obstacles, and an atomic decomposition — via
+    `/lq-maintainer:design-plan issue N` (`C-20`, G-07, design v0.7
+    §9). A no-anchor feature ask that would previously have fired
+    `E-04` lands here, not in `escalate` — see `C-20` for the
+    stub-vs-design-path split.
   - **`needs-info`** — a bug whose repro is absent or partial (`C-10`), or a
     feature whose anchor is unverified (`A-06`), with no escalation trigger: it
     cannot be acted on until the reporter fills the gap; the drafted repro /
@@ -185,20 +220,24 @@ output here it **recommends, never rules** (`L-01`): a human decides.
   - **`proceed`** — none of the above: clear, grounded, single-concern, ready
     for a contributor.
 
-  Precedence when more than one could apply: `escalate` > `needs-info` >
-  `decompose` > `proceed`. The losing conditions still surface in the obstacle
-  list (`IV-02`). A **vulnerability-suspect** issue (`C-04`) gets **no deck and
-  no recommendation at all** — the absolute carve-out of `C-40`: the only output
-  is the private-advisory redirect.
+  Precedence when more than one could apply: `escalate` > `design` >
+  `needs-info` > `decompose` > `proceed`. The losing conditions still surface
+  in the obstacle list (`IV-02`). A **vulnerability-suspect** issue (`C-04`)
+  gets **no deck and no recommendation at all** — the absolute carve-out of
+  `C-40`: the only output is the private-advisory redirect.
 
 - **IV-02 — Predicted obstacles (a list, never a grade).** A preview of what a
   PR built from this issue would run into, as free text in the **visible receipt
   body only** (never the footer — an HTML comment is a concealment channel,
   §8.4 / `rules/injection-posture.md`). Each obstacle is **rule-grounded**: it
   names the rule or canon fact that *would fire* if the issue were submitted
-  as-is — an unanchored decision that would escalate (`E-04`), a `canon:prd`
+  as-is — an unanchored category-1 ask that would route to the design path
+  rather than escalate (`E-04` as retired, design v0.7 §6; `C-20`), an
+  unanchored category-2/3 change reviewed on its merits with the necessity
+  check instead of escalating (`G-10`/`G-11`), a `canon:prd`
   non-goal that would be declined (`S-DECLINE`), a sensitive-path proximity
-  (`E-01`), a duplicate (`S-DUP` / `#n`), a multi-concern sprawl that would need
+  that still escalates regardless of category (`E-01`, `G-08`), a duplicate
+  (`S-DUP` / `#n`), a multi-concern sprawl that would need
   decomposition. There is **no worst-of level and no axis tile** — the obstacles
   are facts about what the agent's own rules would do, not speculation about
   unwritten code, so the fail-closed grading discipline (`B-11`) has nothing to
@@ -239,7 +278,8 @@ output here it **recommends, never rules** (`L-01`): a human decides.
 - **IV-06 — The footer field is enumerated only.** The recommendation rides the
   versioned receipt footer (`templates/receipt-issue.md`) as a single
   enumerated field — `recommendation:
-  <needs-info|decompose|proceed|escalate>`. Obstacles (`IV-02`) and references
+  <needs-info|decompose|proceed|design|escalate>` (`design` added, design
+  v0.7 §6/§7). Obstacles (`IV-02`) and references
   (`IV-03`) are visible-body free text and are **never** written to the footer.
   The deck's plain-language headline for each state is re-derived at render time
   from `templates/deck/glossary.md`, never stored.

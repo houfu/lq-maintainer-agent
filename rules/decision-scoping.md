@@ -1,8 +1,9 @@
 # Decision scoping — canon interrogation for escalated items
 
 Normative data for the LQ Maintainer Agent (design doc §5 escalate
-lane, §8.6). Loaded at runtime by `skills/triage/SKILL.md`,
-`skills/review-pr/SKILL.md`, and `skills/review-issue/SKILL.md`
+lane, §8.6; amended by design doc v0.7 §6). Loaded at runtime by
+`skills/triage/SKILL.md`, `skills/review-pr/SKILL.md`, and
+`skills/review-issue/SKILL.md`
 whenever any escalation trigger has fired (`rules/lanes.md`
 L-06/L-40) or an issue's recommendation is `escalate`
 (`rules/issues.md` IV-01). Every rule carries a stable ID (`D-NN`);
@@ -206,17 +207,35 @@ the contribution's own text can feed it (L-02,
   section cannot be written without "and", the residual was not
   atomic — return to D-05 and split.
 
-- **D-08 — Narrowing is evidence; recommending is forbidden (the E-23
-  seam, drawn).** Scoping states what canon decided, states each open
-  decision precisely, drafts the decision text — and stops there. It
-  never recommends ratify vs. reject, never recommends merge/reject
-  or close on the item (E-23 binds unchanged), and every CP-05 entry
-  remains a question — typically "Ratify, amend, or reject drafted
-  decision R-<i>: <sentence>?". The draft's Decision section is
-  declarative because a ratifiable artifact must be; declarativeness
-  is not endorsement, and no output adds endorsement. **Where two
-  decision texts are both canon-consistent, draft both as
-  Alternatives A/B in one artifact — drafted, never ranked.**
+- **D-08 — Narrowing is evidence; a labeled recommendation follows it
+  (the E-23 seam, redrawn)** *(AMENDED, design doc v0.7 §6)*. Scoping
+  still states what canon decided, states each
+  open decision precisely, and drafts the decision text before
+  anything else — that sequence, and the discipline behind it, is
+  unchanged. What changes: after the ledger and the drafted
+  artifacts, the packet now carries the agent's **recommended
+  resolution per residual**, clearly labeled as a recommendation and
+  kept visually separate from the evidence above it
+  (`rules/escalation-triggers.md` E-23 as amended). The recommendation
+  is never folded into the settled table or the drafted artifact
+  itself: a settled row is still never an un-firing of a trigger
+  (L-04), and it stays contestable (D-04) whether or not a
+  recommendation follows it. Ratify, amend, or reject is still the
+  **committee's act** — every CP-05 entry remains a question,
+  typically "Ratify, amend, or reject drafted decision R-<i>:
+  <sentence>?" — the recommendation answers a different thing: not
+  "is R-<i> settled" but "what should the committee do with it."
+  **Where two decision texts are both canon-consistent, draft both as
+  Alternatives A/B in one artifact — drafted, never ranked** — and
+  where they are genuinely equal, the recommendation itself may be
+  "either — the committee's preference between A and B", never a
+  forced tiebreak where none exists. The draft's Decision section is
+  still declarative because a ratifiable artifact must be;
+  declarativeness is still not endorsement — a recommendation
+  attached beside it is an opinion offered for the human's judgment,
+  not a decision already made, and the human (committee or
+  maintainer) still performs the ratify/amend/reject act in every
+  case.
 
 ## 3. Per-trigger duties
 

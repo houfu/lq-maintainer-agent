@@ -129,19 +129,27 @@ card and the Triage Receipt.
 
 ## Boundaries
 
-- **S-17 — Ambiguous parts default toward decline, not preservation**
-  *(decided 2026-07)*. A part that is neither clearly valuable nor
-  obviously slop does **not** get the benefit of the doubt: where
-  canon supplies a decline reason (out of scope per `canon:prd`,
-  contradicts `canon:honest-state`, superseded by an ADR), the
-  default is S-DECLINE with that citation. Where no canon speaks to
-  the part, the agent does not invent a decline reason (S-11.5): the
-  drafted response routes the part to the decision path — file it as
-  a feature issue / DE proposal — so declining the *code* never
-  silently decides the *idea*. S-DE is reserved for parts with a
-  concrete, stated value case; "might be useful someday" is not one.
-  The contributor can always argue a part back in; the maintainer can
-  always override in Step 8.
+- **S-17 — Ambiguous parts default to the idea path, not decline**
+  *(FLIPPED, decided 2026-07-26, design v0.7 §2 P-1)*. A part that is
+  neither clearly valuable nor obviously slop now gets the benefit of
+  the doubt: the default is to keep the idea alive, not to close it
+  out. **S-DECLINE still applies exactly where it always did** — where
+  canon supplies a concrete decline reason (out of scope per
+  `canon:prd`, contradicts `canon:honest-state`, superseded by an
+  ADR), the part declines with that citation; nothing about the flip
+  changes a genuinely canon-declined part. Where **no canon speaks to
+  the part** — the case S-17 actually governs — the default flips from
+  decline to **S-DE**: route it to a drafted feature issue / DE stub
+  crediting the contributor by name/handle (the S-11.5 mechanics,
+  `S-22`), so the idea enters the canon instead of dying with the PR.
+  A part that is trivially harmless — it costs nothing to carry and
+  needs no separate tracking — may instead simply **stay in the PR**
+  rather than being split out for the sake of it; the reviewer states
+  which of the two the part got and why. The agent still never invents
+  a decline reason where canon is silent (S-11.5): silence on the code
+  is never read as a silent decision on the idea. The contributor can
+  always argue a part back in; the maintainer can always override in
+  Step 8.
 - **S-20 — Humans post and file everything.** The agent drafts the
   response, the DE/mini-PRD stubs, the split-issue titles and bodies
   (including sub-issue filing instructions), and the hunk map. A human

@@ -1,20 +1,45 @@
 # LQ Maintainer Agent
 
-**Status: v0.2.0 — early (M0/M1).** Built against design doc v0.6: the
-skeleton, rules, templates, and the two manual skills exist; the eval
-harness and canon-drift check are being wired up; batch digests, published
-receipts, and the multi-agent deep dive land in later milestones. See
-[docs/design/](docs/design/) for the full design and milestone plan.
+**Status: v0.4.0 — early (M0/M1).** Built against design doc v0.7
+("Momentum"): tiered review with a quick-pass default, four change
+categories with a design path for greenfield work, and a
+public-deck / internal-receipt deliverable split. As of v0.4.0 the
+deck is the one surface a maintainer reads: it carries the
+paste-ready drafts (the short comment; the merge message for merge
+candidates), records the maintainer's final decision once they rule,
+and findings with a concrete textual fix arrive as one-click GitHub
+suggestions. The eval harness and canon-drift check are being wired
+up; batch digests and the community repo land in later milestones.
+See [docs/design/](docs/design/) for the full design and milestone
+plan.
 
 ## What this is
 
 LQ Maintainer Agent is a standalone open-source project that helps
 maintainers of [`legalquants/lq-ai`](https://github.com/legalquants/lq-ai)
 process inbound work — PRs, issues, and dependabot traffic — using Claude
-Code. It triages every item into a recommended lane, reviews within that
-lane against lq-ai's own canon, decomposes overreaching contributions so
-their valuable parts survive (**salvage**), and publishes an accountability
-artifact per item (**Triage Receipt**).
+Code. It classifies every item into a change category, reviews it at the
+lightest tier that fits (a quick pass ending in a concrete action for
+small behavioral changes and bug fixes; a deep multi-agent dive only when
+conditions warrant), routes greenfield feature work to a **design path**
+that drafts the plan, ADRs, and atomic decomposition, and decomposes
+overreaching contributions so their valuable parts survive (**salvage**).
+Every review produces a contributor-friendly **reading deck** (the
+primary artifact, bound for a public community repo) and an internal
+evidence record; the PR itself gets a short, warm comment. The deck
+carries the paste-ready drafts — the comment, and the squash-merge
+message for merge candidates — so nothing is delivered as loose chat
+text, and once the maintainer rules, the deck shows **what the
+maintainer decided** alongside what the agent recommended. Divergences
+and maintainer feedback aggregate into a local feedback log
+([templates/feedback-log.md](templates/feedback-log.md)) that seeds
+the golden-eval suite.
+
+Two policies bind everything it drafts: **every contribution is treated
+as sincere**, and **every contribution is treated with respect** —
+reviewers defer to authors on approach, findings name deficiencies
+rather than preferences, and nothing contributor-facing is ever
+personal.
 
 The agent recommends, drafts, and reports. **A human decides, every time.**
 For external contributions this is lq-ai's written policy
@@ -81,7 +106,7 @@ local read access to the canon and to `main`.
    are `/lq-maintainer:triage` and `/lq-maintainer:review-pr`, not a bare
    `/triage`.
 
-The plugin declares the two skills and the **PreToolUse safety hooks**
+The plugin declares the four skills and the **PreToolUse safety hooks**
 ([hooks/hooks.json](hooks/hooks.json)) that block merge, approve, close,
 push, and PR-ref checkout in the session. A reference copy of the same
 block for lq-ai's own `.claude/`
@@ -95,11 +120,12 @@ canon SHA it was judged against, the agent version, and the served model
 ID for the session — so any triage decision is reproducible and any
 dispute auditable.
 
-## The three skills
+## The four skills
 
 All are explicit-invocation-only (`disable-model-invocation: true`) —
 nothing fires unprompted. One **router** sorts the queue; two **reviewers**
-go deep on a single item.
+handle a single item at the right tier; one **designer** turns greenfield
+feature work into a ratifiable plan.
 
 - **`/lq-maintainer:triage`** ([skills/triage/](skills/triage/)) — the
   breadth pass / queue router, for PRs and issues in batch. Produces a
@@ -108,21 +134,56 @@ go deep on a single item.
   packets for escalations, and issue classifications with drafted
   responses. Use it to start a maintainer session and clear the queue.
 - **`/lq-maintainer:review-pr N`** ([skills/review-pr/](skills/review-pr/))
-  — the depth pass for a single standard-lane PR that merits it (size,
-  sensitivity, or an explicit ask). Dispatches a multi-agent team —
-  anchor/scope, security vetting, code quality, test adequacy — over the
-  diff and `main`, filters and caps the findings before anything reaches
-  the receipt, and keeps the full unfiltered set in a cached long-form
-  report behind it.
+  — the single-PR reviewer. Default is the **Tier-1 quick pass**: one
+  time-boxed read of the diff against canon that ends in a concrete
+  action — merge / merge-after-one-named-fix / discuss-a-specific-question
+  / route-to-design — with its undo path stated. The **Tier-2 deep dive**
+  (a multi-agent team: anchor/scope, security vetting, code quality, test
+  adequacy, with a finding filter) runs only when a named condition
+  warrants it: an escalation trigger, size beyond Tier-1 bounds, an
+  irreversible-class path, or the maintainer's ask. Findings whose fix
+  is a concrete text change arrive with a drafted GitHub suggestion
+  block and a stated apply path, so acting on one is one click — for
+  the maintainer or the contributor.
 - **`/lq-maintainer:review-issue N`** ([skills/review-issue/](skills/review-issue/))
   — the single-issue reviewer (the issue counterpart to `review-pr`).
   Classifies, performs its own cross-reference (never the filer's), and
   produces the recommendation deck — needs-info / decompose / proceed /
-  escalate — over a rule-grounded preview of the obstacles the issue would
-  hit as a PR, plus a drafted receipt and responses.
+  design / escalate — over a rule-grounded preview of the obstacles the
+  issue would hit as a PR, plus drafted responses.
+- **`/lq-maintainer:design-plan (pr|issue) N`**
+  ([skills/design-plan/](skills/design-plan/)) — the category-1 path for
+  greenfield / new-feature contributions (the DE series). Produces a
+  plan instead of a code review: the decision inventory with drafted
+  ADR(s), the predicted obstacles, and a decomposition into atomic
+  reviewable changes — so the contributor's energy becomes design input
+  for the committee instead of a stalled PR.
 
 Rule of thumb: `/lq-maintainer:triage` to decide what deserves attention;
-`review-pr` / `review-issue` when one item has earned it.
+`review-pr` / `review-issue` for one item; `design-plan` when the item is
+really a feature proposal wearing a PR.
+
+## Categories and tiers
+
+Every PR classifies into one of four change categories, judged from the
+diff ([rules/change-categories.md](rules/change-categories.md)):
+greenfield/new feature (→ the design path), behavioral
+change/improvement (→ tiered review + a necessity check), bug
+fix/rollback (→ tiered review), and refactoring/large-scale (→ a
+respectful holding pattern until the large-change process is written).
+
+Review depth is tiered ([rules/tiers.md](rules/tiers.md)): Tier 0 is the
+deterministic gate below; Tier 1 — the default for small category-2/3
+changes (≤400 lines, ≤10 files, no irreversible-class paths) — is a
+quick pass that must end in a concrete action with its undo path; Tier 2
+is the multi-agent deep dive, entered only by a named condition; Tier 3
+is committee/design. Conservatism attaches to **irreversibility, not
+uncertainty** ([rules/reversibility.md](rules/reversibility.md)):
+auth/crypto, data migrations, public API contracts, CI workflows, new
+dependencies, and releases never take the quick pass, while everything
+else carries an explicit "if this proves wrong, here is the undo" line.
+Content can only ever move an item to a *heavier* tier — nothing inside
+a contribution can buy it a lighter one.
 
 ## The fast lane is deterministic-first
 
@@ -166,10 +227,11 @@ are stated honestly rather than papered over — see
 
 ## For lq-ai contributors
 
-If a Triage Receipt just appeared on your PR or issue, start with
+If an agent-drafted comment just appeared on your PR or issue, start with
 [docs/bot-behavior.md](docs/bot-behavior.md): what the agent does, what it
-structurally cannot do, what the lanes mean, and how to contest a call or
-ask for human-only handling. Every receipt's attribution line links there.
+structurally cannot do, what the review outcomes mean, and how to contest
+a call or ask for human-only handling. Every comment's attribution line
+links there.
 
 ## Learn more
 

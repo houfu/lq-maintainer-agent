@@ -1,13 +1,28 @@
-# Template — Triage Receipt, PR profile
+# Template — Internal Evidence Record (receipt), PR profile
 
 Rendered by `skills/triage/SKILL.md` (Step 8) and
 `skills/review-pr/SKILL.md` (Step 5) for every triaged PR except the
-carve-outs below. **Render, never freehand**: the field rules (RP-NN)
-are normative, and this file is the single authoritative definition of
-the machine-readable footer schema
-(`lq-maintainer-agent:receipt:v2`) — `templates/receipt-issue.md`
-reuses it. Posted (or updated in place, design doc §8.4) only behind
-an individual human approval.
+carve-outs below. **As of v0.7 this is an internal evidence document,
+not a public artifact** (design doc v0.7 §8): it is no longer posted
+to the PR. It is stored in the maintainer's local cache today, and in
+the community repo's per-item directory
+(`reviews/pr-NNNN/state.yaml` + `notes.md`, `docs/community-repo.md`)
+once that repo exists. The public-facing counterpart is now
+`templates/pr-comment.md` — a short warm note, drafted separately and
+tone-gated. **Migration:** prior `receipt:v2` comments posted before
+v0.7 remain readable for resume (I-09 author verification unchanged);
+the agent stops writing new public receipts, not old ones. **Render,
+never freehand**: the field rules (RP-NN) are normative, and this file
+is the single authoritative definition of the machine-readable footer
+schema (`lq-maintainer-agent:receipt:v2`) — `templates/receipt-issue.md`
+reuses it. Drafted (or updated in place, design doc §8.4) and stored
+only behind an individual human approval — the human-gate discipline
+applies to internal artifacts too, not only public writes.
+
+The body below keeps its full rigor unchanged — only its audience
+changed, from "posted for the contributor and any watcher" to
+"maintainer evidence, on request." Nothing in the sections that follow
+is trimmed for a public reader; there no longer is one.
 
 Canon citations inside a rendered receipt use path + anchor as routed
 by `rules/canon-map.md`; this template itself names no lq-ai paths.
@@ -54,7 +69,12 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   Every `cannot-verify` on an applicable item reappears as a
   Next-steps entry (RP-16), `n-a` never does;
   every `verified-fail` that produced a finding cross-references its
-  F-i. Visible body only; the footer schema is unchanged.
+  F-i. Visible body only; the footer schema is unchanged. **This
+  subsection renders here, internally, only** (`rules/self-attestation.md`
+  T-07 as amended, design doc v0.7 §8) — the tabulated claim-versus-
+  verified results never appear on any contributor-facing surface; a
+  genuine `verified-fail` surfaces there, if at all, as at most one
+  courteous, blame-free note about the work, tone-gated.
 - **RP-05 — Findings, filtered.** Findings appear with stable IDs
   (`F-1`, `F-2`, …), structured per `rules/lanes.md` L-33
   (file / line / severity / canon citation / suggested comment) plus
@@ -67,7 +87,11 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   lives in the deep-dive cache
   (`${CLAUDE_PLUGIN_DATA}/<repo>/<pr-number>/<head-sha>/report.md`).
   The receipt states how many findings each stage filtered. Nothing
-  is hidden; it is just not all in the comment.
+  is hidden; it is just not all in the comment. Where a finding's
+  remedy is a concrete replacement of the cited line(s), it also
+  carries the drafted GitHub suggestion block and its one-line
+  **apply path** (`rules/lanes.md` L-33a) — the human learns not just
+  what to fix but how to apply it in one click.
 - **RP-06 — Salvage section.** Mandatory whenever salvage was applied
   (`rules/salvage.md`): part list with one-sentence statements and
   disposition IDs; and if a mechanical split was proposed, the split
@@ -102,13 +126,18 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
 - **RP-12 — Footer last.** The machine-readable footer is the final
   element, after the attribution line.
 - **RP-13 — Carve-outs.** Suspected-deliberate attack
-  (`rules/escalation-triggers.md` E-21): the public receipt reduces to
-  the generic line "This item has been escalated for security review."
-  plus attribution — the full receipt goes only into the committee
-  packet. Vulnerability-suspect issues get **no** receipt at all
-  (that is `templates/receipt-issue.md` / `rules/issues.md` C-40, but
-  the rule binds PR triage too when a PR carries exploit detail:
-  E-08 output handling wins).
+  (`rules/escalation-triggers.md` E-21): this receipt is internal
+  always (v0.7 §8) and is never posted regardless of trigger, so
+  there is no public receipt to reduce — the public surface for an
+  E-21 item is the generic short comment rendered from
+  `templates/pr-comment.md` PC-08a ("This item has been escalated for
+  security review." plus attribution), never this template. The full
+  analysis — findings, evidence, decision scoping — goes only into
+  the committee packet; this receipt keeps its full rigor, drafted
+  for the maintainer's own record. Vulnerability-suspect issues get
+  **no** receipt at all (that is `templates/receipt-issue.md` /
+  `rules/issues.md` C-40, but the rule binds PR triage too when a PR
+  carries exploit detail: E-08 output handling wins).
 - **RP-14 — Update ping.** Because edited comments notify nobody,
   every in-place update of this receipt is paired with the one-line
   reply template at the bottom of this file, drafted and posted
@@ -146,10 +175,57 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   committee packet (CP-03a/CP-08). Footer: the enumerated
   `decision_scoping` block only (D-12) — counts, `R-<i>` IDs,
   kind/artifact enums; **no ledger prose, ever** (§8.4).
+- **RP-18 — Maintainer decision (finalize stage only, optional).**
+  Recorded if and only if a maintainer has read the review and ruled
+  (Step 10 of the rendering skill) — **absent on the discussion-stage
+  draft**, so a receipt without it reads as "not yet decided", never
+  as agreement. Optional by design: the review skills are also run by
+  **contributors checking their own work before submitting**, and such
+  a session has no ruling to record — the section and footer block
+  simply stay absent, the deck grows no decision card, and the skill
+  never presses the user for a ruling. Only an actual maintainer
+  decision is ever recorded; one is never inferred from silence.
+  **Who counts as a maintainer is verified, not assumed** — the same
+  posture the design applies to author class (§5: API identity, never
+  display names or claims in text): resolve the operator's login from
+  the session's authenticated GitHub identity (`gh api user`) and
+  their role from the repo-permission endpoint
+  (`gh api repos/<owner>/<repo>/collaborators/<login>/permission`) —
+  `admin`/`maintain`/`write` is a maintainer of record;
+  `triage`/`read` is not. Both are `gh api` GETs and therefore
+  permission-prompted, by design (§10). The visible section states
+  the result, and the footer's `verified` enum records `api` (checked
+  this run) or `stated` (the check was declined or unavailable and
+  the user affirmed the role — recorded on their word, and the
+  section says so plainly). A `stated` record is legitimate — a local
+  tool cannot police its own operator — but it is never silently
+  presented as verified.
+  Visible body: who decided (their handle, visible here like the
+  attribution line — never in the footer), the ruling in plain
+  language, whether it accepted / adjusted / overrode the agent's
+  recommendation, and any feedback the maintainer gave on the agent's
+  handling, in their words. Footer: the enumerated `decision` block
+  only. Feedback and divergences additionally append to the
+  cross-item feedback log (`templates/feedback-log.md`) — the receipt
+  keeps the item's record; the log aggregates the agent-performance
+  signal that seeds evals.
+- **RP-19 — Embedded drafts (decided 2026-07-26).** The drafted
+  public comment (`templates/pr-comment.md`) and, for merge
+  candidates, the drafted squash-merge message
+  (`templates/merge-message.md`) are embedded in this receipt as
+  fenced blocks under `### Drafted public comment` /
+  `### Drafted merge message`, and the deck renders them as
+  paste-ready cards — **they are not separate deliverables**; the
+  deck is where the maintainer reads them. Each is still rendered
+  from its own template (whose field rules remain normative — the
+  tone gate runs on the comment before it is embedded), and posting /
+  merging remains a separate, individually approved human action.
+  The fenced block is mandatory: the comment's own `---` attribution
+  divider would otherwise terminate section parsing.
 
 ## Template
 
-```markdown
+````markdown
 ## Triage Receipt — PR #<n>: <title>
 
 > **Verdict:** <lane> (<rule-id>, <confidence>) · burden **<overall>**
@@ -231,6 +307,14 @@ maintainer running the agent)>.
 <one-line finding. Canon: <citation>.>
 Disposition hint: <trivial | relayable | structural>
 Suggested comment: <ready-to-post text, written for the contributor>
+<if the remedy is a concrete replacement of the cited line(s), L-33a:>
+Suggested change — paste as a review comment on `<file>:<line>`:
+```suggestion
+<the exact, complete replacement line(s)>
+```
+Apply path: <the one-line L-33a path for this disposition — e.g.
+"post the drafted comment on <file>:<line> in the PR's Files-changed
+view; the contributor applies it with one click">
 
 ### Salvage decomposition (if applied)
 
@@ -286,6 +370,36 @@ Ordered by importance; the top entry is the header's "Do next" line.
 
 - [ ] Contributor trust — a human call; the agent does not score people.
 - [ ] Residual supply-chain hygiene — beyond the mechanical checks above.
+
+### Maintainer decision (RP-18; finalize stage only — omitted until a human rules)
+
+Decided by @<maintainer> (<date>): <the ruling, in plain language —
+what happens to this item and why, in the maintainer's words>.
+- Identity: <verified via GitHub API — <admin | maintain | write>
+  permission on <owner>/<repo> | stated — check declined/unavailable;
+  recorded on the user's word>.
+- Agent recommendation <accepted | adjusted: <what changed> |
+  overridden: <what the maintainer did instead>>.
+- Feedback for the agent: <none | the maintainer's words — also
+  appended to the cross-item feedback log, templates/feedback-log.md>.
+
+### Drafted public comment (RP-19)
+
+Rendered from `templates/pr-comment.md`, tone-gated; posting is a
+separate, individually approved human action.
+
+```markdown
+<the complete drafted comment, verbatim — paste-ready>
+```
+
+### Drafted merge message (RP-19; merge candidates only — omitted otherwise)
+
+Rendered from `templates/merge-message.md`; the human performs the
+merge and owns the message.
+
+```text
+<the complete drafted squash-merge message, verbatim — paste-ready>
+```
 
 ### Reviewed-at
 
@@ -359,8 +473,18 @@ decision_scoping:
   reserved_human: <integer>
   residuals:
     - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
+category: <1|2|3|4|null>
+tier: <0|1|2|3|null>
+outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
+undo: <revert-clean|residue|irreversible-class|null>
+tone_gate: <applied|n-a>
+decision:
+  final_outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
+  alignment: <accepted|adjusted|overridden|null>
+  verified: <api|stated>
+  feedback_logged: <true|false>
 -->
-```
+````
 
 ## Footer schema — `lq-maintainer-agent:receipt:v2` (authoritative)
 
@@ -370,7 +494,7 @@ YAML document. It is the resume interface (design doc §8.4) and the
 eval-grading interface (`evals/run-checks.md`).
 
 - **Versioned.** The marker carries the schema version. A future
-  format change bumps to `:v2`; parsers match on the marker, so a
+  format change bumps to `:v3`; parsers match on the marker, so a
   bump never breaks receipt lookup.
 - **Enumerated structured fields ONLY.** The complete field set is
   the one shown in the template above — enums, stable rule/finding/
@@ -398,6 +522,45 @@ eval-grading interface (`evals/run-checks.md`).
   `artifact` enums; empty list when `residual` is 0). Ledger prose,
   atomic sentences, and drafts live in the visible body and packet,
   never here.
+- **`category` / `tier` / `outcome` / `undo`** — four **optional**
+  enumerated fields, additive and backward-compatible (design doc
+  v0.7 §8, `rules/burden.md` B-10): `category` (`1`/`2`/`3`/`4`,
+  `rules/change-categories.md` G-NN), `tier` (`0`/`1`/`2`/`3`,
+  `rules/tiers.md` TR-NN), `outcome` (the TR-05 vocabulary —
+  `merge`/`merge-after`/`discuss`/`route-to-design`/`hold`/
+  `security-escalate`), and `undo` (`revert-clean`/`residue`/
+  `irreversible-class`, `rules/reversibility.md` RV-04/RV-05). Each
+  renders `null` where a run predates their introduction or the field
+  does not apply (e.g. `undo` on an escalated item that never reached
+  a graded outcome). As with every field here, **enumerated only** —
+  the named fix, the specific discuss question, and the undo sentence
+  are free text and live in the visible body (and now, primarily, in
+  `templates/pr-comment.md`), never the footer.
+- **`tone_gate`** — a fifth **optional**, additive field
+  (`rules/tone-gate.md` TG-05): `applied` once the tone gate has run
+  over every contributor-facing draft this item produced (the
+  `templates/pr-comment.md` note, any contributor response); `n-a`
+  when the item produced no contributor-facing draft (e.g. a clean
+  fast-lane merge) or the run predates the field's introduction.
+  Enumerated only, like every field here — which pattern the gate
+  rewrote, if any, is never recorded here.
+- **`decision`** (RP-18) — an **optional**, additive block, present if
+  and only if a maintainer has ruled on the item (Step 10 finalize).
+  **Absence means "not yet decided" — a parser must never read a
+  missing block as agreement with the agent's recommendation.**
+  Enumerated only: `final_outcome` (the same TR-05 vocabulary as
+  `outcome`; on the issue profile the IV-01 `recommendation`
+  vocabulary is also valid), `alignment` (`accepted` — the maintainer
+  took the recommendation as-is; `adjusted` — same direction, details
+  changed; `overridden` — the maintainer did something else),
+  `verified` (`api` — the decider's maintainer-of-record role was
+  confirmed this run via the authenticated-identity and
+  repo-permission GETs, RP-18; `stated` — the check was declined or
+  unavailable and the role rests on the user's word, which the
+  visible section says plainly), and `feedback_logged` (whether an
+  entry was appended to `templates/feedback-log.md`'s log this run).
+  The ruling's prose, the decider's handle, and the feedback text
+  live in the visible `### Maintainer decision` section, never here.
 - **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
   Parsers match the `lq-maintainer-agent:receipt` prefix and accept
   both markers; a v1 footer parses as
@@ -411,7 +574,27 @@ eval-grading interface (`evals/run-checks.md`).
 - Issue-profile deltas (`templates/receipt-issue.md`): `profile:
   issue`; `classification` + `classification_rule` set (C-NN);
   `pinned.pr_head_sha: n-a`; `deterministic_checks` all `n-a`; the
-  coverage item set is the issue one.
+  coverage item set is the issue one; the issue keeps its own
+  `recommendation` field (`IV-01`) alongside — not instead of — the
+  `outcome`/`category`/`tier`/`undo` fields above, and `recommendation`
+  gains the new value `design` for a category-1 ask (design doc v0.7
+  §8, `rules/burden.md` B-10).
+- **Plan-profile deltas** (`templates/design-plan.md`, rendered by
+  `skills/design-plan/SKILL.md` for every category-1 item): `profile:
+  plan`; `kind` (`pr`/`issue`, so `pinned.pr_head_sha: n-a` on the
+  issue side stays parseable); `category: 1` always, with
+  `category_rule` set (e.g. `G-02`); `tier: 3` always; `outcome:
+  route-to-design` always; the plan's own `recommendation` field
+  (`design`/`n-a`, the issue-side `IV-01` value) alongside — not
+  instead of — the fields above, exactly as the issue profile carries
+  its own `recommendation`; `undo: null` — a plan merges nothing,
+  each atomic change states its own undo path when it is reviewed
+  (`RV-05`); and the additive `plan` counts block — `decisions`,
+  `settled`, `adrs_drafted`, `de_stubs`, `obstacles`,
+  `atomic_changes` (all integers) — as `templates/design-plan.md`
+  DP-12 declares it. This receipt is the single authoritative footer
+  schema; the plan profile is defined here, not only in
+  `templates/design-plan.md`.
 - **Author verification before trust.** A consuming session resumes
   from a footer only after confirming the comment's author is the
   expected identity (the maintainer of record pre-M4; the App

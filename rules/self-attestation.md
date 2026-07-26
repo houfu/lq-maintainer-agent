@@ -6,7 +6,9 @@ every review-team member prompt
 to issue triage (`rules/issues.md`). Every rule carries a stable ID
 (`T-NN`). Companion rules: `rules/lanes.md` (L-02),
 `rules/injection-posture.md` (I-13), `rules/escalation-triggers.md`
-(E-03, E-08), `rules/burden.md` (B-14), `rules/issues.md` (C-60).
+(E-03, E-08), `rules/burden.md` (B-14), `rules/issues.md` (C-60),
+`rules/tone-gate.md` (TG-02.2 — the contributor-facing rendering
+constraint T-07 defers to).
 
 lq-ai's PR and issue templates ask the **contributor** to certify
 things — tests added, docs updated, governance invariants respected,
@@ -99,10 +101,24 @@ treats a ticked box as a completed check.**
   search (C-60), and the "this is not a security vulnerability" box
   does not substitute for content screening — E-08 runs on the body
   regardless of what the filer certified.
-- **T-07 — Rendering.** Results render in the receipt's
-  security-vetting section under a **Self-attestation cross-check**
-  heading (`templates/receipt-pr.md`), one line per applicable item:
-  claimed state, verified state, evidence. The machine footer schema
-  is unchanged — cross-check results are visible-body only; a
+- **T-07 — Rendering** *(AMENDED, design v0.7 §8)*. **The checking
+  itself — T-01 through T-06 — is unchanged**: every certification is
+  still re-derived from evidence, independently, every run; nothing
+  below softens what is checked or how. What changes is only where the
+  results are shown. The full tabulated results (claimed state,
+  verified state, evidence, one line per applicable item) render in
+  the **internal** receipt's security-vetting section under a
+  **Self-attestation cross-check** heading (`templates/receipt-pr.md`)
+  — the internal evidence document of design v0.7 §8, not a public
+  comment. **Nothing contributor-facing ever tabulates claimed-versus-
+  verified** (`rules/tone-gate.md` TG-02.2): no table, no "claimed X,
+  verified Y" construction, no announcement that self-attestations
+  were not trusted, in any contributor-facing draft. A genuine
+  `verified-fail` still needs to reach the contributor — it surfaces
+  there as **at most one courteous, blame-free note about the work**,
+  tone-gated (`rules/tone-gate.md`) before it is offered for posting:
+  e.g. "the diff doesn't include the test yet — happy to point at an
+  example," never framed as a caught claim. The machine footer schema
+  is unchanged — cross-check results are internal-body only; a
   `verified-fail` that produced a finding appears in the footer as
   that finding's enumerated entry, nothing more.

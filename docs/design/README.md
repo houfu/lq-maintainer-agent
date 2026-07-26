@@ -9,7 +9,25 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| **v0.6** | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | **Current** (Draft, 2026-07-11) |
+| **v0.7** | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | **Current** (Adopted 2026-07-26; delta over v0.6) |
+| v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
+
+Headline of v0.7 ("Momentum") — the maintainer decisions from the
+first 2–3 weeks of live operation: every contribution is treated as
+sincere and with respect (probing/challenging language is banned and
+tone-gated); reviewers defer to authors; the canon is amenable to
+change; PRs classify into four change categories with categories 2–3
+(behavioral changes, bug fixes) as the review target and category 1
+(greenfield / the DE series) routed to a design path that drafts the
+plan, ADRs, and atomic decomposition; review is tiered with a
+quick-pass default (≤400 lines) that must end in a concrete action
+with its undo path; conservatism attaches to irreversibility instead
+of uncertainty; escalation softens where it was decision-shaped (E-04
+retired for categories 2/3, the agent now recommends on escalated
+items) while every security trigger stays absolute; and the
+deliverables split public/internal — the deck becomes the public
+primary artifact (bound for a community repo), the PR comment shrinks
+to a short warm note, and the receipt becomes internal evidence.
 
 Headline of v0.6 — the decisions taken in the 2026-07-11 maintainer
 review, grounded in the research report below: the fast lane becomes

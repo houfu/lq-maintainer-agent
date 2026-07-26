@@ -24,7 +24,11 @@ reply** — the agent never posts, closes, or labels (design doc §2.1,
   respects the contributor — critique the change never the person,
   assume good faith, acknowledge genuine effort, and phrase next-step
   asks as courteous requests that explain why (`CD-06`). CR-02 is the
-  register rule; CR-06 is its normative source.
+  register rule; CR-06 is its normative source. Every rendered
+  response also passes `rules/tone-gate.md` (`TG-NN`) before it is
+  offered for posting — `conduct.md` is the standard it is drafted
+  under, the tone gate is the mechanical check it must still pass
+  (`TG-01`/`TG-05`).
 
 | Scenario | Pattern |
 | --- | --- |
