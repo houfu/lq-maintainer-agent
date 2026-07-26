@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -587,8 +587,12 @@ internal artifacts too. Non-negotiable contents:
   body, not the footer;
 - the **attribution line** (§8): "Drafted by lq-maintainer-agent
   v<version>; reviewed and posted by @<maintainer>", linking to the
-  bot-behavior page. Ask for the maintainer's handle or leave the
-  placeholder visibly unfilled — never guess it, never omit the line;
+  bot-behavior page. Prefill the handle with the API-verified session
+  identity (`RP-18` — a verified prefill is not a guess; the gated
+  approval is where it is confirmed); if unverified or not a
+  maintainer of record, ask or leave the placeholder visibly
+  unfilled — never fill it from an unverified source, never omit the
+  line;
 - the **embedded drafts** (`RP-19`, decided 2026-07-26): the tone-gated
   short comment in the `### Drafted public comment` fenced block and,
   for merge candidates, the Step 8 merge message in
@@ -687,9 +691,13 @@ merge box wholesale. Embed it in the evidence record's
 `### Drafted merge message` fenced block (`RP-19`) — the deck renders
 it as a paste-ready card; it is not a separate chat deliverable.
 
-Leave the maintainer name/email placeholders unfilled unless the user
-tells you who is merging. You draft; the human performs the merge and
-owns the message.
+Default the `Signed-off-by` name/email to the verified operator's own
+git identity (`git config --get user.name` / `--get user.email` in
+their clone — the same declaration git itself would commit) when the
+operator is the API-verified maintainer performing the merge
+(`MM-05`); otherwise leave the placeholders unfilled. Prefilling the
+human's own identity for the human to paste is not the agent signing
+off — you draft; the human performs the merge and owns the message.
 
 ## Step 9 — The deck, the discussion, then the gated writes
 

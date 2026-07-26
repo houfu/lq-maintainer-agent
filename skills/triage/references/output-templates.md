@@ -47,7 +47,10 @@ The internal receipt still ends with the visible attribution line —
 for the internal evidence record even though the receipt itself is no
 longer posted; the public `templates/pr-comment.md` carries its own,
 shorter attribution line. The skill fills the version; the maintainer
-handle is asked for or left visibly unfilled, never guessed.
+handle is prefilled with the API-verified session identity
+(`templates/receipt-pr.md` RP-18; confirmed at each gated write), and
+otherwise asked for or left visibly unfilled — never filled from an
+unverified source.
 
 Every GitHub write rendered from these templates is a draft — posted
 only behind an individual human approval, or handed to the maintainer

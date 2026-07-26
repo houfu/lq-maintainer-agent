@@ -31,9 +31,15 @@ the GitHub merge box.
 - **MM-04 — Disposition wording.** Standard lane: findings-resolved
   count. Fast lane: the deterministic-gate result. Both name the
   human who reviewed the permanently-open human-only items.
-- **MM-05 — Sign-off is the merging human's.** Leave the
-  name/email placeholders unfilled unless told who is merging; the
-  agent never signs off on anything.
+- **MM-05 — Sign-off is the merging human's.** When the operator is
+  the API-verified maintainer performing the merge
+  (`templates/receipt-pr.md` RP-18), default the name/email to their
+  own git identity (`git config --get user.name` / `--get user.email`
+  in their clone — the same declaration git itself would commit);
+  otherwise leave the placeholders unfilled. The human confirms the
+  line when they paste the message into the merge box. The agent
+  never signs off on anything — prefilling the merging human's own
+  identity for them to commit is not the agent signing.
 - **MM-06 — Immutable skeleton.** Once merged, this block is the
   deletion-proof audit record (receipt comments are editable; the
   trailer is not). It is the *entire* committed audit surface — no

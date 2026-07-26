@@ -68,6 +68,9 @@ unchanged); this template is what the agent drafts going forward.
   receipt and drafted response carries — agent version, posting
   maintainer, linked to `docs/bot-behavior.md`
   (`templates/contributor-responses/README.md` CR-04). Not removable.
+  The maintainer handle is prefilled with the API-verified session
+  identity (`templates/receipt-pr.md` RP-18) and confirmed at the
+  gated posting approval; unverified, it stays a visible placeholder.
 - **PC-06 — Hard bans.** This comment never contains: a table; a
   checklist; a rule, lane, tier, or category ID (`G-NN`/`TR-NN`/
   `RV-NN`/`E-NN`/…) or any lane/tier jargon, glossed or not; a

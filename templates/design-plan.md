@@ -153,8 +153,10 @@ canon SHA; this template names no lq-ai paths.
 - **DP-11 — Attribution line.** The plan ends its visible body with
   the standard attribution line — agent version, the posting/owning
   maintainer, linked to `docs/bot-behavior.md`. Not removable; the
-  maintainer's handle is asked for or left visibly unfilled, never
-  guessed.
+  handle is prefilled with the API-verified session identity
+  (`templates/receipt-pr.md` RP-18 — a verified prefill is not a
+  guess, confirmed at the gated write), and otherwise asked for or
+  left visibly unfilled — never filled from an unverified source.
 
 - **DP-12 — Footer last, enumerated only.** The machine-readable
   footer is the final element, after the attribution line, and

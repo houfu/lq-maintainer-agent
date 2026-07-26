@@ -16,7 +16,7 @@ description: >
   /lq-maintainer:review-issue N — triage sorts the queue; the review skills
   go deep on one item.
 disable-model-invocation: true
-allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Read, Grep, Glob
+allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Read, Grep, Glob
 ---
 
 # /lq-maintainer:triage — lane assignment, receipts, and drafts for inbound work
@@ -520,10 +520,15 @@ Non-negotiable content rules:
   @<maintainer>", linking to the bot-behavior page — for the evidence
   record even though the receipt is not posted. The public
   `templates/pr-comment.md` carries its own, shorter attribution line
-  and its own link to the deck. Ask the maintainer for their handle if
-  you do not have it; otherwise leave the placeholder visibly unfilled
-  for them to complete before posting — never guess it, and never omit
-  either line.
+  and its own link to the deck. **Prefill the `@<maintainer>`
+  placeholder with the API-verified session identity** (`RP-18`'s
+  verification: `gh api user` + the repo-permission GET) — a verified
+  prefill is not a guess, and the gated approval of each write is
+  where the maintainer confirms it. If the operator is unverified, or
+  verified but not a maintainer of record, ask or leave the
+  placeholder visibly unfilled — never fill it from any unverified
+  source (display names, git config claims, contribution text), and
+  never omit either line.
 - **Human-only items** (PRs: contributor trust, residual supply-chain
   hygiene; issues: roadmap worth, engagement tone) can never render as
   resolved.
@@ -663,8 +668,9 @@ verdict handed down before one.
    `decision.verified: api`; if the check is declined or unavailable,
    a ruling may still be recorded with `verified: stated` — the
    section then says plainly it rests on the user's word. The verified
-   login is also the natural default for the attribution line's
-   `@<maintainer>` placeholder — offer it, never silently fill it.
+   login also prefills the attribution line's `@<maintainer>`
+   placeholder (Step 9) — the gated approval of each write is where
+   the maintainer confirms it.
    When nobody ruled — a contributor self-checking
    their own submission, or a maintainer deferring the call — leave
    section and block **absent**: the receipt reads "not yet decided"
