@@ -3,15 +3,21 @@
 ''''exec python3 "$0" "$@" # '''
 """test-render-deck.sh — unit + adversarial tests for the reading-deck renderer.
 
-Guards the two properties a deterministic, no-network deck renderer must never
-regress (design doc §8.6/§8.6a, rules/canon-map.md link rule,
+Guards the properties a deterministic, no-network deck renderer must never
+regress (design doc §8.6/§8.6a and v0.7 §7/§8, rules/canon-map.md link rule,
 rules/injection-posture.md):
 
-  1. It renders BOTH profiles from a receipt:v1 footer — the PR burden deck and
-     the issue recommendation deck — and fails closed on a missing/bad footer.
+  1. It renders every profile a footer can carry — the PR burden deck, the
+     issue recommendation deck, and (v0.7) the `profile: plan` design deck —
+     and fails closed on a missing/bad footer.
   2. Click-through links are emitted ONLY for allow-listed, agent-constructable
      targets; a URL that reached the receipt body from contributor text is
      dropped to inert label text, never a live href.
+  3. The v0.7 fields are additive: a footer carrying `outcome` renders the
+     action-first hero with its undo line and demotes the burden axes to the
+     auditor section; a footer WITHOUT them renders the v0.6 burden-led hero
+     unchanged; an unrecognised enum value degrades to raw text instead of
+     crashing or fabricating a gloss.
 
 Pure stdlib, no tokens, no canon clone, no network — safe as a blocking CI
 check. Run from anywhere: `sh ci/scripts/test-render-deck.sh` or directly.
@@ -150,6 +156,48 @@ PR_CLEAN_V2 = (
     "-->\n"
 )
 
+# v0.7 (design v0.7 §7/§8): the four optional enumerated fields on a v2 footer.
+# A category-2, tier-1 quick pass ending in `merge-after` with a clean undo —
+# the action-first hero path. Carries an off-host link in a finding so the
+# allow-list is exercised on this path too, not only the legacy one.
+PR_TIER1_V2 = (
+    "## Triage Receipt — PR #904: pin the request timeout default\n"
+    "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
+    "### References (RP-15)\n"
+    "- **Linked:** [issue #21](https://github.com/LegalQuants/lq-ai/issues/21)\n"
+    "### Findings\n"
+    "**F-1 — minor** — the timeout default is unpinned; see "
+    "[bad](https://evil.example.com/x).\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#904\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "findings:\n  - {id: F-1, severity: minor, disposition: relayable}\n"
+    "findings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "burden:\n  overall: low\n  blockers: []\n"
+    "  scope: low\n  review: low\n  tests: medium\n  carry: low\n  safety: low\n"
+    "decision_scoping:\n  applied: n-a\n"
+    "category: 2\ntier: 1\noutcome: merge-after\nundo: revert-clean\n"
+    "-->\n"
+)
+
+# Same footer, an outcome value no glossary key covers: degrade, never crash.
+PR_UNKNOWN_OUTCOME_V2 = PR_TIER1_V2.replace(
+    "outcome: merge-after", "outcome: ponder-it-a-while")
+
+# An irreversible-class undo must never read as reassurance (RV-03 / TG-06).
+PR_IRREVERSIBLE_V2 = PR_TIER1_V2.replace(
+    "outcome: merge-after", "outcome: discuss").replace(
+    "undo: revert-clean", "undo: irreversible-class").replace(
+    "tier: 1", "tier: 2")
+
+# Issue profile, the new IV-01 value `design` (design v0.7 §6/§9).
+ISSUE_DESIGN = ISSUE_ESCALATE.replace(
+    "recommendation: escalate", "recommendation: design\ncategory: 1\ntier: 3"
+).replace("lane: escalate", "lane: standard"
+).replace("**Recommendation:** Escalate", "**Recommendation:** Design")
+
 ISSUE_ESCALATE_V2 = ISSUE_ESCALATE.replace(
     "lq-maintainer-agent:receipt:v1", "lq-maintainer-agent:receipt:v2"
 ).replace(
@@ -158,6 +206,35 @@ ISSUE_ESCALATE_V2 = ISSUE_ESCALATE.replace(
     "decision_scoping:\n  applied: partial\n  questions: 1\n  settled: 0\n"
     "  residual: 1\n  reserved_human: 0\n  residuals:\n"
     "    - {id: R-1, kind: forward-looking, artifact: de-stub}\n"
+)
+
+# The design-path artifact (templates/design-plan.md, design v0.7 §9): the
+# third profile, carrying the same v2 footer with `profile: plan`, the fixed
+# category-1 / tier-3 / route-to-design call, `undo: null` (a plan merges
+# nothing), the additive `plan` counts block, and the `tone_gate` field. The
+# renderer must read it as an ordinary action-first deck — no burden axes on
+# this path, and no crash on footer keys it has no gloss for.
+PLAN_V2 = (
+    "## Design plan — PR #905: nightly digest of newly matched documents\n"
+    "**Category:** 1 — greenfield (rule: G-02) · **Outcome:** route-to-design\n"
+    "### Predicted obstacles (DP-05)\n"
+    "- The tree has no scheduler, so \"nightly\" is itself a decision.\n"
+    "### References (DP-04)\n"
+    "- **Linked:** [DE-114](https://github.com/LegalQuants/lq-ai/issues/114) "
+    "and [bad](https://evil.example.com/x)\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: plan\nitem: legalquants/lq-ai#905\nkind: pr\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "category: 1\ncategory_rule: G-02\ntier: 3\noutcome: route-to-design\n"
+    "recommendation: n-a\nundo: null\ntone_gate: applied\n"
+    "plan:\n  decisions: 4\n  settled: 1\n  adrs_drafted: 2\n  de_stubs: 1\n"
+    "  obstacles: 3\n  atomic_changes: 5\n"
+    "findings: []\nfindings_filtered: 0\n"
+    "coverage:\n  - {item: code-review, status: never-by-design}\n"
+    "  - {item: runtime-behavior, status: never-by-design}\n"
+    "decision_scoping:\n  applied: n-a\n"
+    "-->\n"
 )
 
 # Deep-dive cache report carrying a '### Below threshold' section (deck-only
@@ -283,6 +360,53 @@ def main():
     check("issue v2 escalate: panel present", "Decisions to make" in out)
     check("issue v2 escalate: partial surfaced", "partial" in out)
 
+    # --- e2e: v0.7 action-first hero (footer carries `outcome`) ---
+    rc, out = run(PR_TIER1_V2)
+    check("PR v0.7: exit 0", rc == 0, "rc=%d" % rc)
+    check("PR v0.7: hero leads with the action outcome, not the burden",
+          "<h1>Ready to merge after one named change</h1>" in out
+          and "<h1>Low burden" not in out)
+    check("PR v0.7: undo path is the highlighted decision line",
+          'class="undo' in out and "One revert puts this back" in out)
+    check("PR v0.7: category + tier render as supporting detail",
+          "Behaviour change" in out and "One focused pass" in out
+          and 'class="ctx"' in out)
+    check("PR v0.7: burden axes demoted to the auditor section",
+          "How this was reviewed" in out and "internal evidence" in out
+          and out.index("How this was reviewed") < out.index("tiles tiles-5"),
+          "hero still owns the axes")
+    check("PR v0.7: decision box states the human action",
+          "One named change is asked for first" in out)
+    check("PR v0.7: honesty rails intact",
+          "What was <em>not</em> checked (on purpose)" in out
+          and "Never checked" in out)
+    check("PR v0.7: allow-list still holds on this path",
+          'href="https://evil' not in out
+          and 'href="https://github.com/LegalQuants/lq-ai/issues/21"' in out)
+
+    # a legacy v2 footer (no v0.7 fields) keeps the burden-led hero exactly
+    rc, out = run(PR_BLOCKED)
+    check("PR legacy: burden hero, no action-first furniture",
+          "Blocked — resolve first" in out and 'class="undo' not in out
+          and "How this was reviewed" not in out)
+    rc, out = run(PR_CLEAN_V2)
+    check("PR v2 clean (no v0.7 fields): no action-first furniture",
+          rc == 0 and 'class="undo' not in out
+          and "How this was reviewed" not in out, "rc=%d" % rc)
+
+    # an unrecognised enum degrades to raw text — never a crash, never a gloss
+    rc, out = run(PR_UNKNOWN_OUTCOME_V2)
+    check("PR v0.7 unknown outcome: exit 0", rc == 0, "rc=%d" % rc)
+    check("PR v0.7 unknown outcome: rendered raw, warn state, no invented gloss",
+          "Outcome: ponder-it-a-while" in out and "verdict s-warn" in out
+          and "Ready to merge" not in out)
+
+    # an irreversible undo never renders as reassurance (RV-03, TG-06)
+    rc, out = run(PR_IRREVERSIBLE_V2)
+    check("PR v0.7 irreversible: undo says it cannot be cleanly undone",
+          rc == 0 and "cannot be cleanly undone" in out
+          and "u-bad" in out, "rc=%d" % rc)
+
     # --- e2e: below-threshold card (deck-only, from the cache report) ---
     check("PR without report arg: no below-threshold card",
           "Below threshold" not in run(PR_BLOCKED)[1])
@@ -321,6 +445,40 @@ def main():
     check("issue: allowed issue link emitted",
           'href="https://github.com/LegalQuants/lq-ai/issues/5"' in out)
     check("issue: next-step derived from recommendation", "committee / roadmap agenda" in out)
+
+    # --- e2e: issue `design` recommendation (IV-01, new in v0.7) ---
+    rc, out = run(ISSUE_DESIGN)
+    check("issue design: exit 0", rc == 0, "rc=%d" % rc)
+    check("issue design: headline glossed, not raw",
+          "This is a feature idea that deserves a design plan" in out
+          and "Recommendation: design" not in out)
+    check("issue design: decision line names the runnable command with the number",
+          "/lq-maintainer:design-plan issue 901" in out)
+    check("issue design: informational state, not an alarm", "verdict s-info" in out)
+    check("issue design: category renders as supporting detail",
+          "New feature" in out and 'class="ctx"' in out)
+    check("issue design: no burden axes anywhere", '<div class="tiles' not in out)
+
+    # --- e2e: the design-plan deck (profile: plan, new in v0.7) ---
+    rc, out = run(PLAN_V2)
+    check("plan: exit 0", rc == 0, "rc=%d" % rc)
+    check("plan: action-first design hero, glossed from the outcome",
+          "<h1>Bigger than a code review — this needs a design plan</h1>" in out)
+    check("plan: informational state, not an alarm", "verdict s-info" in out)
+    check("plan: decision line names the runnable command with the number",
+          "/lq-maintainer:design-plan pr 905" in out)
+    check("plan: category + tier render as supporting detail",
+          "New feature" in out and "Committee or design path" in out
+          and 'class="ctx"' in out)
+    check("plan: burden axes nowhere on this path",
+          "tiles tiles-5" not in out and 'class="tile t-bad"' not in out)
+    check("plan: auditor card present",
+          "How this was reviewed" in out and "internal evidence" in out)
+    check("plan: no undo furniture — `undo: null` reads as absent, not as a gloss",
+          'class="undo' not in out and "Undo path recorded" not in out)
+    check("plan: allow-list still holds on this path",
+          'href="https://evil' not in out
+          and 'href="https://github.com/LegalQuants/lq-ai/issues/114"' in out)
 
     # --- e2e: issue decompose deck ---
     rc, out = run(ISSUE_DECOMPOSE)
