@@ -3,12 +3,15 @@
 ''''exec python3 "$0" "$@" # '''
 """lq-maintainer-agent -- skills/triage/scripts/render-deck.sh
 
-Render a Triage Receipt into a self-contained HTML "reading deck": a
-plain-language, verdict-first view of the same facts the receipt already
-carries, for a maintainer reading outside the terminal. It is a PRIVATE
-LOCAL VIEW, never a published artifact -- the markdown receipt remains the
-thing posted to GitHub. This script only reformats data that already exists;
-it never fetches, never runs contributed code, and never writes to GitHub.
+Render an internal evidence record (the "receipt") into a self-contained HTML
+"reading deck": a plain-language, action-first view of the same facts the
+record already carries, written for the contributor as much as the maintainer.
+From design v0.7 §8 the deck is the PRIMARY artifact and the receipt is
+internal evidence; the deck stays a local view until the community repo exists
+(docs/community-repo.md), and publishing it there -- like every write -- is a
+human's decision, never this script's. This script only reformats data that
+already exists; it never fetches, never runs contributed code, and never
+writes to GitHub.
 
 The file is a sh/python3 polyglot (design doc convention): the two quoted
 lines above run under /bin/sh and exec python3 on this same file; if python3
@@ -34,7 +37,7 @@ Exit   : 0 on success; 1 fail-closed (missing/unparseable footer, or a
          "could not render, read the receipt" page rather than a
          confidently-wrong one, and logs the reason to stderr.
 
-Design contract honoured (see docs/design v0.6 and rules/):
+Design contract honoured (see docs/design v0.6, v0.7 §7/§8, and rules/):
   - The four pinned fields (PR head SHA, canon SHA, agent version, model)
     always appear.
   - Coverage items that are "never checked by design" (runtime behaviour
@@ -43,6 +46,11 @@ Design contract honoured (see docs/design v0.6 and rules/):
     resolved. The cheerful layout must not imply "checks passed = safe".
   - Only the recommendation is shown; the decision is the human's. The deck
     never implies a merge/approve/close/post happened.
+  - v0.7, additive (decided 2026-07-26): when the footer carries `outcome`
+    (rules/tiers.md TR-05) the hero leads with that ACTION OUTCOME and its
+    undo path (rules/reversibility.md RV-05), and the five burden axes demote
+    to the auditor section as internal evidence (rules/burden.md B-09). A
+    footer without those fields renders the v0.6 burden-led hero unchanged.
   - All contributor-derived free text (PR title, findings) is NFKC-normalised,
     stripped of invisible/bidi/tag characters (visibly flagged if any were
     present -- rules/injection-posture.md I-10), then HTML-escaped. It is
@@ -63,6 +71,35 @@ CHECK_ORDER = [
     "author_identity", "manifest_only", "semver_delta",
     "no_new_packages", "osv_lookup", "release_age", "ci_green",
 ]
+
+# --------------------------------------------------------------------------
+# The v0.7 enumerated footer fields (receipt:v2, optional and additive --
+# templates/receipt-pr.md, rules/burden.md B-10). Absent on every pre-v0.7
+# footer, which is why every read of them degrades instead of failing.
+# --------------------------------------------------------------------------
+CATEGORIES = ("1", "2", "3", "4")                       # rules/change-categories.md G-NN
+TIERS = ("0", "1", "2", "3")                            # rules/tiers.md TR-NN
+OUTCOMES = ("merge", "merge-after", "discuss",          # rules/tiers.md TR-05
+            "route-to-design", "hold", "security-escalate")
+UNDOS = ("revert-clean", "residue", "irreversible-class")   # RV-04/RV-05
+ISSUE_RECOS = ("proceed", "design", "needs-info", "decompose", "escalate")  # IV-01
+
+# TR-05 writes the two open-ended outcomes as `merge-after-<fix>` and
+# `discuss-<question>` in prose. The named fix / specific question is FREE TEXT
+# and belongs in the body, never the footer -- so a footer value carrying one
+# is classified by its prefix and the trailing text is dropped, not rendered.
+OUTCOME_PREFIXES = ("merge-after", "discuss")
+
+# Hero accent per outcome. Unknown values fall back to the neutral "needs a
+# person" warn state -- never to the reassuring one.
+OSTATE = {
+    "merge": "s-ok", "merge-after": "s-warn", "discuss": "s-warn",
+    "route-to-design": "s-info", "hold": "s-warn", "security-escalate": "s-bad",
+}
+UNDO_TILE = {"revert-clean": "t-ok", "residue": "t-warn",
+             "irreversible-class": "t-bad"}
+UNDO_ACCENT = {"revert-clean": "", "residue": " u-warn",
+               "irreversible-class": " u-bad"}
 
 # Invisible / direction-controlling code points that can hide a payload in
 # rendered output (rules/injection-posture.md I-10). Stripped and flagged.
@@ -345,6 +382,41 @@ def parse_footer(text):
     return root
 
 
+def enum_field(r, key, allowed, prefixes=()):
+    """Read one OPTIONAL v0.7 enumerated footer field (category / tier /
+    outcome / undo). Returns (known_value_or_None, display_string).
+
+    Three ways to be absent -- key missing, `null`, `n-a` -- all give
+    (None, ''), so a pre-v0.7 footer renders exactly as it did before.
+    A value outside the enum never raises and is never silently dropped: it
+    degrades to its own text (truncated, escaped by the caller), the same
+    degrade-rather-than-hide rule the glossary follows. Prefix forms
+    (`merge-after-<fix>`) classify by prefix and discard the trailing free
+    text -- footer free text is never rendered (rules/injection-posture.md,
+    §8.4)."""
+    v = r.get(key)
+    if v is None or isinstance(v, (bool, list, dict)):
+        return None, ""
+    raw = str(v).strip()
+    if not raw or raw.lower() in ("null", "n-a", "none"):
+        return None, ""
+    low = raw.lower()
+    if low in allowed:
+        return low, low
+    for p in prefixes:
+        if low.startswith(p):
+            return p, p
+    return None, raw[:40]
+
+
+def _num_subst(text, num):
+    """Concretise the glossary's generic 'issue N' / 'pr N' placeholder with
+    this item's number, so a decision line is runnable as written."""
+    if not text or not num:
+        return text
+    return re.sub(r"\b(issue|pr|PR)\s+N\b", lambda m: "%s %s" % (m.group(1), num), text)
+
+
 # --------------------------------------------------------------------------
 # Glossary -- plain-language captions keyed by enumerated value.
 # --------------------------------------------------------------------------
@@ -481,6 +553,19 @@ body{
 }
 .verdict .lede{font-size:18px; color:var(--ink-soft); margin:0; max-width:60ch}
 .verdict .lede code{font-family:var(--mono); font-size:.86em; color:var(--ink)}
+/* undo path — the highlighted decision line under an action outcome (RV-05) */
+.verdict .undo{
+  margin:18px 0 0; padding:11px 15px; border-radius:0 8px 8px 0;
+  background:var(--info-bg); border-left:3px solid var(--info);
+  font-size:15.5px; color:var(--ink); max-width:64ch;
+}
+.verdict .undo b{color:var(--info)}
+.verdict .undo.u-warn{background:var(--warn-bg); border-left-color:var(--warn)}
+.verdict .undo.u-warn b{color:var(--warn)}
+.verdict .undo.u-bad{background:var(--bad-bg); border-left-color:var(--bad)}
+.verdict .undo.u-bad b{color:var(--bad)}
+.verdict .ctx{margin:14px 0 0; font-size:13.5px; color:var(--ink-faint)}
+.verdict .ctx b{color:var(--ink-soft); font-weight:600}
 .pinrow{
   display:flex; flex-wrap:wrap; gap:6px 18px; margin-top:22px;
   padding-top:16px; border-top:1px solid var(--line-soft);
@@ -657,24 +742,47 @@ def build_deck(md, g, below=None):
         title_raw = mtitle.group(1).strip()
     title, title_hidden = sanitize(title_raw)
 
+    # --- v0.7 optional enumerated fields (absent on every older footer) ---
+    category, category_raw = enum_field(r, "category", CATEGORIES)
+    tier, tier_raw = enum_field(r, "tier", TIERS)
+    outcome, outcome_raw = enum_field(r, "outcome", OUTCOMES, OUTCOME_PREFIXES)
+    undo, undo_raw = enum_field(r, "undo", UNDOS)
+    # Action-first rendering is entered by the presence of `outcome` alone
+    # (design v0.7 §7). Without it the v0.6 burden-led hero renders unchanged.
+    action_first = bool(outcome_raw)
+
     # --- verdict state + copy ---
     BSTATE = {"blocked": "s-bad", "high": "s-bad", "medium": "s-warn", "low": "s-ok"}
     burden_overall = str(burden.get("overall")) if burden and burden.get("overall") else None
-    if burden_overall:
+    if action_first:
+        if held:
+            # The contest/hold path (H-NN) is unchanged and outranks the
+            # outcome: a held item is answered by a person, whatever was graded.
+            state = "s-warn"
+            headline = g.cap("outcome:hold", "On hold — a person answers this")
+        else:
+            state = OSTATE.get(outcome, "s-warn")
+            headline = (g.cap("outcome:%s" % outcome, "") if outcome else "") \
+                or ("Outcome: %s" % outcome_raw)
+        if burden_overall == "blocked":
+            # A blocker still gates above everything (B-02): the outcome leads
+            # the words, the blocking state still leads the colour.
+            state = "s-bad"
+    elif burden_overall:
         state = BSTATE.get(burden_overall, "s-warn")
-        headline = g.cap("burden:%s" % burden_overall, "Needs your review")
+        headline = g.cap("burden:%s" % burden_overall, "Needs a person’s review")
     elif held:
         state, headline = "s-warn", "On hold — a person answers this"
     elif lane == "escalate":
         state, headline = "s-bad", "Escalated — needs a second reviewer"
     elif lane == "fast":
-        state, headline = "s-ok", "Cleared the safety gate — your merge click"
+        state, headline = "s-ok", "Cleared the safety gate — the merge click is a person’s"
     elif lane == "docs":
         state, headline = "s-info", "Documentation change — a light review"
     else:  # standard
         state = "s-warn"
-        headline = ("Needs your review — didn’t qualify for auto-merge"
-                    if demoted == "fast" else "Needs your review")
+        headline = ("Needs a person’s review — didn’t qualify for auto-merge"
+                    if demoted == "fast" else "Needs a person’s review")
 
     # sub-line: prefer a concrete dependency-bump sentence built from the title
     lede = ""
@@ -688,17 +796,49 @@ def build_deck(md, g, below=None):
         if is_range:
             lede = ("A bot widened the allowed versions for <code>%s</code> (from "
                     "<code>%s</code> to <code>%s</code>) — a dependency-manifest change the "
-                    "automated gate won’t fast-track on its own. It’s your call." % (pkg, old, new))
+                    "automated gate won’t fast-track on its own, so a person decides."
+                    % (pkg, old, new))
         else:
             lede = ("A bot changed <code>%s</code> from <code>%s</code> to <code>%s</code> "
                     "— a bigger jump than the automated gate fast-tracks, so a person decides."
                     % (pkg, old, new))
     elif lane == "fast":
-        lede = "Every automated safety check passed. You still make the final merge click."
+        lede = ("Every automated safety check passed. A maintainer still makes the "
+                "final merge click.")
     elif lane == "escalate":
-        lede = "A trigger fired that puts this beyond a single reviewer. Route it, don’t decide it alone."
+        lede = "A trigger fired that puts this beyond a single reviewer — it is routed, not decided alone."
     else:
         lede = g.cap("lane:" + str(lane), "")
+
+    # The concrete dependency sentence is worth keeping under an action-first
+    # hero; the generic lane caption is not (it is lane jargon, and the outcome
+    # has already said the useful thing -- rules/tone-gate.md TG-03.5).
+    dep_lede = lede if (dep and checks.get("semver_delta") == "fail") else ""
+
+    # Action-first sub-lines: the outcome's own decision line leads, the undo
+    # path is the highlighted line under it (RV-05), and category/tier ride
+    # underneath as supporting detail (TR-10). Glossary text, so trusted-escaped.
+    outcome_lede, undo_line, ctx_line = "", "", ""
+    if action_first:
+        dec_key = "held:true" if held else ("outcome:%s" % outcome if outcome else "")
+        outcome_lede = _num_subst(g.dec(dec_key) or "", num) if dec_key else ""
+        # A held item's hero carries the hold, not a graded undo path; the undo
+        # is still visible in the glance tile and the record (H-NN unchanged).
+        if (undo or undo_raw) and not held:
+            undo_line = g.cap("undo:%s" % undo, "") if undo else ""
+            if not undo_line:
+                undo_line = ("Undo path recorded as “%s” — this view has no "
+                             "plain-language gloss for it." % undo_raw)
+        bits = []
+        if category or category_raw:
+            bits.append("Change type: <b>%s</b>"
+                        % esc(g.cap("category:%s" % category, category) if category
+                              else category_raw))
+        if tier or tier_raw:
+            bits.append("Depth of review: <b>%s</b>"
+                        % esc(g.cap("tier:%s" % tier, "tier " + tier) if tier
+                              else tier_raw))
+        ctx_line = " · ".join(bits)
 
     out = []
     A = out.append
@@ -708,16 +848,32 @@ def build_deck(md, g, below=None):
     eyebrow = "Triage reading view"
     if num:
         eyebrow += " · PR #%s" % esc(num)
-    if lane:
+    if lane and not action_first:
+        # The raw lane token is internal vocabulary; under an action-first hero
+        # it moves to the auditor card, glossed alongside category and tier
+        # (rules/tone-gate.md TG-03.5). It is never dropped, only relocated.
         eyebrow += " · %s lane" % esc(str(lane))
     A('<p class="eyebrow">%s</p>' % eyebrow)
     A('<h1>%s</h1>' % esc(headline))
-    if title:
+    if action_first:
+        if outcome_lede:
+            A('<p class="lede">%s</p>' % esc(outcome_lede))
+        if title:
+            A('<p class="lede" style="margin-top:10px;font-size:15px;color:var(--ink-faint)">%s</p>'
+              % title)
+        if dep_lede:
+            A('<p class="lede" style="margin-top:10px;font-size:15px">%s</p>' % dep_lede)
+        if undo_line:
+            A('<p class="undo%s"><b>If this turns out wrong:</b> %s</p>'
+              % (UNDO_ACCENT.get(undo, " u-warn"), esc(undo_line)))
+        if ctx_line:
+            A('<p class="ctx">%s</p>' % ctx_line)
+    elif title:
         A('<p class="lede">%s</p>' % lede if lede else "")
         A('<p class="lede" style="margin-top:10px;font-size:15px;color:var(--ink-faint)">%s</p>' % title)
     elif lede:
         A('<p class="lede">%s</p>' % lede)
-    if burden_overall in ("high", "medium"):
+    if not action_first and burden_overall in ("high", "medium"):
         worst = [k for k in ("scope", "review", "tests", "carry", "safety")
                  if str(burden.get(k)) == burden_overall]
         if worst:
@@ -757,7 +913,7 @@ def build_deck(md, g, below=None):
     npass = sum(1 for _, v in considered if v == "pass")
     ntot = len(considered)
     failed_names = [k for k, v in considered if v == "fail"]
-    if burden and burden.get("overall"):
+    if burden and burden.get("overall") and not action_first:
         # burden axes are the glance tiles
         TLEVEL = {"low": "t-ok", "medium": "t-warn", "high": "t-bad"}
         A('<div class="tiles tiles-5">')
@@ -773,18 +929,29 @@ def build_deck(md, g, below=None):
         if ntot:
             gate_cls = "t-ok" if not failed_names else "t-warn"
             nfail = len(failed_names)
-            sub = ("all passed" if not nfail else "%d flagged for you" % nfail)
+            sub = ("all passed" if not nfail else "%d flagged for a person" % nfail)
             A(_tile(gate_cls, "Safety gate", "%d / %d" % (npass, ntot), sub))
         fcls = "t-ok" if not findings else "t-warn"
         A(_tile(fcls, "Findings", str(len(findings)), "issues in the changed lines"))
-        if lane == "fast":
+        if action_first and (undo or undo_raw):
+            # In action-first mode the third tile is the undo cost, not the
+            # auto-merge status the hero has already stated (RV-05/TR-10).
+            UNDO_TILE_V = {"revert-clean": "One revert", "residue": "Revert + residue",
+                           "irreversible-class": "Not clean"}
+            UNDO_TILE_S = {"revert-clean": "nothing downstream to unpick",
+                           "residue": "something it did already stays",
+                           "irreversible-class": "cannot be cleanly undone"}
+            A(_tile(UNDO_TILE.get(undo, "t-warn"), "If it goes wrong",
+                    esc(UNDO_TILE_V.get(undo, undo_raw)),
+                    UNDO_TILE_S.get(undo, "undo path recorded, not glossed")))
+        elif lane == "fast":
             A(_tile("t-ok", "Auto-merge", "Yes", "cleared every check"))
         elif lane == "escalate":
             A(_tile("t-bad", "Auto-merge", "No", "needs escalation"))
         elif held:
             A(_tile("t-warn", "Status", "On hold", "contributor asked"))
         else:
-            A(_tile("t-warn", "Auto-merge", "No", "needs your review"))
+            A(_tile("t-warn", "Auto-merge", "No", "a person reviews this"))
         A('</div>')
 
     # gate meter (glance)
@@ -800,12 +967,20 @@ def build_deck(md, g, below=None):
               % (cls, esc(label), esc(st), esc(label), esc(st), gl))
         A('</div><span class="legend">✓ passed · ✗ needs a human</span></div>')
 
-    # decision box
+    # decision box — the human's, always (L-01); action-first where v0.7 fields
+    # are present, lane-shaped otherwise.
     A('<section class="card decision">')
-    A('<h2>Your call</h2>')
-    A('<p>%s</p>' % esc(_decision_line(lane, demoted, held)))
+    A('<h2>The decision</h2>')
+    if action_first:
+        A('<p>%s</p>' % esc(_outcome_decision_line(outcome, outcome_raw, held, num)))
+        undo_note = g.dec("undo:%s" % undo) if undo else ""
+        if undo_note:
+            A('<p class="decnote%s">%s</p>'
+              % (" d-bad" if undo == "irreversible-class" else "", esc(undo_note)))
+    else:
+        A('<p>%s</p>' % esc(_decision_line(lane, demoted, held)))
     A('<p class="standing">The agent has not merged, approved, closed, or posted anything. '
-      'Every GitHub action here is yours to take.</p>')
+      'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
     A('</section>')
 
     # next steps — the concrete human follow-ups (rules/burden.md B-14)
@@ -837,7 +1012,8 @@ def build_deck(md, g, below=None):
             uniq.append(s)
     if uniq:
         A('<section class="card nextsteps"><h2>Next steps to check</h2>'
-          '<p class="ns-intro">The follow-ups only you can do before deciding.</p><ul>')
+          '<p class="ns-intro">The follow-ups only a person can do before this is '
+          'decided — each one closable, none of them a grade.</p><ul>')
         for s in uniq:
             A('<li>%s</li>' % esc(s))
         A('</ul></section>')
@@ -854,7 +1030,7 @@ def build_deck(md, g, below=None):
     # why not auto-approved (only when a bump was demoted / a check failed)
     if failed_names and (demoted or lane == "standard"):
         A('<details class="dd"><summary>Why it’s not auto-approved'
-          '<span class="tag g-warn">your call</span></summary><div class="body">')
+          '<span class="tag g-warn">a person decides</span></summary><div class="body">')
         for k in failed_names:
             A(_check_row(k, "fail", g, note=True))
         A('</div></details>')
@@ -927,16 +1103,22 @@ def build_deck(md, g, below=None):
         A('</ul>')
     A('</div></details>')
 
+    # how this was reviewed — category, tier, and the demoted burden axes, as
+    # internal evidence beneath the action outcome (design v0.7 §7, B-09).
+    if action_first:
+        A(build_internal_read_card(g, category, category_raw, tier, tier_raw,
+                                   burden, burden_overall, lane))
+
     # below-threshold card (deck-only; decided 2026-07): the low-confidence
-    # non-security findings the Step 5 filter kept out of the public receipt.
+    # non-security findings the Step 5 filter held back from the findings list.
     if below:
         A('<details class="dd"><summary>Below threshold — low-confidence notes'
           '<span class="tag g-mute">%d · deck only</span></summary><div class="body">'
           % len(below))
-        A('<p class="intro">Notes the review filter held back from the public receipt '
-          'for low confidence (none are security-relevant — those always surface). '
-          'Shown only in this private deck so you see everything; the full set lives '
-          'in the cached report.</p>')
+        A('<p class="intro">Notes the review filter held back from the findings list '
+          'above for low confidence (none are security-relevant — those always '
+          'surface, whatever their confidence). They are shown here rather than '
+          'dropped, so nothing is hidden; the full set lives in the cached report.</p>')
         A('<ul class="checks">')
         for raw in below:
             txt_html, _ = render_linked(raw, base)
@@ -944,11 +1126,12 @@ def build_deck(md, g, below=None):
               % txt_html)
         A('</ul></div></details>')
 
-    # full technical receipt (verbatim, escaped)
+    # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
-    A('<details class="dd"><summary>The full technical receipt'
+    A('<details class="dd"><summary>The full technical record'
       '<span class="tag g-mute">for auditors</span></summary><div class="body">')
-    A('<p class="intro">The exact receipt as posted to GitHub — the auditable record.</p>')
+    A('<p class="intro">The internal evidence record this view was rendered from, '
+      'exactly as written — the auditable source behind every line above.</p>')
     A('<pre class="receipt">%s</pre></div></details>' % receipt_txt)
 
     # provenance footer
@@ -958,9 +1141,10 @@ def build_deck(md, g, below=None):
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
-    A('<p>A plain-language reading view of the Triage Receipt, generated by '
-      'lq-maintainer-agent. It reformats the receipt only — the receipt is the '
-      'record. A human decides, every time.</p>')
+    A('<p>A plain-language reading view of the internal evidence record, generated '
+      'by lq-maintainer-agent. It reformats that record only — the record is the '
+      'source. Nothing here was posted, merged, or filed by the agent; a human '
+      'decides, every time.</p>')
     A('</footer>')
 
     return "".join(out)
@@ -1000,6 +1184,88 @@ def build_scoping_card(r, g):
             % (esc(head), esc(g.cap("scoping:settled")), body))
 
 
+def build_internal_read_card(g, category, category_raw, tier, tier_raw,
+                             burden, burden_overall, lane=None):
+    """The auditor panel of an action-first deck: the change category, the
+    review depth, the routing lane, and the five maintainer-burden axes -- all
+    of which are INTERNAL EVIDENCE from v0.7 on (design v0.7 §7,
+    rules/burden.md B-09), no longer the headline and never a
+    contributor-facing grade. Returns '' when none of them is present, so a
+    footer that carries only `outcome` grows no empty card."""
+    rows = []
+    for label, val, raw, key in (("Change type", category, category_raw, "category"),
+                                 ("Depth of review", tier, tier_raw, "tier")):
+        if not (val or raw):
+            continue
+        cap = g.cap("%s:%s" % (key, val), raw) if val else raw
+        dec = g.dec("%s:%s" % (key, val)) if val else ""
+        rows.append('<li><span class="h">%s — %s</span><div class="d">%s</div></li>'
+                    % (esc(label), esc(cap), esc(dec or "")))
+    if lane:
+        rows.append('<li><span class="h">Routing lane — %s</span>'
+                    '<div class="d">%s</div></li>'
+                    % (esc(str(lane)), esc(g.cap("lane:%s" % lane, ""))))
+    axes = ""
+    if burden and burden_overall:
+        TLEVEL = {"low": "t-ok", "medium": "t-warn", "high": "t-bad"}
+        tiles = ["<div class=\"tiles tiles-5\">"]
+        for key in ("scope", "review", "tests", "carry", "safety"):
+            lvl = str(burden.get(key, "low"))
+            tiles.append(_tile(TLEVEL.get(lvl, "t-bad"),
+                               g.cap("burden:%s:label" % key, key.title()),
+                               esc(lvl.title()),
+                               g.cap("burden:%s:concern" % key, "")))
+        tiles.append("</div>")
+        axes = ('<p class="intro">The maintainer-burden read — overall <b>%s</b>. '
+                'These five axes are how the reviewers weigh the work of accepting '
+                'a change; they are kept as evidence behind the outcome above, and '
+                'they are not a judgment of the contribution or its author.</p>%s'
+                % (esc(burden_overall), "".join(tiles)))
+    if not rows and not axes:
+        return ""
+    body = ('<ul class="cov">%s</ul>' % "".join(rows)) if rows else ""
+    return ('<details class="dd"><summary>How this was reviewed'
+            '<span class="tag g-mute">internal evidence</span></summary>'
+            '<div class="body"><p class="intro">Supporting detail behind the '
+            'outcome at the top: what kind of change this is, how much review '
+            'process it got, and what that review weighed. The outcome is the '
+            'verdict; this is the working.</p>%s%s</div></details>' % (body, axes))
+
+
+def _outcome_decision_line(outcome, outcome_raw, held, num):
+    """The 'The decision' sentence for an action-first PR deck. States what a
+    human does next (TR-05), never what the agent did -- the agent has done
+    nothing but recommend."""
+    if held:
+        return ("The contributor asked for a person. A maintainer reads their message "
+                "and answers it; the agent has drafted nothing further.")
+    if outcome == "merge":
+        return ("Nothing found here blocks merging. A maintainer makes the merge "
+                "click — the agent never merges, approves, or closes.")
+    if outcome == "merge-after":
+        return ("One named change is asked for first; it is stated in the review and "
+                "in the note on the item, in plain words. Once it lands, this can go in.")
+    if outcome == "discuss":
+        return ("One specific question is open, and it is named in the review. This is "
+                "a conversation to have, not a decline — nothing is being rejected.")
+    if outcome == "route-to-design":
+        return ("This adds capability the project has not decided on yet, so it goes to "
+                "the design path rather than a code review: run "
+                "%s to draft the decisions, the obstacles, and the smaller changes that "
+                "would build it." % ("/lq-maintainer:design-plan pr %s" % num if num
+                                     else "/lq-maintainer:design-plan"))
+    if outcome == "security-escalate":
+        return ("This is routed for security review — about the surface the change "
+                "touches, not about the person who sent it. It is not decided by one "
+                "reviewer, and anything vulnerability-shaped is handled privately.")
+    if outcome == "hold":
+        return ("Held for a person to answer. The agent has stood down and drafted "
+                "nothing further for it.")
+    return ("The review recorded its outcome as “%s”, which this view has no "
+            "plain-language gloss for. Read the record below before deciding."
+            % (outcome_raw or "unrecognised"))
+
+
 def build_issue_deck(r, md, g, base):
     """Issue-profile deck (design §8.6a): a categorical recommendation over a
     rule-grounded PR-obstacle preview, plus a grounded, four-bucket References
@@ -1026,16 +1292,38 @@ def build_issue_deck(r, md, g, base):
         title_raw = mtitle.group(1).strip()
     title, title_hidden = sanitize(title_raw)
 
-    RSTATE = {"escalate": "s-bad", "needs-info": "s-warn",
+    # `design` (IV-01, new in v0.7) routes a category-1 ask to the design path;
+    # it is a routing, not a problem, so it takes the informational accent.
+    RSTATE = {"escalate": "s-bad", "needs-info": "s-warn", "design": "s-info",
               "decompose": "s-warn", "proceed": "s-ok"}
     if held:
         state, headline = "s-warn", g.cap("held:true", "On hold — a person answers this")
     elif reco:
+        # Only an enumerated IV-01 value consults the glossary; anything else
+        # degrades to its own (escaped, truncated) text rather than borrowing
+        # a caption that does not describe it.
         state = RSTATE.get(reco, "s-warn")
-        headline = g.cap("recommendation:%s" % reco, "Needs your review")
+        headline = (g.cap("recommendation:%s" % reco, "") if reco in ISSUE_RECOS
+                    else "") or ("Recommendation: %s" % reco[:40])
     else:
-        state, headline = "s-warn", "Needs your review"
-    lede = (g.dec("recommendation:%s" % reco) or "") if reco else ""
+        state, headline = "s-warn", "Needs a person’s review"
+    lede = _num_subst((g.dec("recommendation:%s" % reco) or "") if reco else "", num)
+
+    # The optional v0.7 category/tier fields ride the issue footer too
+    # (templates/receipt-issue.md); `outcome` stays null on this profile —
+    # the issue keeps its own IV-01 recommendation as the headline.
+    category, category_raw = enum_field(r, "category", CATEGORIES)
+    tier, tier_raw = enum_field(r, "tier", TIERS)
+    ctx_bits = []
+    if category or category_raw:
+        ctx_bits.append("Change type, if it became a PR: <b>%s</b>"
+                        % esc(g.cap("category:%s" % category, category) if category
+                              else category_raw))
+    if tier or tier_raw:
+        ctx_bits.append("Depth of review: <b>%s</b>"
+                        % esc(g.cap("tier:%s" % tier, "tier " + tier) if tier
+                              else tier_raw))
+    ctx_line = " · ".join(ctx_bits)
 
     out = []
     A = out.append
@@ -1056,6 +1344,8 @@ def build_issue_deck(r, md, g, base):
     if title:
         A('<p class="lede" style="margin-top:10px;font-size:15px;color:var(--ink-faint)">%s</p>'
           % title)
+    if ctx_line:
+        A('<p class="ctx">%s</p>' % ctx_line)
     A('<div class="pinrow">')
     A('<span><b>Item</b> <code>%s</code></span>' % esc(("#" + num) if num else "issue"))
     A('<span><b>Against canon</b> <code>%s</code></span>' % _short(pinned.get("canon_sha")))
@@ -1070,7 +1360,8 @@ def build_issue_deck(r, md, g, base):
     if held:
         A('<div class="alert"><span class="mark">⚠</span><p>'
           '<strong>On hold at the contributor’s request.</strong> The agent has stood down and '
-          'drafted nothing further. Read their message in the receipt and answer it yourself.</p></div>')
+          'drafted nothing further. A maintainer reads their message in the record and '
+          'answers it themselves.</p></div>')
 
     # predicted obstacles (IV-02) — rule-grounded, no grade
     A(render_grounding_card(md, base, r"Predicted obstacles", "g-obs",
@@ -1083,16 +1374,16 @@ def build_issue_deck(r, md, g, base):
 
     # decision box
     A('<section class="card decision">')
-    A('<h2>Your call</h2>')
-    A('<p>%s</p>' % esc(_issue_decision_line(reco, held)))
+    A('<h2>The decision</h2>')
+    A('<p>%s</p>' % esc(_issue_decision_line(reco, held, num)))
     A('<p class="standing">The agent has not filed, labelled, closed, or posted anything. '
-      'Every GitHub action here is yours to take.</p>')
+      'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
     A('</section>')
 
     # next steps — derived from the recommendation + never-checked coverage gaps
     steps = []
     if reco:
-        d = g.cap("recommendation:%s:next" % reco, "")
+        d = _num_subst(g.cap("recommendation:%s:next" % reco, ""), num)
         if d:
             steps.append(d)
     for c in coverage:
@@ -1108,7 +1399,8 @@ def build_issue_deck(r, md, g, base):
             uniq.append(s)
     if uniq:
         A('<section class="card nextsteps"><h2>Next steps to check</h2>'
-          '<p class="ns-intro">The follow-ups only you can do before acting.</p><ul>')
+          '<p class="ns-intro">The follow-ups only a person can do before this is '
+          'acted on.</p><ul>')
         for s in uniq:
             A('<li>%s</li>' % esc(s))
         A('</ul></section>')
@@ -1156,11 +1448,12 @@ def build_issue_deck(r, md, g, base):
               % (esc(sev.title()), esc(fid), (" · " + esc(disp)) if disp else "", txt_html))
         A('</ul></div></details>')
 
-    # full technical receipt (verbatim, escaped)
+    # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
-    A('<details class="dd"><summary>The full technical receipt'
+    A('<details class="dd"><summary>The full technical record'
       '<span class="tag g-mute">for auditors</span></summary><div class="body">')
-    A('<p class="intro">The exact receipt as posted to GitHub — the auditable record.</p>')
+    A('<p class="intro">The internal evidence record this view was rendered from, '
+      'exactly as written — the auditable source behind every line above.</p>')
     A('<pre class="receipt">%s</pre></div></details>' % receipt_txt)
 
     # provenance footer
@@ -1170,31 +1463,42 @@ def build_issue_deck(r, md, g, base):
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
-    A('<p>A plain-language reading view of the issue Triage Receipt, generated by '
-      'lq-maintainer-agent. It reformats the receipt only — the receipt is the record. A '
-      'human decides, every time. This is a private local view, never posted to GitHub.</p>')
+    A('<p>A plain-language reading view of the issue’s internal evidence record, '
+      'generated by lq-maintainer-agent. It reformats that record only — the record '
+      'is the source. Nothing here was filed, labelled, closed, or posted by the '
+      'agent; a human decides, every time.</p>')
     A('</footer>')
 
     return "".join(out)
 
 
-def _issue_decision_line(reco, held):
+def _issue_decision_line(reco, held, num=""):
     if held:
-        return ("The contributor asked for a human. Read their message in the receipt and "
-                "respond yourself; the agent has drafted nothing further.")
+        return ("The contributor asked for a person. A maintainer reads their message in "
+                "the record and responds; the agent has drafted nothing further.")
     if reco == "escalate":
-        return ("Route the underlying decision to the right people (a committee or a roadmap "
-                "call). Do not accept or decline it on your own.")
+        return ("The underlying decision goes to the right people (a committee or a roadmap "
+                "call) — it is not accepted or declined by one reviewer.")
+    if reco == "design":
+        return ("This is a feature idea, so it takes the design path rather than a code "
+                "review: run %s to draft the decisions it needs, the obstacles it would "
+                "hit, and the smaller changes that would build it. The contributor is "
+                "credited in whatever comes out of it."
+                % ("/lq-maintainer:design-plan issue %s" % num if num
+                   else "/lq-maintainer:design-plan"))
     if reco == "needs-info":
-        return ("Post the drafted request to the reporter. You cannot act on this until the "
-                "missing pieces — reproduction, or a design anchor — come back.")
+        return ("A drafted request goes back to the reporter first. Until the missing "
+                "piece — a reproduction, or a design anchor — comes back, there is nothing "
+                "to act on.")
     if reco == "decompose":
-        return ("Decide which drafted sub-issues to file, then split this so each piece can "
-                "move on its own. Filing and closing are yours.")
+        return ("There is more than one concern here. A maintainer picks which drafted "
+                "sub-issues to file, so each piece can move on its own; filing and closing "
+                "stay human actions.")
     if reco == "proceed":
-        return ("Decide whether this is worth doing. It is clear and grounded — nothing blocks "
-                "acting on it — but the priority call is yours.")
-    return "Read the obstacles and references below, then decide how to handle this issue."
+        return ("Nothing blocks acting on this — it is clear, grounded, and single-concern. "
+                "Whether it is worth doing now is a maintainer’s priority call.")
+    return ("Read the obstacles and references below; how to handle this issue is a "
+            "maintainer’s call.")
 
 
 def _short(sha):
@@ -1213,20 +1517,24 @@ def _tile(cls, k, v, s):
 
 
 def _decision_line(lane, demoted, held):
+    """The lane-shaped decision sentence for a footer with no v0.7 `outcome`
+    (pre-v0.7 records). Same substance as before; stated as what a person
+    does, so it reads the same to a contributor and a maintainer."""
     if held:
-        return ("The contributor asked for a human. Read their message in the receipt and "
-                "respond yourself; the agent has drafted nothing further.")
+        return ("The contributor asked for a person. A maintainer reads their message in "
+                "the record and responds; the agent has drafted nothing further.")
     if lane == "escalate":
-        return ("Route this to the right reviewers (a committee or security review). Do not "
-                "merge or reject it on your own.")
+        return ("This goes to the right reviewers (a committee or security review) — it is "
+                "not merged or rejected by one person.")
     if lane == "fast":
-        return ("Decide whether to merge. Every automated check passed, so this is a routine "
-                "click — but the click is yours.")
+        return ("Every automated check passed, so merging is a routine click — and the "
+                "click is a maintainer’s; the agent never merges.")
     if lane == "docs":
-        return "Decide whether the documentation change is accurate and well-placed, then merge or send back."
-    return ("Decide whether to merge this change. Read “why it’s not auto-approved” and "
-            "“what was not checked” first. Posting the receipt to the PR is a separate, "
-            "second approval.")
+        return ("A maintainer decides whether the documentation change is accurate and "
+                "well-placed, then merges it or sends it back.")
+    return ("Whether this merges is a maintainer’s call, made after reading “why it’s not "
+            "auto-approved” and “what was not checked”. Every GitHub write here is a "
+            "separate, individually approved human action.")
 
 
 def _cov_item(c):
