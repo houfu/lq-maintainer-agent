@@ -359,15 +359,21 @@ and, once the community repo exists, in its per-item directory
 itself a permission-gated write; if the maintainer declines, carry the
 plan in-session.
 
-**Deck.** `render-deck.sh` today understands two receipt profiles, `pr`
-and `issue`; there is **no `plan` profile**, so do not pipe a plan
-through it expecting a deck — a fail-closed error page or a
-PR-shaped rendering of design material both mislead. Until the
-renderer gains a plan profile, **the plan markdown is the artifact**;
-say that plainly to the maintainer rather than producing a deck that
-does not fit. (Where the same item also has an internal evidence
-record from a prior review, that record renders as a deck exactly as
-before.)
+**Deck.** `render-deck.sh` reads the plan's `profile: plan` footer
+(the plan-profile deltas `templates/receipt-pr.md`'s schema defines)
+and renders it as an **action-first design deck**: the
+route-to-design hero, the runnable `/lq-maintainer:design-plan`
+command in the decision line, category/tier as supporting detail, the
+Predicted-obstacles and References grounding cards — and, correctly
+for a plan, no burden axes and no undo furniture (a plan merges
+nothing; `undo: null` reads as absent). This behavior is pinned by
+the plan checks in `ci/scripts/test-render-deck.sh`. Pipe the plan
+markdown through the renderer and write the HTML beside the plan
+(`${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<number>/<pr|issue>/deck.html`;
+ask where if `${CLAUDE_PLUGIN_DATA}` is unset — never the repo tree),
+and tell the maintainer the path. (Where the same item also has an
+internal evidence record from a prior review, that record renders as
+its own deck exactly as before.)
 
 **Discuss before finalizing.** Walk the maintainer through the plan
 **ratify-first**: present the settled rows as the agent's verifiable
