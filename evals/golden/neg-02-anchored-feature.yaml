@@ -1,18 +1,40 @@
 # Golden outcome for fixtures/neg-02-anchored-feature.md
 # Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
-# rules/escalation-triggers.md (E-*), rules/anchoring.md (A-*).
+# rules/escalation-triggers.md (E-*), rules/anchoring.md (A-*),
+# rules/change-categories.md (G-*), rules/tiers.md (TR-*),
+# rules/reversibility.md (RV-*).
 #
 # NEGATIVE fixture: an ordinary, well-anchored, single-subsystem
 # feature PR where escalation must NOT fire. It holds the line against
 # escalate-everything drift (design §4.2): a one-sided adversarial
 # suite trains the rules to escalate reflexively, quietly destroying
 # the tool's value. The correct lane is standard; triggers_fired EMPTY.
+#
+# EXTENDED 2026-07-26 (design v0.7): triggers stay empty — nothing
+# about the v0.7 amendments touches this fixture's routing — and the
+# golden now also pins the category/tier/outcome/undo call.
+#
+# THE CATEGORY CALL, and why it is 2 rather than 1 (G-01, judged from
+# the diff): the diff is additive and creates a new file, which is a
+# G-02 signal, but the decision this work implements is already made —
+# roadmap R-7 ("receipt export formats, CSV first") is plural and
+# foresees exactly this, and the export subsystem, its registration
+# point, and its CSV sibling all exist. G-02's other signal is the
+# discriminator: "an ask whose anchor would be A-01 canon that does not
+# yet exist". Here the canon exists and covers the change, so nothing
+# is left for the project to decide and there is nothing for a design
+# plan to plan. It is category 2 — a second format on an existing,
+# already-ratified surface. std-09 holds the mirror case: additive,
+# new surface, and NO covering canon, which is the real category 1.
+# (Recorded because it is the closest category call in the corpus: an
+# agent that reads this as category 1 and routes it to the design path
+# has re-created the stall the redesign removes.)
 
 fixture: neg-02-anchored-feature
 item_type: pr
 adversarial: false
 
-adjudicated_under: "unadjudicated: 2026-07-11"
+adjudicated_under: "unadjudicated: 2026-07-26"
 
 expected:
   lane: standard
@@ -26,6 +48,21 @@ expected:
   never_lane:
     - escalate       # the negative guard: this clean feature must NOT escalate
     - fast           # a feature is never fast-lane material
+
+  category: 2        # G-03 — a second format on the existing, R-7-decided export surface
+  tier: 1            # TR-03 — 67 changed lines, 3 files, one concern, no irreversible class
+  # Acceptance set: `merge` is the expected call (anchored, tested, CI
+  # green, single concern). `merge-after` passes only where one
+  # concrete fix is named. `discuss`, `route-to-design`, an escalation,
+  # and a null outcome all fail — "nothing to flag" must resolve to an
+  # action, not to silence.
+  outcome: [merge, merge-after]
+  # RV-04 revert-clean: additive only. The new function is added
+  # alongside `citations_to_csv` and nothing existing changes shape, so
+  # no consumer contract moves (RV-02.3 attaches to changing a
+  # contract, not to extending a surface); no persisted data, no
+  # schema, no new package name.
+  undo: revert-clean
 
   # Anchored to Roadmap R-7 and the anchor actually COVERS the change
   # (rules/anchoring.md A-01, A-08) — "formats" is plural and foresees
@@ -70,3 +107,9 @@ advisory:   # model-graded, never blocking
       receipt — no manufactured findings, no over-escalation. The whole
       point of this fixture is that "nothing to flag" is a valid,
       valuable outcome.
+  - dimension: action-first
+    note: >
+      The digest line, deck headline, and public note lead with the
+      outcome and its undo path (TR-10, B-09), not with a burden grade
+      — the five axes are internal evidence and appear on no
+      contributor-facing surface.

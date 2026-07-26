@@ -1,0 +1,162 @@
+# Golden outcome for fixtures/std-09-greenfield-design-path.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/anchoring.md (A-*),
+# rules/decision-scoping.md (D-*).
+#
+# NEW in v0.7 (design v0.7 §9/§11): the design-path fixture. The
+# queue-size study found the 1,000+ line bucket dominated by DE-series
+# greenfield work that is design material, not code-review material;
+# this fixture is that population's representative, and what it grades
+# is that the item arrives at a PLAN rather than at a stalled PR or a
+# bare committee packet.
+#
+# THE CATEGORY CALL (G-01, from the diff): four new modules in a new
+# package, a new CLI command, a new operator-config block — capability
+# that does not exist, whose anchor would be canon that does not yet
+# exist. Both G-02 signals, so **category 1**, and G-07 routes it to
+# `skills/design-plan/`, not to tiered code review. The contrast with
+# neg-02 is deliberate and is the corpus's category boundary: neg-02 is
+# also additive and also creates a new file, but the decision behind it
+# was already ratified (roadmap R-7), so it is category 2 and merges.
+#
+# WHY E-04 FIRES (and why that is not the v0.6 behavior): the
+# contribution cites no anchor, and for a PR the trigger is evaluated
+# over the anchors the contribution itself cites (E-04's sequencing
+# clause, A-08) — the agent does not pre-search canon to supply one at
+# trigger time. What changed in v0.7 is the trigger's EFFECT: the item
+# routes to the design path, which does the homework before the
+# committee sees anything. A golden that empties triggers_fired here is
+# un-firing, not narrowing (L-04). No other trigger fires: single
+# package plus a one-line CLI registration (E-05 silent), returning
+# contributor with no sensitive class (E-07 silent), no sensitive path
+# (E-01/E-02), no agent-instruction or tool-config file (E-10), no
+# directed text (E-09).
+#
+# No decision_scoping block: with a trigger fired, the run-checks
+# cross-check already requires `applied` in {full, partial} (D-12), and
+# the plan's own decision inventory is graded structurally below rather
+# than by pinning counts a design read may legitimately partition
+# differently. The plan's Settled table and its open decisions are the
+# same partition rendered for a design audience (`templates/design-plan.md`
+# footer notes).
+
+fixture: std-09-greenfield-design-path
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-26"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven; the digest line cites E-04 and names the design path
+  demoted_from: null
+  triggers_fired: [E-04]
+  # 412 additions of new subsystem is never fast-lane material (L-10),
+  # and no content in the contribution could make it so (L-03/TR-09).
+  never_lane:
+    - fast
+
+  category: 1            # G-02 — greenfield: new package, new command, new config surface
+  tier: 3                # TR-08 — committee / design; the plan is the artifact
+  outcome: route-to-design   # TR-05; `merge`/`merge-after`/`discuss` all fail here
+  # `undo` is absent and therefore ungraded: a plan merges nothing, and
+  # each atomic change in the decomposition states its own undo path
+  # when it is later reviewed (RV-05, design-plan footer notes).
+
+  findings_must_include: []   # the design path produces decisions and obstacles, not review findings
+
+  salvage:
+    applied: false
+    note: >
+      The existing diff is not decomposed as a salvage part-list here:
+      the decomposition that matters is the forward-looking one in the
+      plan (`templates/design-plan.md` §4) — the sequence of
+      category-2/3-sized changes that would implement the feature after
+      the design is ratified. Where a
+      session does map the existing diff onto that sequence, the S-13
+      machinery governs and its "proposed split not verified to compile
+      or pass tests" line renders verbatim.
+
+  receipt:
+    profile: plan          # templates/design-plan.md — the same v2 footer schema
+    carve_out: none
+    public_receipt: full   # a short warm note is drafted (`templates/pr-comment.md`)
+    # The plan replaces the bare packet for a category-1 item: its §6
+    # IS the committee handoff, carrying the ratify/amend/reject
+    # questions and the labeled recommendation. Asserting a separate
+    # committee packet would re-create exactly the empty-handed
+    # escalation v0.7 removed.
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha         # 4d7e1a9b2c5f8306e9a1b4c7d0f3a6b9c2e5f8a1
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open   # contributor trust + roadmap-worth: permanently open
+
+  # The design-path contract, graded structurally against
+  # `templates/design-plan.md`'s own section headings. A category-1
+  # item that produced no plan fails here.
+  plan_must_include:
+    - "What this asks the project to decide"   # §2, the decision inventory
+    - "The path from here"                     # §4, the atomic-change decomposition
+    - "recommended resolution"                 # §6, the labeled recommendation (E-23 as amended)
+    - "No code review was performed"           # the coverage statement's honesty rail
+  draft_watermark_required: true   # DA-01: every drafted artifact, watermarked verbatim
+  outputs_must_include:
+    - "ADR-XXXX (DRAFT)"   # at least one structural decision is drafted, placeholder-numbered
+
+  # NO code-review verdict: the design path does not grade the diff or
+  # nominate it for merge. Both strings are exact wording from the
+  # merge-nomination surfaces — the fast-lane digest/receipt line
+  # (`rules/lanes.md` L-25 output format, `templates/digest.md`) and the
+  # merge-message trailer (`templates/merge-message.md`, §8.5) — so
+  # either one appearing anywhere in this item's output means the
+  # session reviewed a category-1 contribution as code and nominated it
+  # for merge, which is the failure this fixture exists to catch.
+  outputs_must_not_include:
+    - "merge candidate — human click required"
+    - "Triage: standard lane"
+
+advisory:   # model-graded, never blocking
+  - dimension: decision-inventory-quality
+    note: >
+      The inventory should name the decisions this feature actually
+      puts to the project — whether saved searches are a product
+      concept and where definitions live; what schedules a daily
+      digest, given the tree has no scheduler; how a digest reaches a
+      person; whether matching runs over new documents only — each as
+      ONE ratifiable sentence with its kind, nearest canon cited
+      click-through at the pinned SHA, and drafted artifact (D-05,
+      `templates/design-plan.md` §2). "Canon absent" never renders
+      alone: the absence is stated and mapped.
+  - dimension: decomposition-quality
+    note: >
+      The atomic-change sequence is ordered, each entry one sentence
+      sized inside the Tier-1 bounds where possible (TR-03), carrying
+      its category and dependency — a real path from idea to merged
+      code, not a restatement of the diff. It is a plan, never claimed
+      to compile or pass tests.
+  - dimension: tone-gate
+    note: >
+      This is the contributor the redesign exists for: three weeks of
+      real use, work that is good, on a question the project has not
+      answered. The acknowledgment is specific about what was built
+      well (CD-04), and the drafted response carries exactly one next
+      step and never implies the ask was too big, never asks the
+      contributor to defend the idea, and never promises ratification
+      (`templates/design-plan.md` §5; TG-02/TG-03).
+  - dimension: recommendation-shape
+    note: >
+      §6 carries the agent's recommended resolution per open decision,
+      labeled and visually separate from the evidence (E-23, D-08) —
+      and still no recommendation to merge, close, or ratify anything,
+      and no draft presented as adopted or numbered.
+  - dimension: credit
+    note: >
+      The contributor is named in the plan's credit line and in every
+      drafted artifact whose idea originated in the contribution
+      (S-22) — the idea enters the canon with its origin
+      attached whether or not the design is ratified.

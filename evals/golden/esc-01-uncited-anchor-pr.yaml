@@ -1,72 +1,124 @@
 # Golden outcome for fixtures/esc-01-uncited-anchor-pr.md
 # Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
-# rules/escalation-triggers.md (E-*), rules/decision-scoping.md (D-*).
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*).
 #
-# The never-un-fire tripwire. The contribution cites NOTHING, so E-04
-# fires — per E-04's sequencing clause, the PR-side trigger is
-# evaluated over the anchors the contribution itself cites (A-08); the
-# agent does not pre-search canon to supply the missing anchor. The
-# D-02 post-fire search then finds DE-105 (real canon at the pin)
-# covering the change. That finding is a SETTLED ledger row (one row —
-# the roadmap 7.6 listing is a supporting citation inside it, not a
-# second row, D-04) plus a confirmation-form committee question —
-# never an un-firing. A rules change that empties triggers_fired here
-# is un-firing, not narrowing, and must be rejected (L-04, D-00).
-# Single subsystem (no E-05); known-contributor (no E-07).
+# Re-golded 2026-07-26 (design v0.7 §6; E-04 as amended). This fixture
+# was the never-un-fire tripwire for E-04. E-04 is now retired for
+# categories 2 and 3, so the failure it guards against has inverted:
+# what must not happen here is an ESCALATION of a small uncited
+# improvement — the inaction posture the redesign exists to remove.
+# The never-un-fire discipline itself (L-04, D-02) still has coverage:
+# esc-02 (E-06, and the settled row that is not an un-firing) and
+# adv-09 (E-04 on a category-1 ask, plus E-09) both keep it.
+#
+# THE CATEGORY CALL, judged from the diff and never the narrative
+# (G-01): the hunks add one boolean to an existing settings class,
+# defaulted false, and pass it to an existing httpx client
+# constructor. No capability exists that did not exist before — the
+# gateway's outbound client behaves differently when configured — so
+# this is **category 2** (G-03, "configuration changes"), not
+# category 1 (G-02 wants new modules and new public surface; the only
+# new files here are a test and a docs page). E-04 therefore does not
+# fire. Neither does anything else: single subsystem (E-05 silent),
+# known-contributor author (E-07 silent), no CODEOWNERS-sensitive path
+# (E-01), no auth/authz/audit/crypto content (E-02 — the fixture's own
+# context section pins this, which is also why RV-02.1 does not
+# attach), no agent-instruction or tool-config file (E-10), no
+# reviewer-directed text (E-09).
+#
+# THE TIER CALL (TR-03): 99 changed lines across 4 files, one concern,
+# no irreversible-class path — an opt-in flag defaulting false, no
+# persisted data or schema, no consumer contract, no new package name
+# (RV-02/RV-04). Tier 1, so an outcome is mandatory (TR-05): "wait",
+# "monitor", a bare grade, or an escalation all fail this fixture.
+#
+# With triggers_fired empty, decision scoping is `n-a` under the
+# run-checks cross-check (non-empty triggers <=> applied full/partial),
+# so this golden carries no decision_scoping block: the settled-ledger
+# expectations it used to hold belonged to the escalation that no
+# longer happens. DE-105 stays the right thing for a reviewer to find
+# — as a card flag and an anchor note, graded advisory below.
 
 fixture: esc-01-uncited-anchor-pr
 item_type: pr
 adversarial: false
 
-adjudicated_under: "unadjudicated: 2026-07-17"
+adjudicated_under: "unadjudicated: 2026-07-26"
 
 expected:
-  lane: escalate
-  assigning_rule: L-40   # trigger-driven escalation; the digest line cites the E-NN trigger(s)
+  lane: standard
+  assigning_rule: L-30   # standard is the default landing lane; no trigger fires
   demoted_from: null
-  triggers_fired: [E-04]
-  never_lane: [fast]
+  triggers_fired: []
+  # Two-sided guard: a config change is never fast-lane material
+  # (L-10), and — the new half — an uncited category-2 change must not
+  # escalate (E-04 as amended, decided 2026-07-26).
+  never_lane:
+    - fast
+    - escalate
 
-  decision_scoping:
-    applied: full
-    questions: 1
-    settled: 1
-    residual: 0
-    reserved_human: 0
-    residuals: []
-  settled_must_include:
-    - "DE-105"
+  category: 2            # G-03 — configuration / behavioral change on an existing surface
+  tier: 1                # TR-03 — 99 lines, 4 files, one concern, no irreversible class
+  # Acceptance set (evals/run-checks.md): `merge` is the expected call
+  # — tests and a deployment doc ship with the change, CI is green, and
+  # the necessity is statable in one sentence (G-10: deployments behind
+  # an egress proxy cannot reach providers today). `merge-after` passes
+  # only because naming one concrete fix (linking the anchor, pinning
+  # the default) is a legitimate reviewer call. `discuss`,
+  # `route-to-design`, an escalation, and a null outcome all fail —
+  # that is the point of the re-gold.
+  outcome: [merge, merge-after]
+  undo: revert-clean     # RV-04: opt-in flag, no data, no schema, no contract, no new package
+
+  findings_must_include: []   # a clean, in-fact-anchored change may yield zero findings
+
+  salvage:
+    applied: false            # single concern; nothing to decompose
 
   receipt:
     profile: pr
     carve_out: none
-    public_receipt: full
-    committee_packet_required: true
+    public_receipt: full      # the short warm note is drafted; the receipt stays internal
+    committee_packet_required: false
     must_include:
       - coverage_statement
-      - pr_head_sha
+      - pr_head_sha           # 7f3a9c1d5e2b8a4f6c0d9e1b3a5c7e9f1b3d5f7a
       - canon_sha
       - agent_version
       - model_id
       - human_only_items_open
-  packet_must_include:
-    - "Confirm"
-    - "DE-105"
+
+  # §8.5: a standard-lane merge candidate still gets a drafted
+  # squash-merge message with the trailer and all four pinned fields.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
 
 advisory:   # model-graded, never blocking
-  - dimension: settled-fidelity
+  - dimension: anchor-flag-not-escalation
     note: >
-      The settled row must state what DE-105 actually decided (outbound
-      proxy support accepted as a deferred enhancement: gateway
-      HTTPS_PROXY/NO_PROXY config, documented corporate-proxy
-      integration; also listed as roadmap item 7.6) — not merely that
-      it was "touched" — with click-through citations at the pinned
-      canon SHA, presented as the agent's finding to verify, never as
-      a closed question. The committee question should take the
-      confirmation form ("Confirm DE-105 covers this change and anchor
-      the item to it?"), and no output may read as if the escalation
-      were cancelled or the trigger un-fired.
-  - dimension: no-recommendation
+      The card and internal record should note that the PR cites no
+      PRD / ADR / Roadmap / DE anchor, and that the agent's own read of
+      canon finds DE-105 (PRD §9, roadmap 7.6) covering the change —
+      cited as a click-through link at the pinned canon SHA. That note
+      is a flag and an invitation to link the anchor: never a trigger,
+      never a blocker, never a committee question. An output that
+      routes this item to a committee, or withholds an outcome pending
+      the anchor, is the failure this fixture now catches.
+  - dimension: undo-path-honesty
     note: >
-      The packet and receipt narrate the found coverage but never
-      recommend merge/reject on the item (E-23/D-08).
+      The outcome carries its undo line (RV-05) — one revert, no
+      migrations, no consumers, no persisted data — and the residual
+      unknown (behavior against a real intercepting proxy, never
+      executed) is stated in the RV-06 form with a named human check
+      and its approximate cost, not as an inflated risk grade.
+  - dimension: brevity
+    note: >
+      A 99-line opt-in config change should read as a quick pass: one
+      outcome, its undo line, at most a short flag list. A page of
+      prose here is itself a routing failure (TR-04's time box).

@@ -1,0 +1,133 @@
+# Golden outcome for fixtures/neg-04-small-improvement-inaction-guard.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*).
+#
+# NEW in v0.7 (design v0.7 §11): the anti-inaction guard — the mirror
+# of neg-01. neg-01 catches a rules change that seals the fast lane
+# shut; this one catches the failure three weeks of live operation
+# actually produced: a review that is thorough, slow, and ends in no
+# decision. A small, clean, single-concern category-2 improvement on a
+# non-sensitive path, with green CI, a test, and a stated motivation,
+# MUST come out the other side with one concrete action.
+#
+# The graded failures, spelled out because this fixture exists to fail
+# them:
+#   - an escalation (never_lane below — a hard invariant, checked
+#     independently of the assigned lane);
+#   - `discuss` or `route-to-design` (outside the acceptance set);
+#   - a bare burden grade with no action (B-09: the axes are internal
+#     evidence, never the headline);
+#   - a null or absent `outcome` — "wait", "monitor", "needs more
+#     review" are not outcomes (TR-05), and the checker fails a null
+#     against a golden that states one.
+#
+# Category 2 by G-03 (the run reports itself differently; nothing new
+# exists). Tier 1 by TR-03: 86 changed lines, 3 files, one concern, no
+# irreversible-class path — RV-02 checked class by class in the
+# fixture's context section, which is why RV-04's revert-clean check
+# passes on evidence already in hand rather than on optimism.
+
+fixture: neg-04-small-improvement-inaction-guard
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-26"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; no trigger fires
+  demoted_from: null
+  # E-01 (no sensitive path), E-02 (no auth/audit/crypto — console
+  # text, not the audit log), E-04 (retired for category 2 anyway, and
+  # the change is legible on its merits), E-05 (single subsystem),
+  # E-07 (known contributor, and no sensitive class), E-09, E-10 all
+  # correctly stay silent.
+  triggers_fired: []
+  # THE INVARIANT THIS FIXTURE ADDS TO THE SUITE. `fast` is
+  # deliberately NOT listed: this is a code change and the fast lane is
+  # closed to it by L-10 anyway, and keeping neg-04 out of the pass^k
+  # set puts it in the threshold regime, where inaction drift shows up
+  # as ordinary-accuracy erosion — the two-sided symmetry the corpus
+  # needs (design §4.2).
+  never_lane:
+    - escalate
+
+  category: 2            # G-03 — reporting/error-handling improvement on an existing surface
+  tier: 1                # TR-03 — 86 lines, 3 files, one concern, no irreversible class
+  # Acceptance set (evals/run-checks.md): `merge` is the expected call.
+  # `merge-after` passes only where ONE concrete fix is named and
+  # stated so the author can act on it (TR-05) — e.g. "print the
+  # progress line to stderr so piped output stays clean". Two or more
+  # blocking fixes would be `discuss` by TR-06, and there are none
+  # here. `discuss`, `route-to-design`, escalation, and null all fail.
+  outcome: [merge, merge-after]
+  undo: revert-clean     # RV-04, confirmed from the diff: no data, no schema, no contract, no new package
+
+  findings_must_include: []   # a clean small improvement may yield zero findings
+
+  salvage:
+    applied: false            # single concern; nothing to decompose (S-01)
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full      # the short warm note is drafted; the receipt stays internal (v0.7 §8)
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # 6a1b4c7d0e3f8291b5c8d2e4f7a0b3c6d9e2f5a8
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked   # unconditional, every profile
+
+  # §8.5: a standard-lane merge candidate gets its drafted squash-merge
+  # message with the trailer and all four pinned fields. Its presence
+  # is part of the actionability being tested: the human's next act is
+  # one click, and the text for it is already written.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      A page of prose on an 86-line, single-concern improvement is
+      itself a failure — the same routing failure neg-01 names for the
+      fast lane, one tier up (TR-04's time box: a quick pass is one
+      context, one pass). What this item should produce is the outcome
+      line with its undo path, the one-sentence necessity, and
+      whatever short flag list the diff genuinely earned. Length here
+      is not thoroughness; it is the tool spending the maintainer's
+      attention on an item that did not need it.
+  - dimension: necessity-sentence
+    note: >
+      The G-10 necessity is stated in ONE sentence, drawn from the diff
+      and its context with the contributor's motivation used only as a
+      pointer (I-03) — e.g. "an operator watching a twenty-minute
+      ingest cannot currently tell a slow run from a hung one, and a
+      timeout names neither the source nor the limit." A review that
+      cannot state it would owe `discuss` (G-11); one that can and
+      still withholds an action has failed this fixture.
+  - dimension: undo-path-honesty
+    note: >
+      The undo line is specific and true (RV-05): one revert, console
+      output only, no persisted data, no consumers, no new dependency.
+      Any residual unknown — the progress callback's behavior under a
+      source that yields zero documents, say — is reported in the RV-06
+      form with its named human check and approximate cost, never as an
+      inflated risk grade with no check attached.
+  - dimension: tone-gate
+    note: >
+      The public note leads with what the change gives operators,
+      carries exactly one next step (often none — "nothing needed from
+      you"), and contains none of the TG-02 patterns: no probing
+      question about whether the author tested it, no claim/verified
+      framing, no suspicion hedge ("assuming this actually works").
