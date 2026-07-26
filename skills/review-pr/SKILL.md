@@ -589,6 +589,19 @@ internal artifacts too. Non-negotiable contents:
   v<version>; reviewed and posted by @<maintainer>", linking to the
   bot-behavior page. Ask for the maintainer's handle or leave the
   placeholder visibly unfilled — never guess it, never omit the line;
+- the **embedded drafts** (`RP-19`, decided 2026-07-26): the tone-gated
+  short comment in the `### Drafted public comment` fenced block and,
+  for merge candidates, the Step 8 merge message in
+  `### Drafted merge message` — the deck renders them as paste-ready
+  cards, and they are never presented as separate chat deliverables;
+- the **maintainer decision** (`RP-18`), recorded at Step 9's finalize
+  — optional, and absent until a maintainer actually rules (a
+  contributor running this skill to check their own PR never records
+  one): the `### Maintainer decision` section
+  (who ruled, the ruling in their words, alignment with the agent's
+  recommendation, feedback verbatim) and the enumerated `decision`
+  footer block; divergences and explicit feedback additionally append
+  to the cross-item log per `templates/feedback-log.md` FL-01;
 - the versioned machine-readable footer
   (`<!-- lq-maintainer-agent:receipt:v2`) per the template, carrying
   **enumerated structured fields only** — lane + rule id, trigger ids,
@@ -624,11 +637,11 @@ output: scope statement, every fired trigger with its rule text
 quoted, the canon touched/contradicted/absent with citations at the
 pinned canon SHA, checklist results, the human questions phrased as
 questions, and the decision ledger with one watermarked drafted
-artifact per residual (`CP-01`–`CP-08`, `D-00`–`D-14`).
+artifact per residual (`CP-01`–`CP-09`, `D-00`–`D-14`).
 
 **New in v0.7: the packet carries your recommended resolution**
-(`rules/escalation-triggers.md` E-23 as amended;
-`rules/decision-scoping.md` D-08 as amended). After the ledger and the
+(`templates/committee-packet.md` CP-09; `rules/escalation-triggers.md`
+E-23 as amended; `rules/decision-scoping.md` D-08 as amended). After the ledger and the
 drafted artifacts, add one recommendation per residual or question,
 **clearly labeled as the agent's recommendation and kept visually
 separate from the evidence above it** — never folded into the settled
@@ -670,7 +683,9 @@ all four pinned fields — from
 `${CLAUDE_PLUGIN_ROOT}/templates/merge-message.md` (render, never
 freehand: that template is the single authoritative copy of the §8.5
 trailer format), so the maintainer can paste it into the GitHub web UI
-merge box wholesale.
+merge box wholesale. Embed it in the evidence record's
+`### Drafted merge message` fenced block (`RP-19`) — the deck renders
+it as a paste-ready card; it is not a separate chat deliverable.
 
 Leave the maintainer name/email placeholders unfilled unless the user
 tells you who is merging. You draft; the human performs the merge and
@@ -702,14 +717,32 @@ decision at a time (ratify / amend / reject each artifact), with your
 labeled recommendation offered beside each and never inside it (`D-08`
 as amended). Fold the decisions and actions taken back into the
 evidence record (the settled lane, tier, outcome, next steps and their
-owners) so the record reflects the review that happened.
+owners) so the record reflects the review that happened — and, **if a
+maintainer ruled**, the **`### Maintainer decision` section and
+`decision` footer block** (`RP-18`): who ruled, the ruling in their
+words, the alignment with the agent's recommendation, and any feedback
+verbatim — verifying the decider per `RP-18` (authenticated login via
+`gh api user`, role via the repo collaborator-permission GET —
+`admin`/`maintain`/`write` is a maintainer of record; both calls
+prompt), recording `verified: api`, or `verified: stated` where the
+check was declined or unavailable and the section says so plainly; on
+`adjusted`/`overridden` alignment or explicit feedback,
+append the `templates/feedback-log.md` entry (FL-01) and set
+`decision.feedback_logged: true`. Ruling is **optional**: a
+contributor running this skill to check their own PR has no ruling to
+give — leave section and block absent (the record reads "not yet
+decided"), and never press for one. Then **re-render the deck** from
+the finalized record (same command, same path): the final deck carries
+the paste-ready drafts and, where recorded, the "What the maintainer
+decided" card.
 
 Then present for approval — **summary first, evidence on request**.
 The in-chat presentation is the outcome line (outcome, undo path, red
 flags, do-next), the Next steps list (`RP-16`), and a one-line menu of
-the drafted items (the short comment, findings comments, salvage
-response, merge message, committee packet) for the maintainer to
-accept, edit, drop, or open per item. Never paste the full long-form
+the drafted items (the short comment and, for merge candidates, the
+merge message — both read off the deck's paste-ready cards, never
+pasted into chat; findings comments; salvage response; committee
+packet) for the maintainer to accept, edit, drop, or open per item. Never paste the full long-form
 report, the complete findings table, or the whole evidence record into
 chat unprompted — the deck and the cached report are the reading
 surfaces; chat is for decisions. A maintainer who asks for detail gets
@@ -729,7 +762,14 @@ exactly the item they asked for. Only for items they approve:
   record is stored (Step 6), not commented.
 - Individual findings the maintainer wants relayed are drafted as
   review comments for the maintainer to post or approve individually —
-  each tone-gated first (`TG-01`).
+  each tone-gated first (`TG-01`). Where the finding carries a
+  suggested change (`rules/lanes.md` L-33a), the drafted review
+  comment embeds the GitHub suggestion block and is anchored to the
+  finding's file:line — posted there (the PR's Files-changed view, or
+  the pull-request review-comments API via `gh api`, which prompts),
+  GitHub gives whoever reads it a one-click "Commit suggestion"
+  button. The draft states this apply path in plain words, so the
+  maintainer never has to reconstruct the mechanics themselves.
 
 Never post anything unapproved; never batch approvals implicitly. If
 the maintainer runs out of time mid-flow, offer the partial record

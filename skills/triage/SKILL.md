@@ -497,11 +497,12 @@ GitHub comment shrinks to a short warm note; the receipt becomes an
 | Batch digest | `templates/digest.md` | No — session artifact |
 | PR internal receipt | `templates/receipt-pr.md` | **No** — internal evidence (local cache / community repo) |
 | Issue internal receipt | `templates/receipt-issue.md` | **No** — internal evidence |
-| Public PR/issue comment | `templates/pr-comment.md` | **Yes** — the short, tone-gated warm note; replaces public receipt posting |
+| Public PR/issue comment | `templates/pr-comment.md` | **Yes** when posted — drafted into the receipt's `### Drafted public comment` block (RP-19) and read off the deck's paste-ready card, never presented as a separate chat artifact |
 | Escalation packet | `templates/committee-packet.md` | No — human-delivered evidence, destination TBD (design §15 q.1) |
 | Salvage / slop / repro replies | `templates/contributor-responses/` | Yes — tone-gated before posting |
 | Category-1 items | `/lq-maintainer:design-plan (pr\|issue) N` | Detected here, rendered there — not this skill's output |
-| Merge candidate | `templates/merge-message.md` | No — pasted into the merge box by the human |
+| Merge candidate | `templates/merge-message.md` | No — drafted into the receipt's `### Drafted merge message` block (RP-19), read off the deck, pasted into the merge box by the human |
+| Maintainer decision + feedback | `templates/feedback-log.md` | No — the ruling lives in the receipt (`RP-18`, rendered on the final deck); divergences and feedback append to the cross-item log |
 
 Non-negotiable content rules:
 
@@ -589,7 +590,10 @@ message — subject, body, and the §8.5 audit trailer carrying all four
 pinned fields, sign-off line included — from
 `templates/merge-message.md` (render, never freehand: that template is
 the single authoritative copy of the trailer format), so the human can
-paste it whole into the GitHub merge box.
+paste it whole into the GitHub merge box. Embed it in the receipt's
+`### Drafted merge message` fenced block (RP-19): the deck renders it
+as a paste-ready card, and it is not presented as a separate chat
+deliverable.
 
 The human performs the merge and owns the message; you only draft it.
 Fast-lane digest lines end exactly: "merge candidate — human click
@@ -627,7 +631,14 @@ verdict handed down before one.
    (`L-01`/`G-09`/`TR-01`), accept or relay findings, agree to run a
    next step (read the changelog, smoke-test, request a regression
    test), or decide an action (pin / narrow a range). Capture their
-   decisions and the actions taken. For escalated items, walk the
+   decisions and the actions taken — and, **where the user is a
+   maintainer and rules on the item**, their final ruling and any
+   feedback on the agent's handling, **in their words** (`RP-18`; it
+   feeds step 3's decision record and, on divergence or explicit
+   feedback, the cross-item log, `templates/feedback-log.md` FL-01).
+   Ruling is **optional**: a contributor running this skill to check
+   their own work has no ruling to give — capture nothing, and never
+   press for one. For escalated items, walk the
    decision ledger **ratify-first**: present the settled entries as the
    agent's findings to verify by click (a contested entry becomes a
    residual, `D-04`), take the residual decisions as the agenda — and
@@ -639,10 +650,32 @@ verdict handed down before one.
 3. **Finalize the internal receipt** to reflect that conversation — the
    settled lane, category, tier, outcome and its undo path, the
    decisions, the agreed next steps and who owns each — from the
-   templates (Step 9). Apply `rules/conduct.md` to every drafted line:
-   critique the change never the contributor, assume good faith,
-   acknowledge genuine effort, defer to the author, keep the register
-   calibrated (`CD-01`–`CD-09`).
+   templates (Step 9). **If — and only if — a maintainer ruled**,
+   record the **`### Maintainer decision`** section and the enumerated
+   `decision` footer block (`RP-18`): who ruled, the ruling in plain
+   language, the alignment with the agent's recommendation, and any
+   feedback verbatim. **Verify the decider, never assume**: resolve
+   the operator's login from the session's authenticated identity
+   (`gh api user`) and their role from
+   `gh api repos/<owner>/<repo>/collaborators/<login>/permission` —
+   `admin`/`maintain`/`write` is a maintainer of record (both are
+   GETs, permission-prompted like every `gh api` call, Step 3). Record
+   `decision.verified: api`; if the check is declined or unavailable,
+   a ruling may still be recorded with `verified: stated` — the
+   section then says plainly it rests on the user's word. The verified
+   login is also the natural default for the attribution line's
+   `@<maintainer>` placeholder — offer it, never silently fill it.
+   When nobody ruled — a contributor self-checking
+   their own submission, or a maintainer deferring the call — leave
+   section and block **absent**: the receipt reads "not yet decided"
+   and the deck grows no decision card. Where the alignment is
+   `adjusted`/`overridden` or feedback was given, **append the
+   `templates/feedback-log.md` entry** to
+   `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/feedback-log.md` (FL-01) and
+   set `decision.feedback_logged: true`. Apply `rules/conduct.md` to
+   every drafted line: critique the change never the contributor,
+   assume good faith, acknowledge genuine effort, defer to the author,
+   keep the register calibrated (`CD-01`–`CD-09`).
 4. **Draft the short public comment** from `templates/pr-comment.md`
    (or the matching `templates/contributor-responses/` pattern where
    one already fits): the outcome, genuine thanks, the one next step, a
@@ -650,8 +683,14 @@ verdict handed down before one.
    checklists, no cross-check matrices. Run it through the **tone gate**
    (`rules/tone-gate.md` TG-NN) before offering it: the gate rewrites a
    draft that fails a banned pattern, it does not veto the substance
-   underneath.
-5. **Then offer the writes one at a time** — post the short comment (or
+   underneath. Embed the gated draft in the receipt's
+   `### Drafted public comment` fenced block (`RP-19`), then
+   **re-render the deck** from the finalized receipt (step 1's command,
+   same path) and tell the maintainer: the final deck now carries the
+   decision card and the paste-ready draft(s) — the drafts are read
+   off the deck, never pasted into chat as separate deliverables.
+5. **Then offer the writes one at a time** — post the short comment
+   (its text taken verbatim from the receipt's drafted-comment block; or
    update the legacy public receipt in place, plus its "receipt
    updated" ping, only where that is still the resume source, Step 4),
    post any tone-gated contributor response — each behind its own

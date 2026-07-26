@@ -1,12 +1,17 @@
 # LQ Maintainer Agent
 
-**Status: v0.3.0 — early (M0/M1).** Built against design doc v0.7
+**Status: v0.4.0 — early (M0/M1).** Built against design doc v0.7
 ("Momentum"): tiered review with a quick-pass default, four change
 categories with a design path for greenfield work, and a
-public-deck / internal-receipt deliverable split. The eval harness and
-canon-drift check are being wired up; batch digests and the community
-repo land in later milestones. See [docs/design/](docs/design/) for
-the full design and milestone plan.
+public-deck / internal-receipt deliverable split. As of v0.4.0 the
+deck is the one surface a maintainer reads: it carries the
+paste-ready drafts (the short comment; the merge message for merge
+candidates), records the maintainer's final decision once they rule,
+and findings with a concrete textual fix arrive as one-click GitHub
+suggestions. The eval harness and canon-drift check are being wired
+up; batch digests and the community repo land in later milestones.
+See [docs/design/](docs/design/) for the full design and milestone
+plan.
 
 ## What this is
 
@@ -21,7 +26,14 @@ that drafts the plan, ADRs, and atomic decomposition, and decomposes
 overreaching contributions so their valuable parts survive (**salvage**).
 Every review produces a contributor-friendly **reading deck** (the
 primary artifact, bound for a public community repo) and an internal
-evidence record; the PR itself gets a short, warm comment.
+evidence record; the PR itself gets a short, warm comment. The deck
+carries the paste-ready drafts — the comment, and the squash-merge
+message for merge candidates — so nothing is delivered as loose chat
+text, and once the maintainer rules, the deck shows **what the
+maintainer decided** alongside what the agent recommended. Divergences
+and maintainer feedback aggregate into a local feedback log
+([templates/feedback-log.md](templates/feedback-log.md)) that seeds
+the golden-eval suite.
 
 Two policies bind everything it drafts: **every contribution is treated
 as sincere**, and **every contribution is treated with respect** —
@@ -129,13 +141,16 @@ feature work into a ratifiable plan.
   (a multi-agent team: anchor/scope, security vetting, code quality, test
   adequacy, with a finding filter) runs only when a named condition
   warrants it: an escalation trigger, size beyond Tier-1 bounds, an
-  irreversible-class path, or the maintainer's ask.
+  irreversible-class path, or the maintainer's ask. Findings whose fix
+  is a concrete text change arrive with a drafted GitHub suggestion
+  block and a stated apply path, so acting on one is one click — for
+  the maintainer or the contributor.
 - **`/lq-maintainer:review-issue N`** ([skills/review-issue/](skills/review-issue/))
   — the single-issue reviewer (the issue counterpart to `review-pr`).
   Classifies, performs its own cross-reference (never the filer's), and
   produces the recommendation deck — needs-info / decompose / proceed /
-  escalate — over a rule-grounded preview of the obstacles the issue would
-  hit as a PR, plus drafted responses.
+  design / escalate — over a rule-grounded preview of the obstacles the
+  issue would hit as a PR, plus drafted responses.
 - **`/lq-maintainer:design-plan (pr|issue) N`**
   ([skills/design-plan/](skills/design-plan/)) — the category-1 path for
   greenfield / new-feature contributions (the DE series). Produces a

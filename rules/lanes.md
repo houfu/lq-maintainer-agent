@@ -314,9 +314,37 @@ it (L-04).
   exactly one disposition hint:
   - *trivial* — maintainer fixes it in seconds;
   - *relayable* — written so a non-engineer contributor can carry it
-    back to their tooling;
+    back to their tooling: the comment contains the proposed change
+    itself (the replacement wording, or the L-33a suggestion block),
+    never only the explanation of why — a comment whose reader
+    finishes it not knowing what to do is not relayable, however
+    correct (`rules/tone-gate.md` TG-03.2);
   - *structural* — recommend close, and draft an issue describing the
     goal so the idea survives the PR.
+- **L-33a — The apply path (decided 2026-07-27).** A finding is not
+  actionable until the human knows *how* to act on it, not just what
+  is wrong. Where the remedy is a concrete replacement of the cited
+  line(s), the finding additionally carries a **drafted GitHub
+  suggestion**: the suggested comment with a `suggestion` fenced
+  block containing the exact, complete replacement for the anchored
+  line(s). Posted as a **line-anchored review comment on the PR's
+  diff** (the Files-changed view, or the pull-request review-comments
+  API via `gh api` — prompted like every `gh api` call), GitHub
+  renders a one-click "Commit suggestion" button for whoever applies
+  it. Constraints the draft must honour: the block replaces the
+  anchored line(s) **in full** (GitHub commits it verbatim); it works
+  only as a review comment on those diff lines, never in the general
+  conversation thread; a multi-line replacement names its line range.
+  Where the remedy is not a concrete text change, no block is drafted
+  — an empty suggestion is worse than prose. Every finding with a
+  drafted change states its one-line **apply path**, matched to the
+  disposition: *trivial* — the replacement is stated and the
+  suggestion draft is still provided, so the maintainer can either
+  fix it themselves or route it through the contributor's one-click;
+  *relayable* — post the drafted comment on the finding's file:line,
+  and the contributor applies it with one click; *structural* — no
+  block; the close-and-draft-issue path above. Posting remains a
+  human-gated write like every other (§3.3).
 
 ### Output format
 

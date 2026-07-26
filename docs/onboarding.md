@@ -116,14 +116,20 @@ outputs make sense:
   — the outcome, genuine thanks, the one next step if there is one, a
   link to the deck, and the attribution line. This is the *only*
   public-facing output from v0.7 on. No tables, no checklists, no
-  claim-versus-verified matrices.
+  claim-versus-verified matrices. The draft is embedded in the receipt
+  and read off the deck's paste-ready card (decided 2026-07-26) — you
+  copy it from the deck; it is not pasted into chat as a separate
+  deliverable.
 - **A reading deck** — the artifact you actually work from: the
   action recommendation up front, with the audit detail (the checks,
   the findings, the self-attestation cross-check) collapsed into an
-  auditor section beneath it. This is meant to become the project's
-  public artifact once a community repo exists to hold it
-  (`docs/community-repo.md`); until then it stays a local view, same
-  as before.
+  auditor section beneath it. The deck also carries the paste-ready
+  drafts — the short comment and, for merge candidates, the drafted
+  squash-merge message — and, once you have ruled, the **"What the
+  maintainer decided"** card recording your decision. This is meant to
+  become the project's public artifact once a community repo exists to
+  hold it (`docs/community-repo.md`); until then it stays a local
+  view, same as before.
 - **An internal receipt** — everything the old public receipt carried
   (pinned fields, coverage statement, the self-attestation
   cross-check, the burden axes) survives, but as your evidence record,
@@ -133,7 +139,14 @@ outputs make sense:
   the PR.** Older PRs still carry their old public
   `lq-maintainer-agent:receipt:v2` comment footers — those remain
   valid and resumable; the agent just stops writing new ones in
-  public.
+  public. The receipt also records **what you finally decided** — the
+  `### Maintainer decision` section, filled in when you rule at the
+  end of the discussion (optional: if you're a contributor running a
+  review skill to check your own work, there's no ruling to record
+  and the section simply stays absent) — and anything you tell the
+  agent about its own handling lands in a cross-item **feedback log**
+  (`templates/feedback-log.md`, local cache only), which is where new
+  golden evals come from.
 
 ## Your first session
 

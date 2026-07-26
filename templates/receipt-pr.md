@@ -87,7 +87,11 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   lives in the deep-dive cache
   (`${CLAUDE_PLUGIN_DATA}/<repo>/<pr-number>/<head-sha>/report.md`).
   The receipt states how many findings each stage filtered. Nothing
-  is hidden; it is just not all in the comment.
+  is hidden; it is just not all in the comment. Where a finding's
+  remedy is a concrete replacement of the cited line(s), it also
+  carries the drafted GitHub suggestion block and its one-line
+  **apply path** (`rules/lanes.md` L-33a) — the human learns not just
+  what to fix but how to apply it in one click.
 - **RP-06 — Salvage section.** Mandatory whenever salvage was applied
   (`rules/salvage.md`): part list with one-sentence statements and
   disposition IDs; and if a mechanical split was proposed, the split
@@ -171,10 +175,57 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   committee packet (CP-03a/CP-08). Footer: the enumerated
   `decision_scoping` block only (D-12) — counts, `R-<i>` IDs,
   kind/artifact enums; **no ledger prose, ever** (§8.4).
+- **RP-18 — Maintainer decision (finalize stage only, optional).**
+  Recorded if and only if a maintainer has read the review and ruled
+  (Step 10 of the rendering skill) — **absent on the discussion-stage
+  draft**, so a receipt without it reads as "not yet decided", never
+  as agreement. Optional by design: the review skills are also run by
+  **contributors checking their own work before submitting**, and such
+  a session has no ruling to record — the section and footer block
+  simply stay absent, the deck grows no decision card, and the skill
+  never presses the user for a ruling. Only an actual maintainer
+  decision is ever recorded; one is never inferred from silence.
+  **Who counts as a maintainer is verified, not assumed** — the same
+  posture the design applies to author class (§5: API identity, never
+  display names or claims in text): resolve the operator's login from
+  the session's authenticated GitHub identity (`gh api user`) and
+  their role from the repo-permission endpoint
+  (`gh api repos/<owner>/<repo>/collaborators/<login>/permission`) —
+  `admin`/`maintain`/`write` is a maintainer of record;
+  `triage`/`read` is not. Both are `gh api` GETs and therefore
+  permission-prompted, by design (§10). The visible section states
+  the result, and the footer's `verified` enum records `api` (checked
+  this run) or `stated` (the check was declined or unavailable and
+  the user affirmed the role — recorded on their word, and the
+  section says so plainly). A `stated` record is legitimate — a local
+  tool cannot police its own operator — but it is never silently
+  presented as verified.
+  Visible body: who decided (their handle, visible here like the
+  attribution line — never in the footer), the ruling in plain
+  language, whether it accepted / adjusted / overrode the agent's
+  recommendation, and any feedback the maintainer gave on the agent's
+  handling, in their words. Footer: the enumerated `decision` block
+  only. Feedback and divergences additionally append to the
+  cross-item feedback log (`templates/feedback-log.md`) — the receipt
+  keeps the item's record; the log aggregates the agent-performance
+  signal that seeds evals.
+- **RP-19 — Embedded drafts (decided 2026-07-26).** The drafted
+  public comment (`templates/pr-comment.md`) and, for merge
+  candidates, the drafted squash-merge message
+  (`templates/merge-message.md`) are embedded in this receipt as
+  fenced blocks under `### Drafted public comment` /
+  `### Drafted merge message`, and the deck renders them as
+  paste-ready cards — **they are not separate deliverables**; the
+  deck is where the maintainer reads them. Each is still rendered
+  from its own template (whose field rules remain normative — the
+  tone gate runs on the comment before it is embedded), and posting /
+  merging remains a separate, individually approved human action.
+  The fenced block is mandatory: the comment's own `---` attribution
+  divider would otherwise terminate section parsing.
 
 ## Template
 
-```markdown
+````markdown
 ## Triage Receipt — PR #<n>: <title>
 
 > **Verdict:** <lane> (<rule-id>, <confidence>) · burden **<overall>**
@@ -256,6 +307,14 @@ maintainer running the agent)>.
 <one-line finding. Canon: <citation>.>
 Disposition hint: <trivial | relayable | structural>
 Suggested comment: <ready-to-post text, written for the contributor>
+<if the remedy is a concrete replacement of the cited line(s), L-33a:>
+Suggested change — paste as a review comment on `<file>:<line>`:
+```suggestion
+<the exact, complete replacement line(s)>
+```
+Apply path: <the one-line L-33a path for this disposition — e.g.
+"post the drafted comment on <file>:<line> in the PR's Files-changed
+view; the contributor applies it with one click">
 
 ### Salvage decomposition (if applied)
 
@@ -311,6 +370,36 @@ Ordered by importance; the top entry is the header's "Do next" line.
 
 - [ ] Contributor trust — a human call; the agent does not score people.
 - [ ] Residual supply-chain hygiene — beyond the mechanical checks above.
+
+### Maintainer decision (RP-18; finalize stage only — omitted until a human rules)
+
+Decided by @<maintainer> (<date>): <the ruling, in plain language —
+what happens to this item and why, in the maintainer's words>.
+- Identity: <verified via GitHub API — <admin | maintain | write>
+  permission on <owner>/<repo> | stated — check declined/unavailable;
+  recorded on the user's word>.
+- Agent recommendation <accepted | adjusted: <what changed> |
+  overridden: <what the maintainer did instead>>.
+- Feedback for the agent: <none | the maintainer's words — also
+  appended to the cross-item feedback log, templates/feedback-log.md>.
+
+### Drafted public comment (RP-19)
+
+Rendered from `templates/pr-comment.md`, tone-gated; posting is a
+separate, individually approved human action.
+
+```markdown
+<the complete drafted comment, verbatim — paste-ready>
+```
+
+### Drafted merge message (RP-19; merge candidates only — omitted otherwise)
+
+Rendered from `templates/merge-message.md`; the human performs the
+merge and owns the message.
+
+```text
+<the complete drafted squash-merge message, verbatim — paste-ready>
+```
 
 ### Reviewed-at
 
@@ -389,8 +478,13 @@ tier: <0|1|2|3|null>
 outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
 undo: <revert-clean|residue|irreversible-class|null>
 tone_gate: <applied|n-a>
+decision:
+  final_outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
+  alignment: <accepted|adjusted|overridden|null>
+  verified: <api|stated>
+  feedback_logged: <true|false>
 -->
-```
+````
 
 ## Footer schema — `lq-maintainer-agent:receipt:v2` (authoritative)
 
@@ -450,6 +544,23 @@ eval-grading interface (`evals/run-checks.md`).
   fast-lane merge) or the run predates the field's introduction.
   Enumerated only, like every field here — which pattern the gate
   rewrote, if any, is never recorded here.
+- **`decision`** (RP-18) — an **optional**, additive block, present if
+  and only if a maintainer has ruled on the item (Step 10 finalize).
+  **Absence means "not yet decided" — a parser must never read a
+  missing block as agreement with the agent's recommendation.**
+  Enumerated only: `final_outcome` (the same TR-05 vocabulary as
+  `outcome`; on the issue profile the IV-01 `recommendation`
+  vocabulary is also valid), `alignment` (`accepted` — the maintainer
+  took the recommendation as-is; `adjusted` — same direction, details
+  changed; `overridden` — the maintainer did something else),
+  `verified` (`api` — the decider's maintainer-of-record role was
+  confirmed this run via the authenticated-identity and
+  repo-permission GETs, RP-18; `stated` — the check was declined or
+  unavailable and the role rests on the user's word, which the
+  visible section says plainly), and `feedback_logged` (whether an
+  entry was appended to `templates/feedback-log.md`'s log this run).
+  The ruling's prose, the decider's handle, and the feedback text
+  live in the visible `### Maintainer decision` section, never here.
 - **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
   Parsers match the `lq-maintainer-agent:receipt` prefix and accept
   both markers; a v1 footer parses as

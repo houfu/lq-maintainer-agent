@@ -11,6 +11,13 @@ and, once it exists, the community repo's `reviews/<pr|issue>-NNNN/`
 rules (`PC-NN`) are normative. Posted (or updated in place) only
 behind an individual human approval, same as every other draft.
 
+**Delivery (decided 2026-07-26).** The rendered draft is embedded in
+the internal receipt as a fenced block (`### Drafted public comment`,
+`templates/receipt-pr.md` RP-19) and surfaced on the deck as a
+paste-ready card — it is **not** presented as a separate chat
+deliverable. The posting flow is unchanged: still tone-gated first,
+still one individually approved human write.
+
 One template, two profiles (PR and issue) — the outcome vocabulary
 differs (`rules/tiers.md` TR-05 for PRs; `rules/issues.md` IV-01 for
 issues), everything else is shared. Prior `receipt:v2` public comments

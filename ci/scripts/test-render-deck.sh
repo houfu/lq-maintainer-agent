@@ -18,6 +18,11 @@ rules/injection-posture.md):
      auditor section; a footer WITHOUT them renders the v0.6 burden-led hero
      unchanged; an unrecognised enum value degrades to raw text instead of
      crashing or fabricating a gloss.
+  4. The embedded-draft sections (decided 2026-07-26: the deck carries the
+     drafted public comment / merge message and the recorded maintainer
+     decision) render as cards when present, survive a `---` divider inside
+     the fenced draft, keep the link allow-list, and are ABSENT — not
+     empty — on every receipt written before the sections existed.
 
 Pure stdlib, no tokens, no canon clone, no network — safe as a blocking CI
 check. Run from anywhere: `sh ci/scripts/test-render-deck.sh` or directly.
@@ -237,6 +242,49 @@ PLAN_V2 = (
     "-->\n"
 )
 
+# Embedded drafts + recorded maintainer decision (decided 2026-07-26): the
+# receipt carries the paste-ready drafts as fenced blocks and the human ruling
+# as a body section; the deck renders them as cards. The comment deliberately
+# contains a column-0 `---` divider (its attribution rule) and an off-host
+# link, so fence-aware extraction and the allow-list are both exercised.
+DRAFT_SECTIONS = (
+    "### Maintainer decision\n\n"
+    "Decided by @maintainer (2026-07-26): merge after the named fix lands.\n"
+    "- Agent recommendation accepted; feedback: none.\n\n"
+    "### Drafted public comment\n\n"
+    "```markdown\n"
+    "Hi @someone — this looks ready to merge once one change lands.\n\n"
+    "Thanks for pinning the timeout default; see [bad](https://evil.example.com/x).\n\n"
+    "---\n"
+    "*Drafted by lq-maintainer-agent v0.2.0; reviewed and posted by @maintainer.*\n"
+    "```\n\n"
+    "### Drafted merge message\n\n"
+    "```text\n"
+    "Pin the request timeout default (#904)\n\n"
+    "Triage: standard lane; receipt internal\n"
+    "Signed-off-by: <maintainer name> <email>\n"
+    "```\n\n"
+)
+
+PR_WITH_DRAFTS = PR_TIER1_V2.replace(
+    "<!-- lq-maintainer-agent:receipt:v2\n",
+    DRAFT_SECTIONS + "<!-- lq-maintainer-agent:receipt:v2\n"
+).replace(
+    "undo: revert-clean\n",
+    "undo: revert-clean\n"
+    "decision:\n  final_outcome: merge-after\n  alignment: accepted\n"
+    "  verified: api\n  feedback_logged: false\n"
+)
+
+ISSUE_WITH_DRAFT = ISSUE_ESCALATE.replace(
+    "<!-- lq-maintainer-agent:receipt:v1\n",
+    "### Maintainer decision\n\n"
+    "Decided by @maintainer: hold for the committee agenda.\n\n"
+    "### Drafted public comment\n\n"
+    "```markdown\nHi @filer — thanks for the detailed report.\n```\n\n"
+    "<!-- lq-maintainer-agent:receipt:v1\n"
+)
+
 # Deep-dive cache report carrying a '### Below threshold' section (deck-only
 # enrichment, skills/review-pr/SKILL.md Step 5). Includes an adversarial link:
 # the link allow-list must hold in this section too.
@@ -406,6 +454,42 @@ def main():
     check("PR v0.7 irreversible: undo says it cannot be cleanly undone",
           rc == 0 and "cannot be cleanly undone" in out
           and "u-bad" in out, "rc=%d" % rc)
+
+    # --- e2e: embedded drafts + maintainer decision (decided 2026-07-26) ---
+    rc, out = run(PR_WITH_DRAFTS)
+    check("drafts PR: exit 0", rc == 0, "rc=%d" % rc)
+    check("drafts PR: comment card present, marked paste-ready",
+          "The drafted comment" in out and "paste-ready" in out)
+    check("drafts PR: block is one-click-selectable (user-select:all, no JS)",
+          'class="receipt paste"' in out and "user-select:all" in out
+          and "<script" not in out)
+    check("drafts PR: comment survives its own --- divider (attribution kept)",
+          "reviewed and posted by @maintainer" in out)
+    check("drafts PR: merge-message card present with the drafted subject",
+          "The drafted merge message" in out
+          and "Pin the request timeout default (#904)" in out)
+    check("drafts PR: off-host URL inside a draft is inert text, never a href",
+          'href="https://evil' not in out)
+    check("drafts PR: decision-record card present with the ruling",
+          "What the maintainer decided" in out
+          and "merge after the named fix lands" in out)
+    check("drafts PR: decision footer block parses (additive, no crash)",
+          "verdict" in out)  # rc==0 above is the real assertion; keep a probe
+    rc, out = run(PR_TIER1_V2)
+    check("no drafts: draft + decision cards absent, not empty",
+          "The drafted comment" not in out
+          and "The drafted merge message" not in out
+          and "What the maintainer decided" not in out)
+    rc, out = run(ISSUE_WITH_DRAFT)
+    check("drafts issue: exit 0", rc == 0, "rc=%d" % rc)
+    check("drafts issue: comment card present",
+          "The drafted comment" in out
+          and "thanks for the detailed report" in out)
+    check("drafts issue: decision-record card present",
+          "What the maintainer decided" in out
+          and "hold for the committee agenda" in out)
+    check("drafts issue: no merge-message card on the issue profile",
+          "The drafted merge message" not in out)
 
     # --- e2e: below-threshold card (deck-only, from the cache report) ---
     check("PR without report arg: no below-threshold card",

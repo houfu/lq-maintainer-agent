@@ -8,7 +8,7 @@
     {
       "name": "lq-maintainer",
       "source": "./",
-      "description": "Helps legalquants/lq-ai maintainers triage PRs, issues, and dependabot traffic against lq-ai's canon. Recommends lanes, drafts receipts and responses. A human decides, every time."
+      "description": "Helps legalquants/lq-ai maintainers triage PRs, issues, and dependabot traffic against lq-ai's canon. Recommends outcomes and drafts everything onto one reading deck — the warm public comment, the merge message, one-click suggestion fixes — and records what the maintainer decided. A human decides, every time."
     }
   ]
 }

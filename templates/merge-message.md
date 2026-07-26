@@ -8,6 +8,13 @@ performs the merge and owns the message; the agent only drafts it
 (sign-off line included, which also smooths the GitHub-web-UI merge
 path where adding trailers by hand is irritating).
 
+**Delivery (decided 2026-07-26).** For every merge candidate the
+rendered draft is embedded in the internal receipt as a fenced block
+(`### Drafted merge message`, `templates/receipt-pr.md` RP-19) and
+surfaced on the deck as a paste-ready card — it is **not** presented
+as a separate chat deliverable. The human still pastes it whole into
+the GitHub merge box.
+
 ## Field rules
 
 - **MM-01 — Subject.** `<summary> (#<pr-number>)`, ≤72 characters,

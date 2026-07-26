@@ -3,12 +3,17 @@
 Rendered by `skills/triage/SKILL.md`, `skills/review-pr/SKILL.md`, and
 `skills/review-issue/SKILL.md` for every escalated item, per
 `rules/escalation-triggers.md` E-20.
-The packet is **evidence, not a verdict** (E-23): the agent never
-recommends merge/reject on an escalated item, and never delivers the
-packet itself — where packets go is an open governance call (design
-doc §15 q.1); the destination, once chosen, also carries all sensitive
-review state (§3.5) and must be access-controlled. Until then the
-packet is handed to the maintainer in-chat to route.
+The packet is **evidence plus a labeled recommendation, never a
+verdict** (E-23 as amended, design doc v0.7 §6): it carries the
+agent's recommended resolution, clearly labeled and kept visually
+separate from the evidence (CP-09) — but adopting, amending, or
+rejecting it is the human's act, every time, and the agent never
+merges, approves, closes, or posts anything on an escalated item. The
+agent also never delivers the packet itself — where packets go is an
+open governance call (design doc §15 q.1); the destination, once
+chosen, also carries all sensitive review state (§3.5) and must be
+access-controlled. Until then the packet is handed to the maintainer
+in-chat to route.
 
 ## Field rules
 
@@ -77,6 +82,18 @@ packet is handed to the maintainer in-chat to route.
   exclusively via this packet — the agent never commits, files,
   numbers, or posts one (S-20, D-07), and no draft ever satisfies
   anchoring (`rules/anchoring.md` A-12).
+- **CP-09 — The agent's recommendation, labeled (E-23 as amended,
+  `rules/decision-scoping.md` D-08 as amended).** After the questions
+  and before the attachments: one recommended resolution per residual
+  or committee question, under its own heading, clearly labeled as
+  the agent's recommendation and never folded into the settled table,
+  a question, or a drafted artifact's Decision section. Where two
+  resolutions are genuinely equal — no deficiency to name in either —
+  both are drafted as Alternatives A/B, unranked, and the
+  recommendation may itself be "either — the committee's preference"
+  (P-3 applied to the committee, `rules/conduct.md` CD-08). CP-05's
+  questions stay phrased as questions; the recommendation sits beside
+  them, never inside them.
 
 ## Template
 
@@ -156,6 +173,16 @@ escalated — a fired trigger is never un-fired (L-04).">
    sub-question: "Confirm <anchor> covers this change and anchor the
    item to it?">
 3. <free-form — reserved-human judgments only>
+
+### 6. Agent's recommendation (CP-09 — the agent's, not a ruling)
+
+- R-1: <recommended resolution, one or two sentences — or
+  "Alternatives A/B drafted, unranked: either satisfies the stated
+  requirement; the committee's preference">
+- <one per residual / question above>
+
+Adopting, amending, or rejecting these is the committee's act (E-23
+as amended); a fired trigger stays fired whatever is adopted (L-04).
 
 ### Attachments
 

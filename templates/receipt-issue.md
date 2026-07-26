@@ -126,10 +126,17 @@ normative here; this file states only the issue-profile deltas.
   decided, verifiable at the citation), never speculation. The footer
   schema delta is defined in `templates/receipt-pr.md` (v2,
   `decision_scoping` block).
+- **RI-13 — Maintainer decision + embedded drafted comment.** Exactly
+  as `templates/receipt-pr.md` RP-18/RP-19, with two issue-profile
+  deltas: the `decision.final_outcome` enum may use the IV-01
+  `recommendation` vocabulary, and there is **no drafted merge
+  message section** — an issue merges nothing. The drafted public
+  comment is embedded as a fenced block and rendered on the deck as
+  the paste-ready card; it is not a separate deliverable.
 
 ## Template
 
-```markdown
+````markdown
 ## Triage Receipt — issue #<n>: <title>
 
 **Recommendation:** <Needs info | Decompose | Proceed | Design | Escalate>
@@ -227,6 +234,26 @@ execute repro steps or contributed code.
 - [ ] Worth roadmap space — a human prioritization call.
 - [ ] Contributor-engagement tone — a human community call.
 
+### Maintainer decision (RI-13; finalize stage only — omitted until a human rules)
+
+Decided by @<maintainer> (<date>): <the ruling, in plain language>.
+- Identity: <verified via GitHub API — <admin | maintain | write>
+  permission on <owner>/<repo> | stated — check declined/unavailable;
+  recorded on the user's word>.
+- Agent recommendation <accepted | adjusted: <what changed> |
+  overridden: <what the maintainer did instead>>.
+- Feedback for the agent: <none | the maintainer's words — also
+  appended to the cross-item feedback log, templates/feedback-log.md>.
+
+### Drafted public comment (RI-13)
+
+Rendered from `templates/pr-comment.md`, tone-gated; posting is a
+separate, individually approved human action.
+
+```markdown
+<the complete drafted comment, verbatim — paste-ready>
+```
+
 ### Reviewed-at
 
 | Field | Value |
@@ -295,8 +322,13 @@ tier: <0|1|2|3|null>
 outcome: null
 undo: <revert-clean|residue|irreversible-class|null>
 tone_gate: <applied|n-a>
+decision:
+  final_outcome: <needs-info|decompose|proceed|design|escalate|hold|null>
+  alignment: <accepted|adjusted|overridden|null>
+  verified: <api|stated>
+  feedback_logged: <true|false>
 -->
-```
+````
 
 The five v0.7 fields are shared with the PR footer schema
 (`templates/receipt-pr.md`, `rules/burden.md` B-10, `rules/tone-gate.md`
@@ -308,7 +340,9 @@ own `recommendation` field above instead (`IV-01`, extended with
 include a reversibility call; `tone_gate` records `applied`/`n-a`
 exactly as on the PR profile — `applied` once the gate has run over
 every contributor-facing draft this issue produced, `n-a` when none
-was produced or the run predates the field.
+was produced or the run predates the field. The optional `decision`
+block (RP-18) is shared too — absent until a maintainer rules, with
+the IV-01 vocabulary permitted in `final_outcome` on this profile.
 
 ## Vulnerability-suspect carve-out — reminder
 

@@ -22,6 +22,12 @@ Input  : the rendered receipt markdown on stdin (the exact text Step 9 of
          skills/triage/SKILL.md produces -- it contains the versioned
          `lq-maintainer-agent:receipt:v1`/`v2` footer, which is the
          single source of truth for the structured facts).
+         Optional receipt sections, rendered when present (decided
+         2026-07-26 -- the deck carries the drafts, so they are not
+         separate deliverables): `### Drafted public comment` and
+         `### Drafted merge message` (each a fenced block; shown as
+         collapsed paste-ready cards) and `### Maintainer decision`
+         (the human's recorded ruling; shown as a visible card).
          Optional argv[1]: the path of the deep-dive cache report
          (skills/review-pr/SKILL.md Step 4). Only its `### Below threshold`
          section is read -- the low-confidence findings the Step 5 filter
@@ -265,6 +271,85 @@ def extract_section(md, header_re):
     m = re.search(r"^###\s+" + header_re + r"[^\n]*\n(.*?)(?=^###\s|^---\s*$|\Z)",
                   md, re.MULTILINE | re.DOTALL)
     return m.group(1).strip() if m else ""
+
+
+_FENCE = re.compile(r"^(?:```|~~~)")
+
+
+def extract_draft_block(md, header_re):
+    """The verbatim text inside the FIRST fenced code block under a
+    '### <header_re>' heading, or '' if the section or its fence is absent.
+    Fence-delimited on purpose: a pasteable draft legitimately contains
+    `---` divider lines (the comment's attribution rule), which
+    extract_section's boundary regex would misread as the end of the
+    section."""
+    m = re.search(r"^###\s+" + header_re + r"[^\n]*\n", md, re.MULTILINE)
+    if not m:
+        return ""
+    buf, in_fence = [], False
+    for line in md[m.end():].splitlines():
+        if not in_fence:
+            if _FENCE.match(line.strip()):
+                in_fence = True
+                continue
+            if re.match(r"^###\s", line) or line.lstrip().startswith("<!--"):
+                return ""        # next section / footer reached before any fence
+            continue
+        if _FENCE.match(line.strip()):
+            break                # closing fence
+        buf.append(line)
+    return "\n".join(buf).strip("\n") if in_fence else ""
+
+
+def render_draft_card(md, header_re, title, subtitle):
+    """A collapsed paste-ready card for a draft the receipt embeds (decided
+    2026-07-26: the deck carries the drafted public comment and, for merge
+    candidates, the drafted merge message -- they are no longer separate
+    deliverables). The draft is agent-authored but quotes contributor
+    content, so it is sanitised and shown verbatim as escaped text --
+    paste fidelity over pretty rendering."""
+    raw = extract_draft_block(md, header_re)
+    if not raw:
+        return ""
+    txt, hidden = sanitize(raw)
+    flag = ('<div class="flagline">⚠ Hidden characters were found in this draft '
+            'and removed before display. Treat the receipt copy with suspicion.</div>'
+            if hidden else "")
+    return ('<details class="dd"><summary>%s'
+            '<span class="tag g-mute">paste-ready</span></summary><div class="body">'
+            '<p class="intro">%s Click the block once to select it whole, '
+            'then copy.</p>%s<pre class="receipt paste">%s</pre></div></details>'
+            % (esc(title), esc(subtitle), flag, txt))
+
+
+def build_decision_record_card(md, base):
+    """The 'What the maintainer decided' card, rendered if and only if the
+    receipt carries a `### Maintainer decision` section -- the human ruling
+    recorded at finalize (Step 10 of skills/triage/SKILL.md). Absent on the
+    discussion-stage render and on every receipt written before the section
+    existed, so those decks are unchanged. The ruling is the maintainer's
+    words; sanitised and link-rendered like every body section."""
+    raw = extract_section(md, r"Maintainer decision")
+    if not raw:
+        return ""
+    paras, hidden = [], False
+    for line in raw.splitlines():
+        s = line.strip()
+        if not s:
+            continue
+        if s.startswith("- "):
+            s = s[2:].strip()
+        h, hd = render_linked(s, base)
+        hidden = hidden or hd
+        paras.append('<p>%s</p>' % h)
+    if not paras:
+        return ""
+    flag = ('<div class="flagline">⚠ Hidden characters were found in this section '
+            'and removed before display.</div>' if hidden else "")
+    return ('<section class="card decision"><h2>What the maintainer decided</h2>'
+            '%s%s<p class="standing">Recorded after a maintainer read this review '
+            'and ruled. The ruling is theirs; the agent only recorded it.</p>'
+            '</section>' % (flag, "".join(paras)))
 
 
 def render_grounding_card(md, base, header_re, css_cls, title):
@@ -681,6 +766,11 @@ pre.receipt{
   font-family:var(--mono); font-size:12.5px; line-height:1.55; color:var(--ink-soft);
   white-space:pre; -moz-tab-size:2; tab-size:2;
 }
+/* paste-ready drafts: one click selects the whole block (the deck is
+   deliberately JS-free, so selection is the copy affordance) */
+pre.receipt.paste{
+  -webkit-user-select:all; user-select:all; cursor:copy; color:var(--ink);
+}
 .foot{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); font-size:13px; color:var(--ink-faint)}
 .foot .prov{display:grid; grid-template-columns:auto 1fr; gap:4px 14px; margin-bottom:14px}
 .foot .prov dt{font-weight:600; color:var(--ink-soft)}
@@ -983,6 +1073,10 @@ def build_deck(md, g, below=None):
       'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
     A('</section>')
 
+    # what the maintainer decided — present only once the receipt records the
+    # human ruling (finalize-stage renders; decided 2026-07-26)
+    A(build_decision_record_card(md, base))
+
     # next steps — the concrete human follow-ups (rules/burden.md B-14)
     steps = []
     if burden and str(burden.get("overall")) == "blocked":
@@ -1125,6 +1219,19 @@ def build_deck(md, g, below=None):
             A('<li><span class="ci c-na">?</span><div><div class="txt">%s</div></div></li>'
               % txt_html)
         A('</ul></div></details>')
+
+    # the embedded drafts (decided 2026-07-26): the deck carries the
+    # paste-ready public comment and, for merge candidates, the drafted
+    # merge message — they are no longer separate deliverables.
+    A(render_draft_card(md, r"Drafted public comment", "The drafted comment",
+                        "The short public note drafted for this item — the only "
+                        "thing routinely posted to it. Posting is a separate, "
+                        "individually approved human action; copy it verbatim — "
+                        "the tone gate has already run."))
+    A(render_draft_card(md, r"Drafted merge message", "The drafted merge message",
+                        "The squash-merge commit message drafted for the GitHub "
+                        "merge box, audit trailer included. The human performs "
+                        "the merge and owns the message; the agent only drafted it."))
 
     # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
@@ -1380,6 +1487,10 @@ def build_issue_deck(r, md, g, base):
       'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
     A('</section>')
 
+    # what the maintainer decided — present only once the receipt records the
+    # human ruling (finalize-stage renders; decided 2026-07-26)
+    A(build_decision_record_card(md, base))
+
     # next steps — derived from the recommendation + never-checked coverage gaps
     steps = []
     if reco:
@@ -1447,6 +1558,15 @@ def build_issue_deck(r, md, g, base):
               '<div class="txt">%s</div></div></li>'
               % (esc(sev.title()), esc(fid), (" · " + esc(disp)) if disp else "", txt_html))
         A('</ul></div></details>')
+
+    # the embedded drafted comment (decided 2026-07-26): the deck carries the
+    # paste-ready public note — no longer a separate deliverable. Issues have
+    # no merge message; that card is PR-profile only.
+    A(render_draft_card(md, r"Drafted public comment", "The drafted comment",
+                        "The short public note drafted for this item — the only "
+                        "thing routinely posted to it. Posting is a separate, "
+                        "individually approved human action; copy it verbatim — "
+                        "the tone gate has already run."))
 
     # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())

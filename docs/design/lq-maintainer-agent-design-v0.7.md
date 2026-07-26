@@ -255,6 +255,41 @@ into it cleanly (`docs/community-repo.md` designs the layout).
   banned-pattern check (probing questions, challenge framing,
   competence implications, posturing) with a rewrite, not a veto.
 
+**Amendment, decided 2026-07-26 — the deck carries the drafts, and
+the receipt records the ruling:**
+
+- **The drafted public comment and, for merge candidates, the drafted
+  merge message are embedded in the internal receipt** (fenced blocks,
+  `templates/receipt-pr.md` RP-19) and rendered on the deck as
+  collapsed paste-ready cards. They are **no longer separate
+  deliverables**: the deck is the one surface the maintainer reads,
+  and the deliverable set per item collapses to *the deck (and the
+  receipt behind it)*. Each draft is still rendered from its own
+  template, still tone-gated, and posting/merging remains one
+  individually approved human action per write.
+- **The maintainer's final ruling is recorded** in the receipt's
+  `### Maintainer decision` section and enumerated `decision` footer
+  block (RP-18) at the finalize step — who ruled, the ruling in their
+  words, and its alignment with the agent's recommendation
+  (`accepted`/`adjusted`/`overridden`). The deck re-renders after the
+  discussion and shows it as the "What the maintainer decided" card;
+  an absent block always reads as "not yet decided", never as
+  agreement. Recording is **optional by design**: the review skills
+  are also run by contributors checking their own work before
+  submitting, and such a session records no ruling and is never
+  pressed for one — only an actual maintainer decision is recorded.
+  **Who counts as a maintainer is API-verified, not assumed** — the
+  operator's authenticated `gh` identity plus the repo-permission
+  endpoint (`admin`/`maintain`/`write` = maintainer of record),
+  mirroring the §5 author-class posture; where the check is declined
+  or unavailable, the record says `verified: stated` and never
+  presents the role as confirmed.
+- **Divergences and explicit feedback aggregate across items** in the
+  maintainer-internal feedback log (`templates/feedback-log.md`,
+  local cache only — never the community repo): the raw material for
+  new golden evals and rule amendments. Routine agreement is not
+  logged; the log stays high-signal.
+
 ## 9. The design path (new skill; `skills/design-plan/`)
 
 Category-1 contributions — the DE series — get a dedicated skill,

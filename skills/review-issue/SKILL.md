@@ -240,7 +240,7 @@ escalated issue, additionally render the Decision scoping section
 (`RI-12`) and the footer's enumerated `decision_scoping` block (the
 footer marker is `receipt:v2`; prior `v1` receipts still parse), and
 render the committee packet with the decision ledger, drafted
-artifacts, and the agent's labeled recommendation (`CP-03a`/`CP-08`,
+artifacts, and the agent's labeled recommendation (`CP-03a`/`CP-08`/`CP-09`,
 `E-23` as amended); on a non-escalated issue the section is absent and
 the block reads `applied: n-a`. Save the finished receipt to the
 evidence store (local cache today; the community repo's
@@ -267,7 +267,10 @@ one next step, a link to the deck, and the attribution line — no
 tables, no checklists. Run every contributor-facing draft through the
 **tone gate** (`rules/tone-gate.md` TG-NN) before it is offered for
 posting; the gate rewrites a draft that fails a banned pattern, it does
-not veto the finding or request underneath.
+not veto the finding or request underneath. Embed the gated draft in
+the receipt's `### Drafted public comment` fenced block (`RI-13`) —
+the deck renders it as a paste-ready card, and it is never presented
+as a separate chat deliverable.
 
 ## Step 8 — Discuss, finalize, then draft-post
 
@@ -288,9 +291,26 @@ already in the packet (`D-08`, `E-23` as amended). A drafted decision
 artifact is always a hand-the-text-over: the agent never files, commits,
 numbers, or posts one (`S-20`, `D-07`).
 
-**Finalize the internal receipt** to reflect that conversation, then save
-it to the evidence store (Step 7) — this is not a GitHub write and needs
-no permission prompt. **Then offer the remaining writes one at a time**,
+**Finalize the internal receipt** to reflect that conversation — and,
+**if a maintainer ruled**, the **`### Maintainer decision` section and
+the enumerated `decision` footer block** (`RI-13`/`RP-18`): who ruled,
+the ruling in their words, the alignment with the agent's
+recommendation, and any feedback verbatim — verifying the decider per
+`RP-18` (authenticated login via `gh api user`, role via the repo
+collaborator-permission GET — `admin`/`maintain`/`write` is a
+maintainer of record; both calls prompt), recording `verified: api`,
+or `verified: stated` where the check was declined or unavailable and
+the section says so plainly; on `adjusted`/`overridden`
+alignment or explicit feedback, append the `templates/feedback-log.md`
+entry (FL-01) and set `decision.feedback_logged: true`. Ruling is
+**optional**: a contributor running this skill to check their own
+issue has no ruling to give — leave section and block absent, and
+never press for one. Then save the receipt to the evidence store
+(Step 7) and **re-render the deck** from the finalized receipt (same
+command, same path), so the final deck carries the paste-ready comment
+and, where recorded, the "What the maintainer decided" card. Saving is not a
+GitHub write and needs no permission prompt. **Then offer the
+remaining writes one at a time**,
 each behind its own permission prompt (or hand the text to paste): post
 the short public comment (`templates/pr-comment.md`), the drafted repro
 request or canon-cited answer, the DE/mini-PRD promotion stub, the

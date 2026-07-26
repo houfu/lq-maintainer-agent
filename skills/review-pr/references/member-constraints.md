@@ -44,7 +44,17 @@ material under review:
   a finding that cannot cite them will be dropped by the lead's
   evidence check** / `severity` / `confidence` (high / medium / low) /
   `canon citation` (resolved via the canon map included below) /
-  `suggested comment` (ready to post, written for the contributor) /
+  `suggested comment` (ready to post, written for the contributor,
+  and ending in one concrete doable action — where the fix is
+  textual, include the proposed replacement wording itself; a correct
+  explanation that leaves the reader asking "so what do I do?" is an
+  incomplete finding) /
+  `suggested change` (ONLY where the remedy is a concrete replacement
+  of the cited line(s): the exact, complete replacement text for
+  those lines, ready for the lead to wrap in a GitHub suggestion
+  block anchored there — it will be committed verbatim if accepted,
+  so partial lines or ellipses make it wrong; omit the field entirely
+  where the fix is not a concrete text change) /
   `disposition hint` — exactly one of:
   - `trivial` — maintainer fixes it in seconds;
   - `relayable` — written so a non-engineer contributor can carry it

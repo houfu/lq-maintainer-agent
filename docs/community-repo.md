@@ -175,6 +175,14 @@ reasoning about its own queue — three categories stay elsewhere:
   them. This repo cites canon by link; it never restates or forks it.
 - **Committee packets**, per the carve-out above — maintainer-facing
   material with no public-readiness bar applied yet.
+- **The cross-item feedback log** (`templates/feedback-log.md`). The
+  per-item `### Maintainer decision` section (and its `decision`
+  footer block) travels with the receipt into `state.yaml` +
+  `notes.md` here like everything else the receipt carries — but the
+  aggregated maintainer-to-agent feedback log stays in the local
+  cache: it is commentary on the agent's performance across items
+  (eval-seeding material), not the project's public reasoning about
+  its queue.
 
 ## Open questions this document does not close
 

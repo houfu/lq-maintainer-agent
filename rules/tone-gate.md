@@ -69,7 +69,15 @@ assumed to fail sometimes; the gate is the second.
      concretely, not effusively.
   2. **Exactly one clear next step** for the contributor (or
      explicitly none: "nothing needed from you — this is on us
-     now").
+     now") — and it passes the **"what do I do now?" test** (added
+     2026-07-27): a first-time reader finishing the draft can state,
+     in one sentence, the concrete thing they would do next. A
+     correct explanation with no doable action fails the gate even
+     though nothing in it is banned — being right is not the same as
+     being actionable. Where the fix is a text change, the draft
+     carries the proposed replacement wording itself — or the
+     one-click suggestion block (`rules/lanes.md` L-33a) — never just
+     a description of the direction the wording should move.
   3. **Every request carries its reason** — the canon or concrete
      need that makes the ask real (CD-06/CR-03), so no request reads
      as arbitrary gatekeeping.
