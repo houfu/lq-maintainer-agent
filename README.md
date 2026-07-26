@@ -95,27 +95,34 @@ canon SHA it was judged against, the agent version, and the served model
 ID for the session — so any triage decision is reproducible and any
 dispute auditable.
 
-## The two skills
+## The three skills
 
-Both are explicit-invocation-only (`disable-model-invocation: true`) —
-nothing fires unprompted.
+All are explicit-invocation-only (`disable-model-invocation: true`) —
+nothing fires unprompted. One **router** sorts the queue; two **reviewers**
+go deep on a single item.
 
 - **`/lq-maintainer:triage`** ([skills/triage/](skills/triage/)) — the
-  breadth pass, for PRs and issues, single item or batch. Produces a
+  breadth pass / queue router, for PRs and issues in batch. Produces a
   digest: fast-lane one-liners with the assigning rule and the
   deterministic-check results, standard-lane triage cards, committee
   packets for escalations, and issue classifications with drafted
   responses. Use it to start a maintainer session and clear the queue.
-- **`/lq-maintainer:review-pr`** ([skills/review-pr/](skills/review-pr/))
-  — the depth pass, for a single standard-lane PR that merits it (size,
+- **`/lq-maintainer:review-pr N`** ([skills/review-pr/](skills/review-pr/))
+  — the depth pass for a single standard-lane PR that merits it (size,
   sensitivity, or an explicit ask). Dispatches a multi-agent team —
   anchor/scope, security vetting, code quality, test adequacy — over the
   diff and `main`, filters and caps the findings before anything reaches
   the receipt, and keeps the full unfiltered set in a cached long-form
   report behind it.
+- **`/lq-maintainer:review-issue N`** ([skills/review-issue/](skills/review-issue/))
+  — the single-issue reviewer (the issue counterpart to `review-pr`).
+  Classifies, performs its own cross-reference (never the filer's), and
+  produces the recommendation deck — needs-info / decompose / proceed /
+  escalate — over a rule-grounded preview of the obstacles the issue would
+  hit as a PR, plus a drafted receipt and responses.
 
 Rule of thumb: `/lq-maintainer:triage` to decide what deserves attention;
-`/lq-maintainer:review-pr` when one item has earned it.
+`review-pr` / `review-issue` when one item has earned it.
 
 ## The fast lane is deterministic-first
 

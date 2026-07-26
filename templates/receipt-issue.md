@@ -1,6 +1,7 @@
 # Template — Triage Receipt, issue profile
 
-Rendered by `skills/triage/SKILL.md` (Steps 7–8) for every triaged
+Rendered by `skills/review-issue/SKILL.md` (Step 7; and the batch path in
+`skills/triage/SKILL.md`) for every triaged
 issue **except vulnerability-suspect items, which get no public
 receipt at all** (`rules/issues.md` C-40 — the only output there is
 the drafted private-advisory redirect,
@@ -18,10 +19,18 @@ file states only the issue-profile deltas.
   question / spam-suspect) + assigning rule ID (C-NN,
   `rules/issues.md`), **and** a lane + assigning rule like any other
   item (issues are never fast; most commonly standard or escalate).
-- **RI-02 — Duplicate-search record.** What was searched — open
-  issues AND the DE list (routed via `rules/canon-map.md`) — and what
-  matched, cross-referenced both directions. "Nothing matched" is a
-  recordable result; an unperformed search is not.
+- **RI-02 — References / cross-reference record (`C-60`, `IV-03`).** The
+  **agent-performed** cross-reference (never the filer's self-attested
+  search, `I-13`), sorted into four buckets — **duplicate**, **adjacent**,
+  **contradicting**, **linked** — over open issues, open PRs, the DE list,
+  and the roadmap (routed via `rules/canon-map.md`). The filer's "I
+  searched, no duplicates" claim is recorded and then confirmed or
+  corrected by the agent's own read; a discrepancy is a finding. Every
+  match and every canon citation renders as a **click-through link**
+  (`rules/canon-map.md` link rule — canon docs pinned to the canon SHA,
+  issues/PRs by number, agent-constructed from validated sources only).
+  "Nothing matched in a bucket" is a recordable result; an unperformed
+  search is not.
 - **RI-03 — Repro assessment (bugs).** Complete / partial / absent,
   itemized (versions, steps, expected vs. actual, logs), with the
   drafted request for missing pieces rendered from
@@ -57,11 +66,53 @@ file states only the issue-profile deltas.
   resolved.
 - **RI-09 — Contest/hold, attribution, footer, update ping.** Exactly
   as `templates/receipt-pr.md` RP-10–RP-14.
+- **RI-10 — Conduct + next steps.** The receipt and every drafted reply
+  meet `rules/conduct.md` (`CD-NN`) / `canon:code-of-conduct`
+  (`rules/issues.md` C-80), and the receipt names the maintainer's next
+  steps for the issue (C-81) — post the repro request, route the
+  advisory, link the duplicate, promote the DE, or make the RI-08
+  human-only calls.
+- **RI-11 — Recommendation, obstacles, references (the issue deck,
+  §8.6a).** The issue carries **no five-axis `burden` block** — those axes
+  grade a code diff an issue does not have (`rules/burden.md` scope note).
+  It carries instead the issue-deck fields (`rules/issues.md` `IV-NN`):
+  - a **Recommendation** headline — one enumerated state
+    (`needs-info` / `decompose` / `proceed` / `escalate`, `IV-01`),
+    derived from the classification, repro/anchor status, salvage, and any
+    escalation trigger, and recorded in the footer as the single
+    `recommendation` field (`IV-06`);
+  - a **Predicted obstacles** list (`IV-02`) — a rule-grounded preview of
+    what a PR built from this issue would run into, each obstacle citing
+    the rule/canon that would fire; **visible body only, never the
+    footer**, and never a graded level;
+  - a **References** section (`IV-03`) — the `C-60` cross-reference:
+    matched duplicates (open issues + DE list), related open PRs, and the
+    roadmap/DE entry the ask maps to.
+
+  All other honesty rails are unchanged (`IV-05`): the deck is a private
+  local view, coverage lists runtime as never-checked (RI-06), and the
+  RI-08 human-only judgments render permanently open. A
+  **vulnerability-suspect** issue gets no receipt and no deck at all
+  (C-04/C-40) — recommendation included.
+- **RI-12 — Decision scoping (escalated issues only).** As
+  `templates/receipt-pr.md` RP-17, rendered if and only if the
+  recommendation is `escalate` / a trigger fired
+  (`rules/decision-scoping.md` D-00); absent otherwise, with the
+  footer's `decision_scoping.applied: n-a`. Additionally, a Predicted
+  obstacles line (IV-02) may take the sanctioned split form of D-14 —
+  `settled: <part> — settled by [canon:<key> §x](link); open: R-<i> —
+  <atomic sentence>` — still a rule-grounded fact (what canon has
+  decided, verifiable at the citation), never speculation. The footer
+  schema delta is defined in `templates/receipt-pr.md` (v2,
+  `decision_scoping` block).
 
 ## Template
 
 ```markdown
 ## Triage Receipt — issue #<n>: <title>
+
+**Recommendation:** <Needs info | Decompose | Proceed | Escalate>
+(rule: IV-01) — <one-line plain-language reason>
 
 **Classification:** <bug | feature | question | spam-suspect>
 (rule: <C-NN>) · **Lane:** <docs | standard | escalate>
@@ -72,11 +123,29 @@ file states only the issue-profile deltas.
 > This item is marked human-only; the agent drafts nothing further for
 > it except at explicit maintainer request. A maintainer will respond.
 
-### Duplicate search
+### Predicted obstacles — if this became a PR (IV-02)
 
-Searched: open issues; the DE list (via the canon map).
-Matched: <none | list of #n / DE-XXX with one-line relation each,
-cross-referenced both directions>
+A rule-grounded preview, not a grade. Each line names the rule or canon
+fact that would fire if the ask were submitted as-is.
+
+- <obstacle> — <rule/canon that would fire, e.g. E-04 / S-DECLINE / S-DUP #n>
+- <where canon settles part of the ask (D-14): settled: <part> —
+  settled by [canon:<key> §x](link); open: R-<i> — <atomic sentence>>
+<or, if none: "None foreseen — a single, anchored, in-scope ask.">
+
+### References (IV-03)
+
+Searched **by the agent** (not the filer's self-attestation, I-13): open
+issues; open PRs; the DE list; the roadmap. Filer's claim: <"searched, no
+duplicates" | none> — <confirmed | corrected: …>. Every entry links.
+- **Duplicate:** <none | [#n](link) / [DE-XXX](link) with one-line relation,
+  cross-referenced both directions>
+- **Adjacent:** <none | [#n](link) / [PR #n](link) / roadmap item — overlapping
+  scope, one line each>
+- **Contradicting:** <none | [canon:prd §x](link) non-goal / superseding
+  [ADR-NNN](link) / declined DE — the conflict that may force escalate (E-04)>
+- **Linked:** <none | [DE-XXX](link) / [#n](link) — dependency / blocked-by /
+  referenced, one line each>
 
 ### Repro assessment (bugs; n/a otherwise)
 
@@ -108,6 +177,22 @@ Suggested severity: <one of the project's severity levels>
 Drafted split issues (to be filed as sub-issues of this one, by a
 human): <titles, one line each; full bodies delivered in-session>.
 
+### Decision scoping (escalated items only — omitted otherwise)
+
+Escalation narrowed per rules/decision-scoping.md, at canon `<sha>`:
+<s> sub-question(s) found settled · <r> residual decision(s) ·
+<h> reserved-human. Settled entries are the agent's findings —
+verify by click; a contested entry becomes an open decision (D-04).
+Full ledger and drafted artifacts: committee packet (CP-03a/CP-08).
+
+- Settled: <one line per entry — <sub-question> — settled by
+  [canon:<key> §x / ADR-NNN / DE-XXX](link)> <or: none — nothing this
+  escalation raises is already decided>
+- **R-<i> — <atomic ratifiable sentence>** [drafted: ADR-XXXX (DRAFT)
+  | DE stub | none — reserved-human]
+- Reserved-human: <judgment — reserving citation> <or: none put at
+  issue by this escalation>
+
 ### Coverage statement
 
 Covered: <e.g. classification, duplicate search, repro assessment>
@@ -133,7 +218,7 @@ execute repro steps or contributed code.
 *Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 
-<!-- lq-maintainer-agent:receipt:v1
+<!-- lq-maintainer-agent:receipt:v2
 profile: issue
 item: <owner>/<repo>#<n>
 lane: <docs|standard|escalate>
@@ -143,6 +228,7 @@ demoted_from: <lane or null>
 triggers: [<E-NN>, ...]
 classification: <bug|feature|question|spam-suspect>
 classification_rule: <C-NN>
+recommendation: <needs-info|decompose|proceed|escalate>
 held: <true|false>
 pinned:
   pr_head_sha: n-a
@@ -174,6 +260,14 @@ coverage:
   - {item: anchor, status: <covered|not-covered|n-a>}
   - {item: salvage, status: <covered|not-covered|n-a>}
   - {item: runtime-behavior, status: never-by-design}
+decision_scoping:
+  applied: <full|partial|n-a>
+  questions: <integer>
+  settled: <integer>
+  residual: <integer>
+  reserved_human: <integer>
+  residuals:
+    - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
 -->
 ```
 

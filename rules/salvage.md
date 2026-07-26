@@ -129,11 +129,27 @@ card and the Triage Receipt.
 
 ## Boundaries
 
+- **S-17 — Ambiguous parts default toward decline, not preservation**
+  *(decided 2026-07)*. A part that is neither clearly valuable nor
+  obviously slop does **not** get the benefit of the doubt: where
+  canon supplies a decline reason (out of scope per `canon:prd`,
+  contradicts `canon:honest-state`, superseded by an ADR), the
+  default is S-DECLINE with that citation. Where no canon speaks to
+  the part, the agent does not invent a decline reason (S-11.5): the
+  drafted response routes the part to the decision path — file it as
+  a feature issue / DE proposal — so declining the *code* never
+  silently decides the *idea*. S-DE is reserved for parts with a
+  concrete, stated value case; "might be useful someday" is not one.
+  The contributor can always argue a part back in; the maintainer can
+  always override in Step 8.
 - **S-20 — Humans post and file everything.** The agent drafts the
   response, the DE/mini-PRD stubs, the split-issue titles and bodies
   (including sub-issue filing instructions), and the hunk map. A human
-  maintainer posts every comment, files every issue and DE entry, and
-  closes or relabels the original item. The agent never posts, files,
+  maintainer posts every comment, files every issue, DE entry,
+  **and ADR draft** (a drafted decision artifact is handed over in the
+  committee packet, never committed, filed, or numbered by the agent —
+  `rules/decision-scoping.md` D-07), and closes or relabels the
+  original item. The agent never posts, files,
   closes, or labels (per §2.1 / §10 of the design doc).
 - **S-21 — Decomposition appears in the receipt.** The part list with
   dispositions is a mandatory section of the Triage Receipt

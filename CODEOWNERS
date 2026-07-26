@@ -11,6 +11,9 @@
 # with the security team (e.g. @legalquants/maintainer-agent-security).
 
 /rules/           @houfu
+# The reading-deck glossary is normative (a wrong plain-language gloss
+# misrepresents a security decision — design §8.6); route it like rules/.
+/templates/deck/  @houfu
 /hooks/           @houfu
 /settings/        @houfu
 /skills/          @houfu

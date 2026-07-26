@@ -10,7 +10,9 @@ or receipt — MUST cite the assigning rule by ID: the most specific
 rule that produced the assignment (or the demotion). Companion rule
 sets: `rules/anchoring.md` (A-NN), `rules/escalation-triggers.md`
 (E-NN), `rules/salvage.md` (S-NN), `rules/injection-posture.md`
-(I-NN), `rules/stale-sweep.md` (the §7 sweep guardrails). Canon
+(I-NN), `rules/stale-sweep.md` (the §7 sweep guardrails),
+`rules/burden.md` (B-NN, the §5.2 maintainer-burden roll-up),
+`rules/conduct.md` (CD-NN, the §8 conduct standard for drafted outputs). Canon
 locations referenced below resolve via their `canon:<key>` entries in
 `rules/canon-map.md` — the only file that names the maintained
 project's paths — and are verified by the canon-drift check.
@@ -284,13 +286,20 @@ it (L-04).
 
 ### Review focus
 
-Assemble evidence for humans; do not attempt to resolve the escalated
-question. Where a trigger prescribes work (E-07's full vetting
-checklist), run it against the diff and attach results.
+Assemble evidence for humans; never attempt to resolve the escalated
+question — but always **scope** it (`rules/decision-scoping.md`): the
+evidence must state what canon the agent found already settled, with
+verifiable citations, and state precisely what remains, as atomic
+ratifiable decisions with drafted artifacts. Scoping narrows the
+question; it never answers it, never moves the lane, and never
+un-fires a trigger (L-04, D-00) — and every settled finding stays
+contestable by the humans reading it (D-04). Where a trigger
+prescribes work (E-07's full vetting checklist), run it against the
+diff and attach results.
 
 ### Output format
 
-- Digest line: `#<n> — <one-line summary> — escalate (<E-NN>[, E-NN…], <confidence>)`.
+- Digest line: `#<n> — <one-line summary> — escalate (<E-NN>[, E-NN…], <confidence>) — <s> found settled / <r> to decide`.
 - Committee packet per `templates/committee-packet.md` — the output
   spec, including the suspected-deliberate-attack and
   public-vulnerability carve-outs, is in

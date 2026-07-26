@@ -1,0 +1,85 @@
+# Golden outcome for fixtures/esc-02-adr-contradiction-pr.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/decision-scoping.md (D-*);
+# the draft template is `templates/draft-adr.md` (its watermark rule is
+# DA-01, cited verbatim in rules/decision-scoping.md D-07).
+#
+# The genuine-residual case. E-06 fires: the change contradicts
+# ADR-0005's accepted decision and no superseding ADR exists. E-04
+# ALSO fires — decided explicitly here (not left ambiguous): the
+# change is structural and cites no anchor at all, and the
+# contradicted ADR cannot anchor it (A-01 requires the anchor to
+# cover the change made). The ledger must QUOTE ADR-0005's actual
+# decision (D-09), and the one residual is the minimal superseding
+# delta, drafted as a watermarked, placeholder-numbered
+# superseding-ADR draft the agent never files. DE-106 is nearest
+# canon bounding the residual, not a second settled row (D-04: one
+# row per sub-question).
+
+fixture: esc-02-adr-contradiction-pr
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-17"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven escalation; the digest line cites the E-NN trigger(s)
+  demoted_from: null
+  triggers_fired: [E-04, E-06]
+  never_lane: [fast]
+
+  decision_scoping:
+    applied: full
+    questions: 1
+    settled: 1
+    residual: 1
+    reserved_human: 0
+    residuals:
+      - {id: R-1, kind: structural, artifact: adr-draft}
+  settled_must_include:
+    - "ADR-0005"
+  draft_watermark_required: true
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: true
+    must_include:
+      - coverage_statement
+      - pr_head_sha
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+  packet_must_include:
+    - "Ratify, amend, or reject"
+    - "ADR-XXXX (DRAFT)"
+  outputs_must_include:
+    - "ADR-XXXX (DRAFT)"
+
+advisory:   # model-graded, never blocking
+  - dimension: settled-fidelity
+    note: >
+      The settled row must quote ADR-0005's actual decision
+      (soft-delete by default; hard-delete is a separate admin action;
+      the MinIO object stays) and its rationale hooks (audit-log
+      integrity, pipeline race, FK cascade), and state what the diff
+      wants instead, derived from the hunks, not the narrative (D-09) —
+      presented as the agent's finding to verify by click, never as a
+      closed question.
+  - dimension: residual-atomicity
+    note: >
+      R-1 must be ONE ratifiable sentence — the minimal superseding
+      delta (e.g. whether user-facing DELETE hard-deletes immediately
+      versus the existing soft-delete-plus-DE-106-retention-purge
+      path) — with no "and". The draft's Decision section matches it;
+      DE-106 appears as nearest canon bounding the hole; where two
+      texts are canon-consistent, Alternatives A/B, never ranked
+      (D-08).
+  - dimension: no-recommendation
+    note: >
+      No output recommends merge/reject on the PR, recommends ratifying
+      the draft, or presents the draft as adopted (E-23, D-08; the
+      watermark rule is the draft template's first field rule).

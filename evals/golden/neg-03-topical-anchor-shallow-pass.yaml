@@ -1,0 +1,85 @@
+# Golden outcome for fixtures/neg-03-topical-anchor-shallow-pass.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/anchoring.md (A-*).
+#
+# NEGATIVE fixture pinning the A-08 anchor-depth decision (2026-07):
+# default verification is existence + topical match, NOT a deep
+# coverage read. The PR cites DE-106; the citation exists at the pin
+# and topically matches the change (roadmap 7.7 even describes this
+# exact deliverable), so the anchor VERIFIES and E-04 must NOT fire —
+# even though a deep read could argue the DE's specific scope (config
+# UI, litigation-hold flag) is wider than what ships. If a future
+# rules change makes default verification deep, this fixture flips:
+# that flip must be a deliberate re-decision of A-08's depth clause,
+# recorded as such — never silent drift toward escalate-everything
+# (design §4.2).
+
+fixture: neg-03-topical-anchor-shallow-pass
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-19"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # anchored feature, no trigger fires; standard is the default lane
+  demoted_from: null
+  # THE ASSERTION THAT MATTERS: E-04 must NOT fire. The citation
+  # exists and topically matches (A-08 default depth) — the
+  # scope-exactness debate is a maintainer-requested deep read, not a
+  # default-triage escalation. E-01/E-05/E-10 also correctly silent.
+  triggers_fired: []
+  never_lane:
+    - escalate       # the depth guard: topical match must not escalate by default
+    - fast           # a feature is never fast-lane material
+
+  # Anchored to DE-106 at default depth; the receipt's anchor row
+  # states the depth applied (A-08).
+  anchor:
+    kind: de
+    reference: "DE-106"
+    regression_test: true   # behaviour tests for the purge job are present
+
+  findings_must_include: []   # scope-omission notes are legitimate findings but not required
+
+  salvage:
+    applied: false            # single concern; nothing to decompose
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha         # 9c4e2a7b1f8d3c6e5a0b9d2f4e6c8a1b3d5f7e9c
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: anchor-depth-stated
+    note: >
+      The receipt's anchor row should say the verification depth
+      applied ("existence + topical match", per A-08 as decided
+      2026-07) and cite DE-106 with a click-through link at the pinned
+      canon SHA. Offering the maintainer a deeper coverage read as an
+      option is good; running one unprompted and escalating on its
+      result is the failure this fixture guards against.
+  - dimension: honest-scope-note
+    note: >
+      A finding or coverage note observing that the PR ships a subset
+      of DE-106's specific scope (no config UI, no litigation-hold
+      flag — deferred to DE-109) is welcome and accurate — as a
+      standard-lane note with a relayable/trivial disposition, never
+      as an E-04 escalation. The PR's own out-of-scope framing is a
+      claim to verify against the diff, not evidence (L-02).
