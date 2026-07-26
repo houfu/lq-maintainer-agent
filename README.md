@@ -94,7 +94,7 @@ local read access to the canon and to `main`.
    are `/lq-maintainer:triage` and `/lq-maintainer:review-pr`, not a bare
    `/triage`.
 
-The plugin declares the two skills and the **PreToolUse safety hooks**
+The plugin declares the four skills and the **PreToolUse safety hooks**
 ([hooks/hooks.json](hooks/hooks.json)) that block merge, approve, close,
 push, and PR-ref checkout in the session. A reference copy of the same
 block for lq-ai's own `.claude/`
