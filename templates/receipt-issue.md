@@ -1,17 +1,28 @@
-# Template — Triage Receipt, issue profile
+# Template — Internal Evidence Record (receipt), issue profile
 
 Rendered by `skills/review-issue/SKILL.md` (Step 7; and the batch path in
 `skills/triage/SKILL.md`) for every triaged
-issue **except vulnerability-suspect items, which get no public
-receipt at all** (`rules/issues.md` C-40 — the only output there is
-the drafted private-advisory redirect,
+issue **except vulnerability-suspect items, which get no receipt at
+all** (`rules/issues.md` C-40 — the only output there is the drafted
+private-advisory redirect,
 `templates/contributor-responses/vulnerability-redirect.md`).
-**Render, never freehand.** Posted (or updated in place, design doc
-§8.4) only behind an individual human approval.
+**As of v0.7 this is an internal evidence document, not a public
+artifact** (design doc v0.7 §8): it is no longer posted to the issue.
+It is stored in the maintainer's local cache today, and in the
+community repo's per-item directory (`reviews/issue-NNNN/state.yaml`
++ `notes.md`, `docs/community-repo.md`) once that repo exists. The
+public-facing counterpart is now `templates/pr-comment.md` — the same
+short warm note used for PRs, drafted separately and tone-gated.
+**Migration:** prior `receipt:v2` comments posted before v0.7 remain
+readable for resume (I-09 author verification unchanged); the agent
+stops writing new public receipts, not old ones. **Render, never
+freehand.** Drafted (or updated in place, design doc §8.4) and stored
+only behind an individual human approval.
 
-Footer schema, update-ping convention, and shared field semantics are
-defined once in `templates/receipt-pr.md` and are normative here; this
-file states only the issue-profile deltas.
+The body below keeps its full rigor unchanged — only its audience
+changed. Footer schema, update-ping convention, and shared field
+semantics are defined once in `templates/receipt-pr.md` and are
+normative here; this file states only the issue-profile deltas.
 
 ## Field rules
 
@@ -29,6 +40,13 @@ file states only the issue-profile deltas.
   match and every canon citation renders as a **click-through link**
   (`rules/canon-map.md` link rule — canon docs pinned to the canon SHA,
   issues/PRs by number, agent-constructed from validated sources only).
+  The confirmed-or-corrected comparison against the filer's claim is
+  this profile's self-attestation cross-check (`rules/self-attestation.md`
+  T-06) and **renders here, internally, only** (T-07 as amended,
+  design doc v0.7 §8) — a genuine correction never tabulates
+  claimed-versus-verified on a contributor-facing surface; it
+  surfaces there, if at all, as at most one courteous, blame-free
+  note, tone-gated.
   "Nothing matched in a bucket" is a recordable result; an unperformed
   search is not.
 - **RI-03 — Repro assessment (bugs).** Complete / partial / absent,
@@ -77,10 +95,13 @@ file states only the issue-profile deltas.
   grade a code diff an issue does not have (`rules/burden.md` scope note).
   It carries instead the issue-deck fields (`rules/issues.md` `IV-NN`):
   - a **Recommendation** headline — one enumerated state
-    (`needs-info` / `decompose` / `proceed` / `escalate`, `IV-01`),
-    derived from the classification, repro/anchor status, salvage, and any
-    escalation trigger, and recorded in the footer as the single
-    `recommendation` field (`IV-06`);
+    (`needs-info` / `decompose` / `proceed` / `design` / `escalate`,
+    `IV-01`), derived from the classification, repro/anchor status,
+    salvage, and any escalation trigger — `design` for a category-1
+    ask (`rules/change-categories.md` G-02), routing to
+    `skills/design-plan/` exactly as a PR's `route-to-design` outcome
+    does (design doc v0.7 §8, `rules/burden.md` B-10) — and recorded
+    in the footer as the single `recommendation` field (`IV-06`);
   - a **Predicted obstacles** list (`IV-02`) — a rule-grounded preview of
     what a PR built from this issue would run into, each obstacle citing
     the rule/canon that would fire; **visible body only, never the
@@ -111,7 +132,7 @@ file states only the issue-profile deltas.
 ```markdown
 ## Triage Receipt — issue #<n>: <title>
 
-**Recommendation:** <Needs info | Decompose | Proceed | Escalate>
+**Recommendation:** <Needs info | Decompose | Proceed | Design | Escalate>
 (rule: IV-01) — <one-line plain-language reason>
 
 **Classification:** <bug | feature | question | spam-suspect>
@@ -128,7 +149,8 @@ file states only the issue-profile deltas.
 A rule-grounded preview, not a grade. Each line names the rule or canon
 fact that would fire if the ask were submitted as-is.
 
-- <obstacle> — <rule/canon that would fire, e.g. E-04 / S-DECLINE / S-DUP #n>
+- <obstacle> — <rule/canon that would fire, e.g. E-04 on a category-1
+  ask / S-DECLINE / S-DUP #n>
 - <where canon settles part of the ask (D-14): settled: <part> —
   settled by [canon:<key> §x](link); open: R-<i> — <atomic sentence>>
 <or, if none: "None foreseen — a single, anchored, in-scope ask.">
@@ -143,7 +165,7 @@ duplicates" | none> — <confirmed | corrected: …>. Every entry links.
 - **Adjacent:** <none | [#n](link) / [PR #n](link) / roadmap item — overlapping
   scope, one line each>
 - **Contradicting:** <none | [canon:prd §x](link) non-goal / superseding
-  [ADR-NNN](link) / declined DE — the conflict that may force escalate (E-04)>
+  [ADR-NNN](link) / declined DE — the conflict that may force escalate (E-06)>
 - **Linked:** <none | [DE-XXX](link) / [#n](link) — dependency / blocked-by /
   referenced, one line each>
 
@@ -228,7 +250,7 @@ demoted_from: <lane or null>
 triggers: [<E-NN>, ...]
 classification: <bug|feature|question|spam-suspect>
 classification_rule: <C-NN>
-recommendation: <needs-info|decompose|proceed|escalate>
+recommendation: <needs-info|decompose|proceed|design|escalate>
 held: <true|false>
 pinned:
   pr_head_sha: n-a
@@ -268,8 +290,25 @@ decision_scoping:
   reserved_human: <integer>
   residuals:
     - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
+category: <1|2|3|4|null>
+tier: <0|1|2|3|null>
+outcome: null
+undo: <revert-clean|residue|irreversible-class|null>
+tone_gate: <applied|n-a>
 -->
 ```
+
+The five v0.7 fields are shared with the PR footer schema
+(`templates/receipt-pr.md`, `rules/burden.md` B-10, `rules/tone-gate.md`
+TG-05) — `category` and `tier` apply to issues exactly as to PRs (a
+feature-shaped issue is previewed under `rules/change-categories.md`
+G-01); `outcome` stays `null` on the issue profile, which keeps its
+own `recommendation` field above instead (`IV-01`, extended with
+`design`); `undo` applies where the issue's predicted obstacles
+include a reversibility call; `tone_gate` records `applied`/`n-a`
+exactly as on the PR profile — `applied` once the gate has run over
+every contributor-facing draft this issue produced, `n-a` when none
+was produced or the run predates the field.
 
 ## Vulnerability-suspect carve-out — reminder
 

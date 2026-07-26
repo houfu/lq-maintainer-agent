@@ -1,8 +1,9 @@
 # Pattern — contest / hold acknowledgement (§7.1)
 
-Used when a contributor disagrees with a lane call or asks for their
-item to be handled human-only (in a comment, or via the documented
-marker — see the bot-behavior page). The agent's next pass quotes the
+Used when a contributor disagrees with the routing or handling we
+suggested or asks for their item to be handled human-only (in a
+comment, or via the documented marker — see the bot-behavior page).
+The agent's next pass quotes the
 request in the receipt, marks the item **held** (`held: true` in the
 receipt footer), and drafts nothing further for the item except at
 explicit maintainer request. **The request routes to a human, not to
@@ -15,14 +16,14 @@ the lane call.
 ```markdown
 @<contributor> — noted, and thank you for saying so plainly.
 
-Your request has been recorded on this item's Triage Receipt:
+We've recorded it with the review notes for this item:
 
 > <verbatim quote of the contributor's request>
 
 As of now this item is **held**: the triage agent drafts nothing
 further for it, and a human maintainer will respond to your point
 directly. To be clear about what the agent's output was and wasn't:
-the lane call you're contesting was a *recommendation* to
+the routing/handling we suggested was a *recommendation* to
 maintainers — it never decided anything, and merge/close decisions
 here are always made by a human either way.
 

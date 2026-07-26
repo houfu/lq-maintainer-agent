@@ -1,13 +1,28 @@
-# Template — Triage Receipt, PR profile
+# Template — Internal Evidence Record (receipt), PR profile
 
 Rendered by `skills/triage/SKILL.md` (Step 8) and
 `skills/review-pr/SKILL.md` (Step 5) for every triaged PR except the
-carve-outs below. **Render, never freehand**: the field rules (RP-NN)
-are normative, and this file is the single authoritative definition of
-the machine-readable footer schema
-(`lq-maintainer-agent:receipt:v2`) — `templates/receipt-issue.md`
-reuses it. Posted (or updated in place, design doc §8.4) only behind
-an individual human approval.
+carve-outs below. **As of v0.7 this is an internal evidence document,
+not a public artifact** (design doc v0.7 §8): it is no longer posted
+to the PR. It is stored in the maintainer's local cache today, and in
+the community repo's per-item directory
+(`reviews/pr-NNNN/state.yaml` + `notes.md`, `docs/community-repo.md`)
+once that repo exists. The public-facing counterpart is now
+`templates/pr-comment.md` — a short warm note, drafted separately and
+tone-gated. **Migration:** prior `receipt:v2` comments posted before
+v0.7 remain readable for resume (I-09 author verification unchanged);
+the agent stops writing new public receipts, not old ones. **Render,
+never freehand**: the field rules (RP-NN) are normative, and this file
+is the single authoritative definition of the machine-readable footer
+schema (`lq-maintainer-agent:receipt:v2`) — `templates/receipt-issue.md`
+reuses it. Drafted (or updated in place, design doc §8.4) and stored
+only behind an individual human approval — the human-gate discipline
+applies to internal artifacts too, not only public writes.
+
+The body below keeps its full rigor unchanged — only its audience
+changed, from "posted for the contributor and any watcher" to
+"maintainer evidence, on request." Nothing in the sections that follow
+is trimmed for a public reader; there no longer is one.
 
 Canon citations inside a rendered receipt use path + anchor as routed
 by `rules/canon-map.md`; this template itself names no lq-ai paths.
@@ -54,7 +69,12 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   Every `cannot-verify` on an applicable item reappears as a
   Next-steps entry (RP-16), `n-a` never does;
   every `verified-fail` that produced a finding cross-references its
-  F-i. Visible body only; the footer schema is unchanged.
+  F-i. Visible body only; the footer schema is unchanged. **This
+  subsection renders here, internally, only** (`rules/self-attestation.md`
+  T-07 as amended, design doc v0.7 §8) — the tabulated claim-versus-
+  verified results never appear on any contributor-facing surface; a
+  genuine `verified-fail` surfaces there, if at all, as at most one
+  courteous, blame-free note about the work, tone-gated.
 - **RP-05 — Findings, filtered.** Findings appear with stable IDs
   (`F-1`, `F-2`, …), structured per `rules/lanes.md` L-33
   (file / line / severity / canon citation / suggested comment) plus
@@ -102,13 +122,18 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
 - **RP-12 — Footer last.** The machine-readable footer is the final
   element, after the attribution line.
 - **RP-13 — Carve-outs.** Suspected-deliberate attack
-  (`rules/escalation-triggers.md` E-21): the public receipt reduces to
-  the generic line "This item has been escalated for security review."
-  plus attribution — the full receipt goes only into the committee
-  packet. Vulnerability-suspect issues get **no** receipt at all
-  (that is `templates/receipt-issue.md` / `rules/issues.md` C-40, but
-  the rule binds PR triage too when a PR carries exploit detail:
-  E-08 output handling wins).
+  (`rules/escalation-triggers.md` E-21): this receipt is internal
+  always (v0.7 §8) and is never posted regardless of trigger, so
+  there is no public receipt to reduce — the public surface for an
+  E-21 item is the generic short comment rendered from
+  `templates/pr-comment.md` PC-08a ("This item has been escalated for
+  security review." plus attribution), never this template. The full
+  analysis — findings, evidence, decision scoping — goes only into
+  the committee packet; this receipt keeps its full rigor, drafted
+  for the maintainer's own record. Vulnerability-suspect issues get
+  **no** receipt at all (that is `templates/receipt-issue.md` /
+  `rules/issues.md` C-40, but the rule binds PR triage too when a PR
+  carries exploit detail: E-08 output handling wins).
 - **RP-14 — Update ping.** Because edited comments notify nobody,
   every in-place update of this receipt is paired with the one-line
   reply template at the bottom of this file, drafted and posted
@@ -359,6 +384,11 @@ decision_scoping:
   reserved_human: <integer>
   residuals:
     - {id: R-1, kind: <structural|forward-looking|reserved-human>, artifact: <adr-draft|de-stub|none>}
+category: <1|2|3|4|null>
+tier: <0|1|2|3|null>
+outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
+undo: <revert-clean|residue|irreversible-class|null>
+tone_gate: <applied|n-a>
 -->
 ```
 
@@ -370,7 +400,7 @@ YAML document. It is the resume interface (design doc §8.4) and the
 eval-grading interface (`evals/run-checks.md`).
 
 - **Versioned.** The marker carries the schema version. A future
-  format change bumps to `:v2`; parsers match on the marker, so a
+  format change bumps to `:v3`; parsers match on the marker, so a
   bump never breaks receipt lookup.
 - **Enumerated structured fields ONLY.** The complete field set is
   the one shown in the template above — enums, stable rule/finding/
@@ -398,6 +428,28 @@ eval-grading interface (`evals/run-checks.md`).
   `artifact` enums; empty list when `residual` is 0). Ledger prose,
   atomic sentences, and drafts live in the visible body and packet,
   never here.
+- **`category` / `tier` / `outcome` / `undo`** — four **optional**
+  enumerated fields, additive and backward-compatible (design doc
+  v0.7 §8, `rules/burden.md` B-10): `category` (`1`/`2`/`3`/`4`,
+  `rules/change-categories.md` G-NN), `tier` (`0`/`1`/`2`/`3`,
+  `rules/tiers.md` TR-NN), `outcome` (the TR-05 vocabulary —
+  `merge`/`merge-after`/`discuss`/`route-to-design`/`hold`/
+  `security-escalate`), and `undo` (`revert-clean`/`residue`/
+  `irreversible-class`, `rules/reversibility.md` RV-04/RV-05). Each
+  renders `null` where a run predates their introduction or the field
+  does not apply (e.g. `undo` on an escalated item that never reached
+  a graded outcome). As with every field here, **enumerated only** —
+  the named fix, the specific discuss question, and the undo sentence
+  are free text and live in the visible body (and now, primarily, in
+  `templates/pr-comment.md`), never the footer.
+- **`tone_gate`** — a fifth **optional**, additive field
+  (`rules/tone-gate.md` TG-05): `applied` once the tone gate has run
+  over every contributor-facing draft this item produced (the
+  `templates/pr-comment.md` note, any contributor response); `n-a`
+  when the item produced no contributor-facing draft (e.g. a clean
+  fast-lane merge) or the run predates the field's introduction.
+  Enumerated only, like every field here — which pattern the gate
+  rewrote, if any, is never recorded here.
 - **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
   Parsers match the `lq-maintainer-agent:receipt` prefix and accept
   both markers; a v1 footer parses as
@@ -411,7 +463,27 @@ eval-grading interface (`evals/run-checks.md`).
 - Issue-profile deltas (`templates/receipt-issue.md`): `profile:
   issue`; `classification` + `classification_rule` set (C-NN);
   `pinned.pr_head_sha: n-a`; `deterministic_checks` all `n-a`; the
-  coverage item set is the issue one.
+  coverage item set is the issue one; the issue keeps its own
+  `recommendation` field (`IV-01`) alongside — not instead of — the
+  `outcome`/`category`/`tier`/`undo` fields above, and `recommendation`
+  gains the new value `design` for a category-1 ask (design doc v0.7
+  §8, `rules/burden.md` B-10).
+- **Plan-profile deltas** (`templates/design-plan.md`, rendered by
+  `skills/design-plan/SKILL.md` for every category-1 item): `profile:
+  plan`; `kind` (`pr`/`issue`, so `pinned.pr_head_sha: n-a` on the
+  issue side stays parseable); `category: 1` always, with
+  `category_rule` set (e.g. `G-02`); `tier: 3` always; `outcome:
+  route-to-design` always; the plan's own `recommendation` field
+  (`design`/`n-a`, the issue-side `IV-01` value) alongside — not
+  instead of — the fields above, exactly as the issue profile carries
+  its own `recommendation`; `undo: null` — a plan merges nothing,
+  each atomic change states its own undo path when it is reviewed
+  (`RV-05`); and the additive `plan` counts block — `decisions`,
+  `settled`, `adrs_drafted`, `de_stubs`, `obstacles`,
+  `atomic_changes` (all integers) — as `templates/design-plan.md`
+  DP-12 declares it. This receipt is the single authoritative footer
+  schema; the plan profile is defined here, not only in
+  `templates/design-plan.md`.
 - **Author verification before trust.** A consuming session resumes
   from a footer only after confirming the comment's author is the
   expected identity (the maintainer of record pre-M4; the App
