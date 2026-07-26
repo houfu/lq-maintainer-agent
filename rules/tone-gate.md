@@ -92,11 +92,17 @@ assumed to fail sometimes; the gate is the second.
 
 - **TG-05 — Applied and recorded.** The gate runs over the final
   text of each draft (after any template rendering, over normalized
-  text per I-10). The internal evidence record notes `tone-gate:
-  applied` per drafted item. A maintainer who edits a draft after
-  the gate owns their edit (L-01 — the human posts and owns every
-  write); the agent may offer to re-gate on request but never
-  polices the maintainer (`rules/conduct.md` preamble).
+  text per I-10). The internal evidence record's footer carries this
+  as an enumerated field named **`tone_gate`** (underscore, YAML
+  style; `templates/receipt-pr.md`'s footer schema), value
+  `applied`/`n-a` — `applied` once the gate has run over every
+  contributor-facing draft this item produced, `n-a` when the item
+  produced no contributor-facing draft. Prose describing the same
+  state (in a SKILL.md or elsewhere) may read "tone gate: applied";
+  the footer key itself is always `tone_gate`. A maintainer who edits
+  a draft after the gate owns their edit (L-01 — the human posts and
+  owns every write); the agent may offer to re-gate on request but
+  never polices the maintainer (`rules/conduct.md` preamble).
 
 - **TG-06 — The gate never touches accuracy.** Rewriting for warmth
   never softens a fact: a security redirect stays a redirect, a

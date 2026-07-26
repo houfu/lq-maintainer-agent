@@ -1,7 +1,11 @@
-# Maintainer burden — the two-layer verdict
+# Maintainer burden — internal evidence behind the verdict
 
-Normative data for the LQ Maintainer Agent (design doc §5.2). Loaded at
-runtime by `skills/triage/SKILL.md` and `skills/review-pr/SKILL.md`.
+Normative data for the LQ Maintainer Agent (design doc §5.2, amended by
+design v0.7 §7/§8). Loaded at runtime by `skills/triage/SKILL.md` and
+`skills/review-pr/SKILL.md`. Companion rule sets: `rules/tiers.md`
+(TR-NN — the outcome vocabulary that now leads every headline),
+`rules/reversibility.md` (RV-NN — the undo path every outcome states),
+`rules/change-categories.md` (G-NN).
 
 Every rule carries a stable ID (`B-NN`). The burden verdict is
 **additive** — it does not replace lane assignment (`rules/lanes.md`,
@@ -16,12 +20,23 @@ Burden is a **recommendation, not a ruling** (as with lanes, `L-01`): a
 human decides, every time. The verdict never implies a merge, approval,
 close, or post occurred.
 
+**As of v0.7, the receipt that carries this block is an internal
+evidence document** (design v0.7 §8): it is no longer posted to the
+PR or issue, only stored — in the local cache today, in the community
+repo's `reviews/<pr|issue>-NNNN/` once it exists. What the five axes
+feed contributor-facing is no longer their own grades but the single
+action outcome they support (`B-09`); the axes themselves, the
+self-attestation cross-check, and the full coverage detail are
+maintainer evidence, available on request, never rendered where a
+contributor reads.
+
 **Scope: burden is a PR verdict.** Its five axes grade a code diff,
 which an issue does not have. Issues carry **no `burden` block** and are
 never graded on these axes. An issue instead gets its **own** deck and a
 verdict-first headline — a categorical **triage recommendation**
-(`needs-info` / `decompose` / `proceed` / `escalate`) over a rule-grounded
-preview of the PR it would become — defined in `rules/issues.md` `IV-NN`
+(`needs-info` / `decompose` / `proceed` / `design` / `escalate`) over a
+rule-grounded preview of the PR it would become — defined in
+`rules/issues.md` `IV-NN`
 and rendered per `templates/receipt-issue.md` RI-11 (design §8.6a). The
 conduct standard (`rules/conduct.md`) and the Next-steps idea (`B-14`)
 apply to issues too; only the five-axis grade does not.
@@ -112,10 +127,14 @@ evidence is not `low`.
     entry; single concern; scope legible.
   - `medium`: anchored but broad, or drifts slightly beyond the cited
     canon (a single scope flag).
-  - `high`: an unanchored decision (`A-06`/`E-04`), a change that
-    contradicts an ADR with no superseding one (`E-06`), a re-proposal
-    of an idea already deferred on the DE list, or a
-    multi-concern/overreaching diff (salvage applied).
+  - `high`: an unanchored **category-1** decision (`A-06`/`E-04` —
+    `E-04` fires for category-1 items only, `rules/change-categories.md`
+    G-02), a change that contradicts an ADR with no superseding one
+    (`E-06`), a re-proposal of an idea already deferred on the DE
+    list, or a multi-concern/overreaching diff (salvage applied). An
+    unanchored category-2/3 change does not fire `E-04`: it is a flag
+    plus the necessity check (`G-10`/`G-11`), at most `medium` on
+    Scope.
 
 - **B-04 — Review effort** — *how hard is it to review, by lq-ai's own
   standard?* Grades against `canon:contributing` (its review standards)
@@ -181,57 +200,102 @@ evidence is not `low`.
   blocker (`B-02`) supersedes the roll-up: overall = `blocked`, and the
   five axes are still reported beneath it.
 
-- **B-09 — Burden leads the verdict.** The receipt records the burden
-  block (`B-10`); the reading deck (design §8.6) headlines the overall
-  burden and shows the five axes as its glance tiles, with the lane
-  demoted to a supporting detail. This does not change routing — the
-  receipt still cites the lane and its assigning rule (`L-NN`); burden
-  is an added summary, not a replacement.
+- **B-09 — The action outcome leads; the five axes are internal
+  evidence** *(REPLACED, design v0.7 §7)*. The public/deck/digest
+  headline for every reviewed item is the **action outcome**
+  (`rules/tiers.md` TR-05 vocabulary — `merge` /
+  `merge-after-<fix>` / `discuss-<question>` / `route-to-design`,
+  plus the escalate/hold output classes), stated with its **undo
+  path** (`rules/reversibility.md` RV-04/RV-05). The five burden axes
+  (`B-03`–`B-07`) no longer head anything a contributor or the deck's
+  primary surface shows: they are **internal evidence** — computed
+  every run exactly as before, recorded in the internal receipt's
+  burden block (`B-10`), and available to the maintainer on request —
+  but never the deck hero and never rendered on any contributor-facing
+  surface. The axes' own definitions (`B-03`–`B-07`) are unchanged; what
+  changes is only what leads and what is public. This does not change
+  routing — the internal receipt still cites the lane and its assigning
+  rule (`L-NN`); the axes remain the evidence the outcome is drawn from.
 
-- **B-14 — Next steps: what the reviewer must still check.** A verdict
+- **B-14 — Next steps: the check, and its approximate cost.** A verdict
   that only grades is not enough — the human needs to know *what to do
-  next*. Every receipt and the reading deck carry a **Next steps** list:
-  the concrete follow-ups only a human can perform, one per firing
-  blocker, `medium`/`high` axis, and `not-covered`/`never-by-design`
-  coverage item, each stating the action **and why** (the canon or gap
-  that requires it). They are specific to the item, not boilerplate:
+  next*, and what it will cost them to do it. Every internal receipt
+  and the reading deck carry a **Next steps** list: the concrete
+  follow-ups only a human can perform, one per firing blocker,
+  `medium`/`high` axis, unknown-under-B-11 axis, and
+  `not-covered`/`never-by-design` coverage item, each stating the
+  action, **why** (the canon or gap that requires it), **and its
+  approximate cost** — the `RV-06` form. They are specific to the item,
+  not boilerplate:
   - a major version jump or widened range ⇒ *"Read the dependency's
     changelog / release notes for breaking changes affecting the call
-    sites this project uses"* (the `semver_delta` fail / Safety axis);
+    sites this project uses, ~10 minutes"* (the `semver_delta` fail /
+    Safety axis);
   - runtime-behaviour never checked ⇒ *"Smoke-test the affected feature
-    (e.g. the PDF export, in light and dark) before merging"*;
+    (e.g. the PDF export, in light and dark) before merging, ~5
+    minutes"*;
   - a bug fix with no regression test ⇒ *"Request the regression test
-    `canon:contributing` requires before accepting"*;
+    `canon:contributing` requires before accepting, ~2 minutes to
+    draft the ask"*;
   - an unpinned widened range with no lockfile ⇒ *"Decide: pin the
     version, narrow the ceiling, or add a lockfile so a concrete version
-    is vetted"*;
+    is vetted, ~5 minutes"*;
   - a `blocked` verdict ⇒ each blocker's resolution is itself a next
-    step (get CI green, obtain sign-off, resolve the advisory).
+    step (get CI green, obtain sign-off, resolve the advisory), costed
+    the same way.
 
-  Next steps are **free text and live in the visible body / deck only**,
-  never the enumerated footer (`B-10`). Where a next step is a request to
-  the contributor, it is drafted courteously per `rules/conduct.md`
-  (CD-06) and posted only by the human (`L-01`).
+  **Next steps feed the action outcome** (`rules/tiers.md` TR-05): an
+  item whose only next steps are cheap named checks is `merge` or
+  `merge-after-<fix>` material, not high-burden material — a long list
+  of expensive, unresolved checks is what earns `discuss` or a heavier
+  tier (`TR-06`). Next steps are **free text and live in the visible
+  body / deck only**, never the enumerated footer (`B-10`). Where a
+  next step is a request to the contributor, it is drafted courteously
+  per `rules/conduct.md` (CD-06) and posted only by the human (`L-01`).
 
 - **B-10 — The footer block is enumerated only.** The burden state rides
-  the versioned receipt footer (`templates/receipt-pr.md`) as a block of
+  the internal receipt's versioned footer (`templates/receipt-pr.md`,
+  marker unchanged at `lq-maintainer-agent:receipt:v2`) as a block of
   **enumerated fields only**: `overall`
   (`blocked`/`low`/`medium`/`high`), `blockers` (a list of the `B-02`
   slugs, empty if none), and the five axis levels (`low`/`medium`/`high`).
-  **No free text, ever** — the canon citations and the driver phrasing a
-  reader sees ("driven by Safety / risk") live in the visible receipt
-  body and are re-derived at render time from the deck glossary, never
-  stored in the footer. An HTML comment is exactly the concealment
-  channel injection uses (`rules/injection-posture.md`, §8.4).
+
+  The footer additionally carries **four optional enumerated fields**,
+  additive and backward-compatible (design v0.7 §8): `category`
+  (`1`/`2`/`3`/`4`, `rules/change-categories.md` G-NN), `tier`
+  (`0`/`1`/`2`/`3`, `rules/tiers.md` TR-NN), `outcome` (the TR-05
+  vocabulary — `merge`/`merge-after`/`discuss`/`route-to-design`/
+  `hold`/`security-escalate`; issues keep the `IV-01` `recommendation`
+  field and may additionally use `recommendation: design` for a
+  category-1 ask), and `undo` (`revert-clean`/`residue`/
+  `irreversible-class`, `rules/reversibility.md` RV-04/RV-05).
+
+  **No free text, ever** — the canon citations, the driver phrasing a
+  reader sees ("driven by Safety / risk"), the named fix, the discuss
+  question, and the undo sentence live in the visible receipt body and
+  are re-derived at render time from the deck glossary, never stored in
+  the footer. An HTML comment is exactly the concealment channel
+  injection uses (`rules/injection-posture.md`, §8.4).
 
 ## 4. Discipline
 
-- **B-11 — Conservative under uncertainty.** Burden inherits the
-  fail-closed posture (`F`-gate, §5.1). Where an axis's signal or its
-  governing canon (`B-00`) cannot be computed, grade it up, not down;
-  where a blocker's signal is not yet live (`B-12`), surface it as an
-  open human-only check, never as passed. A confident `low` requires
-  positive evidence, read from canon.
+- **B-11 — Conservative grading, scoped to Safety and the irreversible
+  classes** *(SCOPED, design v0.7 §5/§7)*. Fail-closed grading — an
+  unverifiable signal graded up, never down — applies in full to the
+  **Safety axis** (`B-07`, disciplined further by `B-13`) and to any
+  item touching an **irreversible class**
+  (`rules/reversibility.md` RV-02/RV-03): those keep the original
+  posture without exception. For the **other four axes**
+  (`B-03`–`B-06`) on everything else, a signal or its governing canon
+  (`B-00`) that cannot be computed is **never** graded up: it reports
+  as **unknown**, paired with the named human check that settles it
+  and that check's **approximate cost**, in the `RV-06` form ("not
+  verified: X — check: Y, ~Z minutes"). An inflated grade with no
+  named check attached is the v0.6 pattern this rule retires. Where a
+  blocker's signal is not yet live (`B-12`), it still surfaces as an
+  open human-only check, never as passed — that discipline is
+  unchanged. A confident `low` still requires positive evidence, read
+  from canon.
 
 - **B-12 — Deferred signals (build order).** Three signals are not yet
   computed and are named so the gaps are visible, not silent:
