@@ -1167,9 +1167,16 @@ def build_deck(md, g, below=None):
     A('</ul></div></details>')
 
     # findings
-    A('<details class="dd"><summary>Findings'
+    # Open by default when anything blocking/major is present: a maintainer
+    # should not have to discover a merge-stopping finding behind a click.
+    # Minor/nit-only sets stay collapsed, as does the below-threshold card,
+    # so the disclosure still does its job of keeping low-signal notes folded.
+    _sev_open = any(str(f.get("severity", "")).lower() in ("blocking", "major")
+                    for f in findings)
+    A('<details class="dd"%s><summary>Findings'
       '<span class="tag %s">%d</span></summary><div class="body">'
-      % ("g-mute" if not findings else "g-warn", len(findings)))
+      % (" open" if _sev_open else "",
+         "g-mute" if not findings else "g-warn", len(findings)))
     if not findings:
         try:
             filt = int(r.get("findings_filtered") or 0)
@@ -1179,9 +1186,7 @@ def build_deck(md, g, below=None):
           % ("" if filt <= 0 else " (%d low-signal note%s were filtered out.)"
              % (filt, "" if filt == 1 else "s")))
     else:
-        A('<p class="intro">Issues the review raised in the lines this change touches.</p>')
-        A('<ul class="checks">')
-        for f in findings:
+        def _finding_li(f):
             fid = str(f.get("id", "F"))
             sev = str(f.get("severity", "minor"))
             disp = str(f.get("disposition", ""))
@@ -1190,11 +1195,36 @@ def build_deck(md, g, below=None):
                 txt_html, _ = render_linked(real_text, base)
             else:
                 txt_html = esc(g.cap("severity:" + sev, ""))
-            A('<li><span class="ci c-fail">!</span><div>'
-              '<div class="name">%s <span class="id">%s%s</span></div>'
-              '<div class="txt">%s</div></div></li>'
-              % (esc(sev.title()), esc(fid), (" · " + esc(disp)) if disp else "", txt_html))
-        A('</ul>')
+            return ('<li><span class="ci c-fail">!</span><div>'
+                    '<div class="name">%s <span class="id">%s%s</span></div>'
+                    '<div class="txt">%s</div></div></li>'
+                    % (esc(sev.title()), esc(fid),
+                       (" · " + esc(disp)) if disp else "", txt_html))
+
+        # Severity split: what stops a merge reads inline; the rest folds away.
+        # A finding carrying an unknown severity word counts as high — an
+        # unrecognised label must never be the reason something stays hidden.
+        _hi = [f for f in findings
+               if str(f.get("severity", "")).lower() not in ("minor", "nit")]
+        _lo = [f for f in findings
+               if str(f.get("severity", "")).lower() in ("minor", "nit")]
+        A('<p class="intro">Issues the review raised in the lines this change touches.</p>')
+        if _hi:
+            A('<ul class="checks">')
+            for f in _hi:
+                A(_finding_li(f))
+            A('</ul>')
+        if _lo:
+            A('<details class="dd sub"><summary>Minor findings'
+              '<span class="tag g-mute">%d</span></summary><div class="body">'
+              % len(_lo))
+            A('<p class="intro">Worth fixing, but none of these blocks a merge '
+              'on their own.</p>')
+            A('<ul class="checks">')
+            for f in _lo:
+                A(_finding_li(f))
+            A('</ul>')
+            A('</div></details>')
     A('</div></details>')
 
     # how this was reviewed — category, tier, and the demoted burden axes, as
