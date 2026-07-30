@@ -79,6 +79,11 @@ def load_module():
 # Fixtures — minimal but valid receipt:v1 documents.
 # --------------------------------------------------------------------------
 
+# The pinned agent_version below (and the drafted-comment attribution line
+# further down that also reads v0.2.0) are synthetic fixture values fixed on
+# purpose -- they exercise the renderer against an OLD pinned version so the
+# renderer-stamp test can show the artifact's own version diverging from it.
+# Neither is this repo's shipped version; do not bump them at release time.
 FOOTER_PINNED = (
     "pinned:\n"
     "  pr_head_sha: %(sha)s\n"

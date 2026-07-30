@@ -9,8 +9,23 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| **v0.7** | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | **Current** (Adopted 2026-07-26; delta over v0.6) |
+| **v0.7.1** | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | **Current** (Adopted 2026-07-30; delta over v0.7) |
+| v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
+
+Headline of v0.7.1 — four normative changes drawn from real maintainer
+field sessions on `legalquants/lq-ai` in July 2026: every finding now
+carries an **impact**, an **ask**, and a **scope** (in-scope /
+follow-up / pre-existing), bound at every tier by the new
+maintainer-actionability test (L-33b); batch triage gains **merge-order
+groups**, a **mergeability table**, and a security-first digest for
+queues where multiple open PRs collide on a shared manifest/lockfile,
+report-only throughout; the maintainer's recorded ruling now **syncs
+from live GitHub state** at finalize and resume, so GitHub's own record
+of what happened always wins over a stale in-session guess; and a
+squash-merge message now preserves every contributor's `Signed-off-by`
+and adds a `Co-authored-by` per squashed author, with a plain-language
+explainer of what the two trailers certify.
 
 Headline of v0.7 ("Momentum") — the maintainer decisions from the
 first 2–3 weeks of live operation: every contribution is treated as
