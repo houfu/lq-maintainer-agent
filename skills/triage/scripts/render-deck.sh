@@ -68,6 +68,7 @@ rather than hiding a fact. No dependencies beyond the python3 stdlib.
 """
 
 import html
+import json
 import os
 import re
 import sys
@@ -89,6 +90,12 @@ OUTCOMES = ("merge", "merge-after", "discuss",          # rules/tiers.md TR-05
             "route-to-design", "hold", "security-escalate")
 UNDOS = ("revert-clean", "residue", "irreversible-class")   # RV-04/RV-05
 ISSUE_RECOS = ("proceed", "design", "needs-info", "decompose", "escalate")  # IV-01
+
+# Findings severity split (rules/lanes.md L-33): blocking/major read inline
+# and auto-open the disclosure; minor/nit fold into a nested sub-disclosure.
+# Fail-loud: an unrecognised severity word is never a member of this set, so
+# it renders -- and keeps the disclosure open -- as if it were high.
+LOW_SEVERITIES = frozenset({"minor", "nit"})
 
 # TR-05 writes the two open-ended outcomes as `merge-after-<fix>` and
 # `discuss-<question>` in prose. The named fix / specific question is FREE TEXT
@@ -212,17 +219,39 @@ def repo_base():
     """The `canon:repo` web base from rules/canon-map.md (the single place the
     base URL lives). Falls back to the github host if canon-map is unreadable
     -- links then still must match the github blob/tree/issues/pull shape."""
-    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
-    if not root:
-        root = os.path.abspath(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
     try:
-        with open(os.path.join(root, "rules", "canon-map.md"), encoding="utf-8") as fh:
+        with open(os.path.join(_plugin_root(), "rules", "canon-map.md"), encoding="utf-8") as fh:
             text = fh.read()
     except OSError:
         return "https://github.com/"
     m = re.search(r"`canon:repo`.*?web base `(https://[^\s`]+)`", text, re.DOTALL)
     return (m.group(1).rstrip("/") + "/") if m else "https://github.com/"
+
+
+def _plugin_root():
+    """${CLAUDE_PLUGIN_ROOT}, falling back to a path relative to this file (same
+    resolution main() uses for the glossary) -- so every reader of the plugin
+    manifest agrees on where it lives."""
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    if root:
+        return root
+    return os.path.abspath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
+
+
+def renderer_version():
+    """The renderer's own version, read fresh from the installed plugin
+    manifest at render time -- so a stale installed plugin is visible on the
+    artifact itself, not just in the receipt's pinned agent_version (sessions
+    have seen decks claiming agent 0.2.0 with no way to tell which renderer
+    actually drew them). Fails open to '?': the manifest is convenience
+    metadata about this render, never a fact the deck depends on."""
+    try:
+        with open(os.path.join(_plugin_root(), ".claude-plugin", "plugin.json"),
+                  encoding="utf-8") as fh:
+            return str(json.load(fh).get("version") or "?")
+    except (OSError, ValueError, TypeError):
+        return "?"
 
 
 _URL_OK = re.compile(r"^https://[^\s\"'<>]+$")
@@ -738,6 +767,15 @@ details.dd>summary .tag{margin-left:auto; font-size:12px; font-weight:600; paddi
 .tag.g-mute{background:var(--surface-2); color:var(--ink-faint); border:1px solid var(--line-soft)}
 .dd .body{padding:2px 20px 20px; border-top:1px solid var(--line-soft)}
 .dd .body>.intro{color:var(--ink-soft); font-size:15.5px; margin:14px 0 6px}
+/* nested drill-down (e.g. minor/nit findings folded inside Findings) --
+   deliberately quieter than a top-level .dd so nesting reads at a glance */
+details.dd.sub{
+  background:var(--surface-2); border:1px solid var(--line-soft);
+  border-radius:10px; margin:14px 0 0; box-shadow:none;
+}
+details.dd.sub>summary{padding:11px 14px; font-size:14px; color:var(--ink-soft)}
+details.dd.sub>summary::before{font-size:16px}
+details.dd.sub .body{padding:2px 14px 14px}
 /* check list */
 .checks{list-style:none; margin:8px 0 0; padding:0}
 .checks li{display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--line-soft)}
@@ -746,6 +784,7 @@ details.dd>summary .tag{margin-left:auto; font-size:12px; font-weight:600; paddi
 .ci.c-pass{background:var(--ok)} .ci.c-fail{background:var(--bad)} .ci.c-na{background:var(--ink-faint); opacity:.55}
 .checks .name{font-weight:600; font-size:15px}
 .checks .name .id{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); font-weight:500; margin-left:6px}
+.checks .name .tag{margin-left:8px; font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px; vertical-align:1px}
 .checks .txt{font-size:14.5px; color:var(--ink-soft); margin-top:2px}
 .decnote{
   margin-top:6px; font-size:14px; color:var(--ink); background:var(--warn-bg);
@@ -1115,6 +1154,9 @@ def build_deck(md, g, below=None):
     # references / grounding (RP-15) — agent-performed cross-reference, linked
     A(render_grounding_card(md, base, r"References", "g-ref", "References"))
 
+    # why this escalated (E-NN) — the fired mechanical triggers, glossed
+    A(build_triggers_card(r, g))
+
     # decisions to make (D-13) — escalated v2 receipts only
     A(build_scoping_card(r, g))
 
@@ -1171,7 +1213,7 @@ def build_deck(md, g, below=None):
     # should not have to discover a merge-stopping finding behind a click.
     # Minor/nit-only sets stay collapsed, as does the below-threshold card,
     # so the disclosure still does its job of keeping low-signal notes folded.
-    _sev_open = any(str(f.get("severity", "")).lower() in ("blocking", "major")
+    _sev_open = any(str(f.get("severity", "")).lower() not in LOW_SEVERITIES
                     for f in findings)
     A('<details class="dd"%s><summary>Findings'
       '<span class="tag %s">%d</span></summary><div class="body">'
@@ -1190,24 +1232,31 @@ def build_deck(md, g, below=None):
             fid = str(f.get("id", "F"))
             sev = str(f.get("severity", "minor"))
             disp = str(f.get("disposition", ""))
+            scope = str(f.get("scope", "")).strip().lower()
             real_text = ftext_map.get(fid.replace(" ", "").upper())
             if real_text:
                 txt_html, _ = render_linked(real_text, base)
             else:
                 txt_html = esc(g.cap("severity:" + sev, ""))
+            disp_txt = g.cap("disposition:" + disp, disp) if disp else ""
+            # in-scope is the unremarkable default and gets no tag; follow-up /
+            # pre-existing are the cases worth flagging as not this change's problem
+            scope_tag = ('<span class="tag g-mute">%s</span>'
+                         % esc(g.cap("scope:" + scope, scope))
+                         if scope and scope != "in-scope" else "")
             return ('<li><span class="ci c-fail">!</span><div>'
-                    '<div class="name">%s <span class="id">%s%s</span></div>'
+                    '<div class="name">%s <span class="id">%s%s</span>%s</div>'
                     '<div class="txt">%s</div></div></li>'
                     % (esc(sev.title()), esc(fid),
-                       (" · " + esc(disp)) if disp else "", txt_html))
+                       (" · " + esc(disp_txt)) if disp_txt else "", scope_tag, txt_html))
 
         # Severity split: what stops a merge reads inline; the rest folds away.
         # A finding carrying an unknown severity word counts as high — an
         # unrecognised label must never be the reason something stays hidden.
         _hi = [f for f in findings
-               if str(f.get("severity", "")).lower() not in ("minor", "nit")]
+               if str(f.get("severity", "")).lower() not in LOW_SEVERITIES]
         _lo = [f for f in findings
-               if str(f.get("severity", "")).lower() in ("minor", "nit")]
+               if str(f.get("severity", "")).lower() in LOW_SEVERITIES]
         A('<p class="intro">Issues the review raised in the lines this change touches.</p>')
         if _hi:
             A('<ul class="checks">')
@@ -1278,6 +1327,7 @@ def build_deck(md, g, below=None):
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
+    A('<p>Rendered by lq-maintainer-agent v%s renderer.</p>' % esc(renderer_version()))
     A('<p>A plain-language reading view of the internal evidence record, generated '
       'by lq-maintainer-agent. It reformats that record only — the record is the '
       'source. Nothing here was posted, merged, or filed by the agent; a human '
@@ -1285,6 +1335,31 @@ def build_deck(md, g, below=None):
     A('</footer>')
 
     return "".join(out)
+
+
+def build_triggers_card(r, g):
+    """'Why this escalated' — the fired mechanical escalation triggers
+    (rules/escalation-triggers.md E-NN), each glossed to a plain-language
+    caption. Returns '' when the footer carries no triggers (every fast/docs/
+    standard-lane item, and any pre-trigger-field footer), so a routine item
+    grows no empty card."""
+    triggers = r.get("triggers")
+    if not isinstance(triggers, list):
+        return ""
+    rows = []
+    for tid in triggers:
+        tid = str(tid).strip()
+        if not tid:
+            continue
+        rows.append('<li><span class="refk">%s</span> %s</li>'
+                    % (esc(tid), esc(g.cap("trigger:" + tid, tid))))
+    if not rows:
+        return ""
+    return ('<section class="card grounding g-obs"><h2>Why this escalated</h2>'
+            '<p class="intro">Every mechanical condition that routed this here '
+            '(rules/escalation-triggers.md) — evaluated from the diff, paths, '
+            'and metadata, never suppressible by anything in the contribution '
+            'itself.</p><ul>%s</ul></section>' % "".join(rows))
 
 
 def build_scoping_card(r, g):
@@ -1506,6 +1581,9 @@ def build_issue_deck(r, md, g, base):
     # references (IV-03) — agent-performed four-bucket cross-reference, linked
     A(render_grounding_card(md, base, r"References", "g-ref", "References"))
 
+    # why this escalated (E-NN) — the fired mechanical triggers, glossed
+    A(build_triggers_card(r, g))
+
     # decisions to make (D-13) — escalated v2 receipts only
     A(build_scoping_card(r, g))
 
@@ -1578,15 +1656,21 @@ def build_issue_deck(r, md, g, base):
             fid = str(f.get("id", "F"))
             sev = str(f.get("severity", "minor"))
             disp = str(f.get("disposition", ""))
+            scope = str(f.get("scope", "")).strip().lower()
             real_text = ftext_map.get(fid.replace(" ", "").upper())
             if real_text:
                 txt_html, _ = render_linked(real_text, base)
             else:
                 txt_html = esc(g.cap("severity:" + sev, ""))
+            disp_txt = g.cap("disposition:" + disp, disp) if disp else ""
+            scope_tag = ('<span class="tag g-mute">%s</span>'
+                         % esc(g.cap("scope:" + scope, scope))
+                         if scope and scope != "in-scope" else "")
             A('<li><span class="ci c-fail">!</span><div>'
-              '<div class="name">%s <span class="id">%s%s</span></div>'
+              '<div class="name">%s <span class="id">%s%s</span>%s</div>'
               '<div class="txt">%s</div></div></li>'
-              % (esc(sev.title()), esc(fid), (" · " + esc(disp)) if disp else "", txt_html))
+              % (esc(sev.title()), esc(fid), (" · " + esc(disp_txt)) if disp_txt else "",
+                 scope_tag, txt_html))
         A('</ul></div></details>')
 
     # the embedded drafted comment (decided 2026-07-26): the deck carries the
@@ -1613,6 +1697,7 @@ def build_issue_deck(r, md, g, base):
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
+    A('<p>Rendered by lq-maintainer-agent v%s renderer.</p>' % esc(renderer_version()))
     A('<p>A plain-language reading view of the issue’s internal evidence record, '
       'generated by lq-maintainer-agent. It reformats that record only — the record '
       'is the source. Nothing here was filed, labelled, closed, or posted by the '
@@ -1750,11 +1835,7 @@ def main():
         sys.stderr.write("render-deck: empty input on stdin (expected receipt markdown).\n")
         sys.stdout.write(error_page("No receipt was provided."))
         return 1
-    glossary_root = os.environ.get("CLAUDE_PLUGIN_ROOT")
-    if not glossary_root:
-        glossary_root = os.path.abspath(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
-    g = Gloss(load_glossary(os.path.join(glossary_root, "templates", "deck", "glossary.md")))
+    g = Gloss(load_glossary(os.path.join(_plugin_root(), "templates", "deck", "glossary.md")))
     below = load_below_threshold(sys.argv[1] if len(sys.argv) > 1 else None)
     try:
         body = build_deck(md, g, below)

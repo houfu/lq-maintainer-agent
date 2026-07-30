@@ -197,6 +197,41 @@ PR_IRREVERSIBLE_V2 = PR_TIER1_V2.replace(
     "undo: revert-clean", "undo: irreversible-class").replace(
     "tier: 1", "tier: 2")
 
+# A nit-severity finding with no free-text body in the receipt: the caption
+# must fall back to the glossary (severity:nit), never render empty.
+PR_NIT_ONLY = (
+    "## Triage Receipt — PR #906: rename a local variable\n"
+    "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#906\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "findings:\n  - {id: F-1, severity: nit, disposition: trivial, scope: in-scope}\n"
+    "findings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "-->\n"
+)
+
+# A finding carrying the new `scope` field (follow-up) and an `Impact:`/`Ask:`
+# body (the receipt-side finding-schema change this renderer implements
+# against). Severity major, so this also exercises the auto-open direction.
+PR_SCOPED_FINDING = (
+    "## Triage Receipt — PR #907: adjust cache eviction policy\n"
+    "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
+    "### Findings\n"
+    "**F-1 — major** — The eviction policy change is unrelated to this PR's stated goal.\n"
+    "Impact: Could evict hot cache entries under load spikes; not exercised by tests.\n"
+    "Ask: Confirm whether this policy change belongs in a separate PR.\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#907\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "findings:\n  - {id: F-1, severity: major, disposition: structural, scope: follow-up}\n"
+    "findings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "-->\n"
+)
+
 # Issue profile, the new IV-01 value `design` (design v0.7 §6/§9).
 ISSUE_DESIGN = ISSUE_ESCALATE.replace(
     "recommendation: escalate", "recommendation: design\ncategory: 1\ntier: 3"
@@ -454,6 +489,53 @@ def main():
     check("PR v0.7 irreversible: undo says it cannot be cleanly undone",
           rc == 0 and "cannot be cleanly undone" in out
           and "u-bad" in out, "rc=%d" % rc)
+
+    # --- e2e: findings severity split, scope/disposition glossing, triggers ---
+    rc, out = run(PR_BLOCKED)
+    check("findings: auto-open when a major/blocking finding exists",
+          '<details class="dd" open><summary>Findings' in out, "rc=%d" % rc)
+    rc, out = run(PR_TIER1_V2)
+    check("findings: stays collapsed when only minor/nit findings exist",
+          '<details class="dd"><summary>Findings' in out
+          and '<details class="dd" open><summary>Findings' not in out)
+    check("findings: minor findings fold into the nested sub-disclosure",
+          '<details class="dd sub"><summary>Minor findings' in out)
+    rc, out = run(PR_NIT_ONLY)
+    check("findings: nit-only stays collapsed too",
+          '<details class="dd" open><summary>Findings' not in out, "rc=%d" % rc)
+    check("findings: nit finding folds into the sub-disclosure",
+          '<details class="dd sub"><summary>Minor findings' in out)
+    check("findings: nit with no body text still gets a non-empty caption",
+          "A nitpick" in out, out)
+    rc, out = run(PR_SCOPED_FINDING)
+    check("findings: exit 0", rc == 0, "rc=%d" % rc)
+    check("findings: scope: follow-up renders its glossed tag",
+          'class="tag g-mute"' in out
+          and "need to hold this change up" in out, out)
+    check("findings: disposition is glossed, not the raw word",
+          "Recommends closing this and opening an issue instead" in out
+          and ">structural<" not in out, out)
+    check("findings: Impact:/Ask: body lines flow through to the deck",
+          "Impact:" in out and "Ask:" in out
+          and "Could evict hot cache entries" in out
+          and "Confirm whether this policy change belongs" in out, out)
+
+    # --- e2e: renderer version stamp (a stale installed plugin is visible on
+    # the artifact itself, not just via the receipt's pinned agent_version) ---
+    rc, out = run(PR_BLOCKED)
+    check("provenance: renderer stamp present", "Rendered by lq-maintainer-agent v" in out
+          and "renderer" in out, out)
+
+    # --- e2e: "Why this escalated" card (fired E-NN triggers, glossed) ---
+    rc, out = run(PR_BLOCKED)  # carries triggers: [E-10]
+    check("triggers: Why this escalated card present", "Why this escalated" in out)
+    check("triggers: fired trigger glossed, not left raw",
+          "Adds or changes a file that instructs AI agents" in out)
+    rc, out = run(PR_CLEAN_V2)  # triggers: []
+    check("triggers: no card when nothing fired", "Why this escalated" not in out)
+    rc, out = run(ISSUE_ESCALATE)  # no `triggers` key at all (pre-field footer)
+    check("triggers: no crash / no card on a footer with no triggers key",
+          rc == 0 and "Why this escalated" not in out, "rc=%d" % rc)
 
     # --- e2e: embedded drafts + maintainer decision (decided 2026-07-26) ---
     rc, out = run(PR_WITH_DRAFTS)
