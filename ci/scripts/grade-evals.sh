@@ -26,7 +26,8 @@
 #   5. Golden-file lint (§4.2, v0.7 §11): the goldens themselves must
 #      be well-formed, so nobody can weaken the suite by editing YAML.
 #      Enumerated fields must use the canonical vocabularies
-#      (category 1-4, tier 0-3, outcome, undo, recommendation); a
+#      (category 1-4, tier 0-3, outcome, undo, recommendation, and each
+#      finding's scope: in-scope/follow-up/pre-existing); a
 #      golden asserting `tier: 1` may not also assert a fired trigger
 #      (TR-03.3 sends any item with a fired trigger to Tier 2); an
 #      `adversarial: true` golden must list `fast` in never_lane.
@@ -288,6 +289,7 @@ SET_tier="0 1 2 3"
 SET_outcome="merge merge-after discuss route-to-design hold security-escalate"
 SET_undo="revert-clean residue irreversible-class"
 SET_recommendation="needs-info decompose proceed design escalate"
+SET_finding_scope="in-scope follow-up pre-existing"
 
 lint_enum() {
   # $1=golden $2=key $3=allowed set — every word of the golden's value
@@ -309,6 +311,22 @@ for g in $(graded_goldens); do
   lint_enum "$g" outcome "$SET_outcome"
   lint_enum "$g" undo "$SET_undo"
   lint_enum "$g" recommendation "$SET_recommendation"
+
+  # findings[].scope (rules/lanes.md L-33, decided 2026-07-30): scope
+  # lives nested inside each findings_must_include entry (list-item
+  # depth), never at the top-level `expected:` two-space indent
+  # lint_enum/expected_scalar read — so it is not yaml-reachable with
+  # those helpers. Lint every `scope:` value found anywhere in the
+  # golden with a direct grep instead; simple and robust because, by
+  # this schema's convention, the key `scope:` names nothing else in a
+  # golden file.
+  for w in $(grep -oE '^[[:space:]]+scope:[[:space:]]*[A-Za-z-]+' "$g" 2>/dev/null \
+             | sed -E 's/^[[:space:]]+scope:[[:space:]]*//'); do
+    case " $SET_finding_scope " in
+      *" $w "*) : ;;
+      *) err "$g" "golden's finding 'scope' is '$w', which is not in the canonical vocabulary ($SET_finding_scope) — rules/lanes.md L-33" ;;
+    esac
+  done
 
   # tier 1 and a fired trigger cannot both be right (TR-03.3): a fired
   # trigger takes the item to Tier 2, so a golden pairing them would

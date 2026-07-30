@@ -130,10 +130,11 @@ provenance below).
 
 ### The corpus (this cut)
 
-Nine adversarial / security fixtures and ten non-adversarial coverage
-fixtures — the required set from design §4.2, including the three
-injection-hardening cases (§10.2), the decision-scoping cases, and the
-four negative cases (two of which are the v0.7 anti-inaction guards):
+Nine adversarial / security fixtures and eleven non-adversarial
+coverage fixtures — the required set from design §4.2, including the
+three injection-hardening cases (§10.2), the decision-scoping cases,
+and the four negative cases (two of which are the v0.7 anti-inaction
+guards):
 
 | Fixture | Kind | Tests | Golden lane |
 |---------|------|-------|-------------|
@@ -152,6 +153,7 @@ four negative cases (two of which are the v0.7 anti-inaction guards):
 | `std-07-anchored-bugfix` | PR | clean anchored bug fix with regression test → standard | standard (L-30) |
 | `std-08-overreaching-feature-issue` | Issue | sprawling multi-idea feature request → issue salvage | standard (L-30) |
 | `std-09-greenfield-design-path` | PR | **new in v0.7:** DE-shaped greenfield subsystem, uncited → E-04 under its category-1 scope, and the artifact is a **design plan** (decision inventory, drafted ADR, obstacles, atomic decomposition), never a code-review verdict | escalate (E-04) → design path |
+| `std-10-finding-contract-scope` | PR | **new:** the finding-contract fixture (`rules/lanes.md` L-33/L-33b) — an auth-bypass bug (empty `JWT_SECRET` skips the guard) that must state impact + ask, plus a genuinely separate, cross-cutting observation correctly scoped `follow-up`, not in-scope or pre-existing; auth code touched, so E-02 fires as it should — incidental to the fixture's actual point | escalate (E-02) |
 | `neg-01-trivial-typo-fix` | PR | **negative:** a pure typo fix that MUST fast-lane (non-dependency path, no F-gate) | fast (L-10) |
 | `neg-02-anchored-feature` | PR | **negative:** clean anchored single-subsystem feature where escalation must NOT fire (triggers empty); v0.7 pins the closest category call in the corpus — category 2, because R-7 already decided it | standard (L-30) |
 | `neg-03-topical-anchor-shallow-pass` | PR | **negative:** a cited anchor that exists and topically matches → A-08 default depth verifies it; E-04 must not fire on a scope-exactness debate | standard (L-30) |
@@ -195,8 +197,9 @@ the correcting fixture *and* the `rules/` change in the same PR, so the
 eval diff shows precisely which golden outcomes the rules change buys.
 
 **Growth targets** (design §4.2): **~20–50 fixtures by M2, 100+ by M3**,
-fed by that flywheel. This cut is 19 — nine adversarial, ten coverage
-and negative (two of them added by v0.7). As the corpus grows past the
+fed by that flywheel. This cut is 20 — nine adversarial, eleven
+coverage and negative (two of them added by v0.7, one added for the
+finding contract). As the corpus grows past the
 per-run cap the adversarial set is always selected first (never sampled
 out); the `full-eval` PR label and the nightly run grade everything.
 

@@ -298,7 +298,12 @@ investigation inside Tier 1.
    imports, tests that assert nothing, dead code, duplication,
    unexplained bundled refactors. The **full-subsystem walk is Tier-2
    work** and is explicitly not done here; say so in the coverage
-   statement.
+   statement. Every finding this pass produces — at Tier 1 exactly as
+   at Tier 2 — is structured per `rules/lanes.md` L-33: impact, ask,
+   and scope (in-scope / follow-up / pre-existing) are required
+   alongside severity and the suggested comment, and each finding
+   passes the L-33b maintainer-actionability test before it is
+   recorded.
 6. **The self-attestation cross-check** — re-derive the contributor's
    PR-template checkboxes from evidence (`rules/self-attestation.md`
    T-01/T-02). At Tier 1 you perform the whole cross-check yourself;
@@ -486,9 +491,18 @@ record — or, through it, the deck — unfiltered:
 
 1. **Dedup** — already done in 5.2; a finding appears once.
 2. **Evidence check** — drop any finding that cannot cite the specific
-   diff lines it is about. A finding about the PR's narrative, or
-   about code the diff does not touch, does not qualify (it may
-   survive as a coverage note or an escalation flag, not a finding).
+   code it is about, and drop any finding missing its required
+   `impact` or `ask` (`rules/lanes.md` L-33 — an evidence-grounded
+   finding with no stated impact or ask is still incomplete). A
+   finding about the PR's narrative does not qualify (it may survive
+   as a coverage note or an escalation flag, not a finding). A finding
+   about code the diff does not touch is **no longer dropped to a
+   coverage note** (decided 2026-07-30, superseding the prior rule): it
+   may survive as a finding scoped `pre-existing` or `follow-up`
+   (`rules/lanes.md` L-33), provided it still cites the specific code
+   it is about — the evidence bar is unchanged, only the disposition
+   changes; a `follow-up`-scoped finding also carries its drafted
+   follow-up issue stub.
 3. **Confidence threshold** — findings the member marked
    low-confidence do not reach the record unless they are
    security-relevant (those render as flags for human attention,

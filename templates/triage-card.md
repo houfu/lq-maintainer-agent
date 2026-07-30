@@ -35,8 +35,10 @@ auditable.
   normalization findings, agent-instruction/tool-config files in the
   diff (escalation trigger, `rules/injection-posture.md`), CI status
   anomalies.
-- **TC-06 — Findings** in the L-33 structured form with disposition
-  hints (see `templates/receipt-pr.md` RP-05).
+- **TC-06 — Findings** in the L-33 structured form — impact, ask,
+  disposition hint, and scope (in-scope / follow-up / pre-existing),
+  each finding passing the L-33b actionability test (see
+  `templates/receipt-pr.md` RP-05).
 - **TC-07 — Salvage summary** when applied: the part/disposition
   table, with the full decomposition in the receipt.
 - **TC-08 — Maintainer next actions.** The card ends with the
@@ -85,7 +87,9 @@ medium | low>)
 
 **Findings:** <count>
 - F-<i> [<blocking | major | minor>] `<file>:<line>` — <one line>
-  (canon: <citation>; disposition hint: <trivial | relayable | structural>)
+  (canon: <citation>; disposition hint: <trivial | relayable | structural>;
+  scope: <in-scope | follow-up | pre-existing>)
+  Impact: <one sentence> · Ask: <one sentence, phrased as a request>
 
 **Salvage (if applied):**
 | Part | Statement | Disposition |
