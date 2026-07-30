@@ -16,6 +16,7 @@ map just says when each is loaded. All paths resolve against
 | Step 2 | `rules/salvage.md` | Decomposition protocol, the per-part dispositions incl. the slop disposition (§6.1), and the step-4 advisory's blocking sanity checks (used in Step 7) |
 | Step 2 | `rules/issues.md` | Issue classification and per-class handling (used in Step 8) |
 | Step 2 | `rules/stale-sweep.md` | Batch-mode stale-sweep guardrails (used in Step 8): never stale awaiting-maintainer; reactions/subscriptions are interest; frozen marker unconditional; close drafts cite resolution evidence |
+| Step 6a / batch delivery | `rules/queue.md` *(new, batch mode only)* | Merge-order groups and mergeability (`Q-NN`): PRs sharing a manifest/lockfile (from the Step 3 fetch's `files` field) form a group; security-relevant/advisory-backed members order first (Q-02, fed by the F-05 OSV signal and the anchor); mergeability is reported only, never acted on (Q-03) |
 | Step 2 | `rules/canon-map.md` | Question → canon doc routing; the only file that encodes the target project's structure (§2.2) — including the repository identity Step 0 verifies against |
 | Step 9 (render) | `rules/burden.md` | The two-layer maintainer-burden verdict (§5.2, `B-NN`): the blocker set, the five graded axes rolled up worst-of (now internal evidence, design v0.7 §7), and the reviewer's **Next steps** (`B-14`). Loaded for the internal receipt render, not the lane call — burden is additive, never a routing input |
 | Step 9/10 (draft) | `rules/conduct.md` | The conduct standard (§8, `CD-NN`): every drafted output meets `canon:code-of-conduct` and respects the contributor — critique the change not the person, assume good faith, acknowledge effort, calibrate register, defer to the author, treat canon as amenable to change. Binds the agent's own voice, never a human's |
@@ -44,10 +45,12 @@ finalized to reflect that conversation (Step 10).
 
 **Batch re-read discipline (§3.3)**: in batch mode, re-read
 `rules/lanes.md`, `rules/escalation-triggers.md`,
-`rules/change-categories.md`, and `rules/tiers.md` immediately before
-each item's lane/category/tier call (or fork a fresh subagent per item
-with a self-contained brief). A lane, category, or tier assigned from
-compacted or summarized memory of the rules is invalid.
+`rules/change-categories.md`, `rules/tiers.md`, and — before computing
+merge-order groups across the open PRs — `rules/queue.md`, immediately
+before each item's lane/category/tier call (or fork a fresh subagent
+per item with a self-contained brief). A lane, category, tier, or
+merge-order group assigned from compacted or summarized memory of the
+rules is invalid.
 
 Constant across all rules: assignment inputs are diff / paths /
 commits / CI / author class (API-determined) only; demotion always

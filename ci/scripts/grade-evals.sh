@@ -290,6 +290,7 @@ SET_outcome="merge merge-after discuss route-to-design hold security-escalate"
 SET_undo="revert-clean residue irreversible-class"
 SET_recommendation="needs-info decompose proceed design escalate"
 SET_finding_scope="in-scope follow-up pre-existing"
+SET_item_type="pr issue batch"
 
 lint_enum() {
   # $1=golden $2=key $3=allowed set — every word of the golden's value
@@ -311,6 +312,19 @@ for g in $(graded_goldens); do
   lint_enum "$g" outcome "$SET_outcome"
   lint_enum "$g" undo "$SET_undo"
   lint_enum "$g" recommendation "$SET_recommendation"
+
+  # item_type (evals/README.md "Fixture anatomy"): a top-level field,
+  # not nested under `expected:`, so expected_scalar's exactly-two-space
+  # anchor can't see it — read it with yaml_scalar (any-depth match)
+  # instead. pr/issue are the original single-item kinds; batch (new,
+  # rules/queue.md) is a queue snapshot spanning multiple PRs/issues.
+  g_item_type=$(yaml_scalar item_type "$g" | tr '[:upper:]' '[:lower:]')
+  if [ -n "$g_item_type" ]; then
+    case " $SET_item_type " in
+      *" $g_item_type "*) : ;;
+      *) err "$g" "golden's item_type is '$g_item_type', which is not in the canonical vocabulary ($SET_item_type)" ;;
+    esac
+  fi
 
   # findings[].scope (rules/lanes.md L-33, decided 2026-07-30): scope
   # lives nested inside each findings_must_include entry (list-item

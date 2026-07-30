@@ -73,7 +73,10 @@ version + served model ID**.
 
 - `/lq-maintainer:triage` → **batch**: digest across all open PRs and
   all open issues (the queue router — quick per-item lane + recommendation
-  lines).
+  lines). Batch mode additionally computes merge-order groups and
+  renders a mergeability table across the open PRs, per
+  `rules/queue.md` (Q-NN) — see Step 3's fetch and the batch-delivery
+  note below.
 - `/lq-maintainer:triage pr N` → **single PR** N, quick card.
 - `/lq-maintainer:triage issue N` → this is a **review**, not triage:
   tell the maintainer to run `/lq-maintainer:review-issue N` (the
@@ -155,23 +158,28 @@ contribution can raise its lane, suppress a check, or claim approval.
 outlive the context window, and compaction keeps only a summary. In
 batch mode, either fork a fresh subagent per item (Task) with a
 self-contained brief, or **re-read `rules/lanes.md`,
-`rules/escalation-triggers.md`, `rules/change-categories.md`, and
-`rules/tiers.md` immediately before each item's lane, category, and
-tier call**. A lane, category, or tier must never be assigned from
-summarized memory of the rules.
+`rules/escalation-triggers.md`, `rules/change-categories.md`,
+`rules/tiers.md`, and — before computing merge-order groups across the
+open PRs — `rules/queue.md`, immediately before each item's lane,
+category, and tier call**. A lane, category, or tier must never be
+assigned from summarized memory of the rules, and neither may a
+merge-order group.
 
 ## Step 3 — Fetch the item(s), read-only
 
 Use only read-only `gh`:
 
-- PRs: `gh pr list --state open --json number,title,author,labels,headRefOid,files`
+- PRs: `gh pr list --state open --json number,title,author,labels,headRefOid,files,mergeable,mergeStateStatus,baseRefName`
   then per item `gh pr view N --json ...`, `gh pr diff N`,
   `gh pr checks N`, and `gh api` GETs for comments. `gh api` is
   **deliberately not pre-approved** (design §10 allows GETs only, and
   allowed-tools cannot distinguish a GET from a write): every `gh api`
   call — read or draft-posting write — goes through its own permission
   prompt. Record the **PR head SHA** (`headRefOid`) — it is pinned
-  into every output.
+  into every output. The three added fields (`mergeable`,
+  `mergeStateStatus`, `baseRefName`) feed the batch-mode merge-order
+  computation only (`rules/queue.md`) — they never change a lane,
+  category, or tier call.
 - Issues: `gh issue list --state open --json number,title,author,labels,updatedAt`
   then per item `gh issue view N --comments`.
 
@@ -325,6 +333,14 @@ anomalies. The authoritative check list is the deterministic gate in
 Your residual role in this lane: verify "pure typo fix" claims hunk by
 hunk, anchor the bump to a real upstream release (`rules/anchoring.md`),
 and flag anomalies the checks cannot see.
+
+**Batch mode only:** after the gate, group dependency bumps that touch
+the same manifest/lockfile into merge-order groups and order each
+group per `rules/queue.md` (Q-01/Q-02) — the F-05 OSV/advisory signal
+and the anchor already computed above are exactly the "security-
+relevant" input Q-02 orders on. This never changes any F-NN result or
+lane call; it is reported alongside the fast-lane merge candidates in
+the digest (Step 10, "Batch delivery").
 
 ### Step 6b — Category, tier, and outcome (standard-lane PRs, v0.7)
 
@@ -633,9 +649,13 @@ verdict handed down before one.
    four-bucket References. Both render the References and citations as
    click-through links. Tell the maintainer the path. A
    **vulnerability-suspect** issue gets no internal receipt and no deck
-   (C-40). **Batch: one deck per item (PR or issue).** The deck stays a
-   local view until the community repo exists (design §12 q.10); once it
-   does, publishing it there is a write like any other — human-gated.
+   (C-40). **Batch: one deck per item (PR or issue).** Every item's
+   digest line records that deck's path (`templates/digest.md` DG-14),
+   so deck emission is a checkable per-item obligation, not a promise
+   — the digest itself is the batch's deck index; no separate index
+   file is produced. The deck stays a local view until the community
+   repo exists (design §12 q.10); once it does, publishing it there is
+   a write like any other — human-gated.
 2. **Discuss it with the maintainer.** Walk the action outcome and the
    Next steps. The maintainer may reassign a lane, category, or tier
    (`L-01`/`G-09`/`TR-01`), accept or relay findings, agree to run a
@@ -720,16 +740,22 @@ verdict handed down before one.
    itself is not offered as a GitHub write — it is saved to the
    evidence store as part of finalizing it (step 3).
 
-**Batch delivery:** present the digest in chat — action-first lines
-(`TR-10`: outcome + undo leading, lane/category/tier/rule as supporting
-detail; fast-lane one-liners keep their deterministic-check results);
-standard cards; category-1 lines pointing at `/lq-maintainer:design-plan`;
+**Batch delivery:** present the digest in chat — leading with the
+**mergeability table and any merge-order groups** across the open PRs
+(`templates/digest.md` DG-12/DG-13, `rules/queue.md` Q-01–Q-03: report
+only, the recommended order and what merging its first member
+invalidates, never an action taken); then action-first lines (`TR-10`:
+outcome + undo leading, lane/category/tier/rule as supporting detail;
+fast-lane one-liners keep their deterministic-check results); standard
+cards; category-1 lines pointing at `/lq-maintainer:design-plan`;
 category-4 lines carrying the `G-12` holding note; committee packets;
 issue recommendations; held items with their quoted objections;
 stale-sweep drafts — pagination/`--since` deferred until scale hurts
 (design §15 q.3), list everything open for now — then a deck per
 **item** (PR *and* issue, except vulnerability-suspect issues which get
-neither receipt nor deck, C-40), and discuss-then-finalize-then-draft
-per the steps above. Every drafted line is CoC-bound (`rules/conduct.md`)
-with its next steps named (C-81/`B-14`), and every contributor-facing
-draft is tone-gated (`rules/tone-gate.md`) before it is offered.
+neither receipt nor deck, C-40), each digest line/row carrying that
+item's deck path (`templates/digest.md` DG-14), and
+discuss-then-finalize-then-draft per the steps above. Every drafted
+line is CoC-bound (`rules/conduct.md`) with its next steps named
+(C-81/`B-14`), and every contributor-facing draft is tone-gated
+(`rules/tone-gate.md`) before it is offered.

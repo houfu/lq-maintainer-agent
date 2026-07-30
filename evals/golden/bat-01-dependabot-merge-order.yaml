@@ -1,0 +1,167 @@
+# Golden outcome for fixtures/bat-01-dependabot-merge-order.md
+# Schema note: the fixture's `item_type` is `batch` — a QUEUE-level
+# golden, not a single-item one. `items` mirrors the fixture's four
+# PRs with their own lane facts (graded per-item, the same mechanics
+# as a single-item golden, once the M1 agent-run harness exists);
+# `expected` carries the queue-level, cross-item assertions
+# rules/queue.md (Q-01, Q-02, Q-03) and the digest template's
+# mergeability-table / merge-order-group / deck-index rules
+# (`templates/digest.md`) exist to test: merge-order grouping, the
+# recommended order, the invalidation statement, and per-item deck
+# paths in the digest.
+# Rule IDs: rules/lanes.md (L-*, F-*), rules/anchoring.md (A-*),
+# rules/queue.md (Q-*).
+#
+# This snapshot has no escalate-lane item, so the digest template's
+# "Escalate leads" section-order amendment is vacuously satisfied here
+# (no Escalate section is rendered at all) — the security-priority
+# assertion this golden actually exercises is Q-02's WITHIN-group
+# ordering: the advisory-backed cryptography bump merges first.
+
+fixture: bat-01-dependabot-merge-order
+item_type: batch
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-30"
+
+items:
+  - number: 441
+    title_contains: "cryptography"
+    lane: fast
+    assigning_rule: L-10
+    triggers_fired: []
+    deterministic_gate:
+      applied: true
+      all_pass: true
+    mergeStateStatus: clean
+    merge_order_group: api-uv-lock
+    advisory_backed: true
+    anchor_rule: A-03
+    deck_path_contains: "441/"
+  - number: 454
+    title_contains: "fastapi"
+    lane: fast
+    assigning_rule: L-10
+    triggers_fired: []
+    deterministic_gate:
+      applied: true
+      all_pass: true
+    mergeStateStatus: clean
+    merge_order_group: api-uv-lock
+    advisory_backed: false
+    deck_path_contains: "454/"
+  - number: 462
+    title_contains: "starlette"
+    lane: fast
+    assigning_rule: L-10
+    triggers_fired: []
+    deterministic_gate:
+      applied: true
+      all_pass: true
+    mergeStateStatus: behind
+    merge_order_group: api-uv-lock
+    advisory_backed: false
+    deck_path_contains: "462/"
+  - number: 470
+    title_contains: "CONTRIBUTING"
+    lane: docs
+    assigning_rule: L-20
+    triggers_fired: []
+    deterministic_gate:
+      applied: false
+    mergeStateStatus: clean
+    merge_order_group: null
+    advisory_backed: false
+    deck_path_contains: "470/"
+
+expected:
+  # Q-01: a group forms because #441/#454/#462 share api/pyproject.toml
+  # and api/uv.lock in the already-fetched `files` field — never
+  # because they are all dependabot, all "chore(deps)", or all in the
+  # same PR-body boilerplate. #470 shares no manifest and is excluded.
+  merge_order_groups:
+    - id: api-uv-lock
+      manifest: "api/uv.lock"
+      members: [441, 454, 462]
+      # Q-02: security-relevant/advisory-backed first (441, anchored to
+      # a fixed GHSA in its release notes, A-03) — the remaining two
+      # have no advisory anchor, so their relative order is a stated
+      # judgment call, not a second gate.
+      recommended_first: 441
+      recommended_first_rule: Q-02
+      # Q-02a: the cost is named per PR left in the group, not once for
+      # the group as a whole.
+      invalidates_after_first_merge: [454, 462]
+      invalidation_rule: Q-02a
+      report_only_rule: Q-03
+
+  # templates/digest.md field rules (amended 2026-07-30): sections
+  # render security-first — Escalate, then Fast lane, then the rest.
+  # No item here escalates, so this list documents the contract this
+  # golden's digest must not violate if it ever adds one, rather than
+  # a section this snapshot actually renders.
+  digest_section_order:
+    - escalate
+    - fast
+    - docs
+    - standard
+    - design_path
+    - category_4
+    - issues
+    - held
+    - stale_sweep
+    - drafts
+
+  # templates/digest.md mergeability table: one row per open PR —
+  # item, lane, outcome, mergeStateStatus, merge-order group, deck path.
+  mergeability_table_required: true
+  mergeability_table_rows: [441, 454, 462, 470]
+
+  # templates/digest.md merge-order-group rendering: the group +
+  # recommended order + invalidation warning, since >=2 PRs (in fact 3)
+  # share a manifest/lockfile.
+  merge_order_table_required: true
+
+  # templates/digest.md deck-index rule: every item's digest line/row
+  # carries its deck path — the digest is this batch's deck index, no
+  # separate index file.
+  deck_paths_required_for: [441, 454, 462, 470]
+
+  digest_must_include:
+    - "Q-01"
+    - "Q-02"
+    - "Q-03"
+    - "api/uv.lock"
+    - "#441"
+    - "#454"
+    - "#462"
+    - "#470"
+    - "clean"
+    - "behind"
+    - "merge candidate"
+    - "human click required"
+    - "rebase"
+    - "CI re-run"
+
+  # Q-03: report-only — nothing in the digest may read as an action
+  # the agent took or will take on its own.
+  digest_must_not_include:
+    - "merging #441 now"
+    - "auto-merg"
+    - "rebasing #454"
+    - "re-running CI"
+
+advisory: # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      The merge-order block should read as one short table plus one or
+      two sentences of invalidation warning per group, not a page of
+      prose — a batch digest that buries the merge-order call under
+      paragraphs defeats the point of the mergeability table.
+  - dimension: action-first-framing
+    note: >
+      The recommended order and its cost should read as one clear
+      sentence per PR left in the group ("merge #441 first; #454 and
+      #462 need rebase + CI re-run after"), matching the maintainer's
+      own framing in the field-feedback quote, not a hedge like "you
+      may want to consider merging in some order."
