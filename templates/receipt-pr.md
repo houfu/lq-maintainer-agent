@@ -209,6 +209,25 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   section says so plainly). A `stated` record is legitimate — a local
   tool cannot police its own operator — but it is never silently
   presented as verified.
+  **GitHub state wins over the recorded ruling (decided 2026-07-30).**
+  At finalize, and again on any resumed session, read the item's live
+  GitHub state before trusting or writing a ruling — `gh pr view <n>
+  --json state,mergedAt,mergeCommit` — the same posture as the cache
+  rule elsewhere in this skill set: a local record is a rebuildable
+  convenience, never a source of truth, and the verified state from
+  GitHub outranks it (`skills/review-pr/SKILL.md` Step 2: "the footer
+  wins and the cache is rebuilt from the diff plus the footer" — here
+  it is GitHub's own state that wins over whatever was recorded from a
+  chat ruling). A discrepancy — the receipt records `merge` but the PR
+  is still open on GitHub; the PR has merged or closed but no
+  `### Maintainer decision` section was ever recorded — is never
+  silently rewritten: it is surfaced to the maintainer and, once they
+  confirm how to reconcile it, recorded as a dated note in the visible
+  decision section (e.g. "2026-07-30: PR merged on GitHub; no ruling
+  had been recorded here — reconciled from GitHub state per the
+  maintainer's confirmation"). **Absence of a decision block still
+  never reads as agreement** — a merged-but-undecided item is a
+  discrepancy to surface and ask about, not consent to infer.
   Visible body: who decided (their handle, visible here like the
   attribution line — never in the footer), the ruling in plain
   language, whether it accepted / adjusted / overrode the agent's
@@ -401,6 +420,9 @@ what happens to this item and why, in the maintainer's words>.
   overridden: <what the maintainer did instead>>.
 - Feedback for the agent: <none | the maintainer's words — also
   appended to the cross-item feedback log, templates/feedback-log.md>.
+- GitHub state at finalize (`gh pr view --json state,mergedAt,mergeCommit`):
+  <matches the recorded ruling | discrepancy — <date>: <what the
+  states disagreed on and how it was reconciled>>.
 
 ### Drafted public comment (RP-19)
 

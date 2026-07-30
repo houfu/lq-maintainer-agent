@@ -598,7 +598,12 @@ the single authoritative copy of the trailer format), so the human can
 paste it whole into the GitHub merge box. Embed it in the receipt's
 `### Drafted merge message` fenced block (RP-19): the deck renders it
 as a paste-ready card, and it is not presented as a separate chat
-deliverable.
+deliverable. Before drafting it, read the branch's commit authors and
+any existing `Signed-off-by` trailers from `gh pr view N --json
+commits` (gh/git read forms only — the PR ref is never fetched or
+checked out, design 10), so the message preserves each contributor's
+sign-off and adds a `Co-authored-by` line per distinct squashed author
+(`MM-05a`).
 
 The human performs the merge and owns the message; you only draft it.
 Fast-lane digest lines end exactly: "merge candidate — human click
@@ -671,6 +676,15 @@ verdict handed down before one.
    login also prefills the attribution line's `@<maintainer>`
    placeholder (Step 9) — the gated approval of each write is where
    the maintainer confirms it.
+   **Read GitHub state before recording the ruling** (`RP-18`, decided
+   2026-07-30): `gh pr view N --json state,mergedAt,mergeCommit` for a
+   PR, `gh issue view N --json state,stateReason` for an issue.
+   GitHub's own state wins over whatever the ruling conversation
+   concluded — read the item's record, not the conversation. A
+   discrepancy (the ruling says `merge` but the item is still open;
+   the item merged or closed with no ruling ever recorded) is never
+   silently rewritten: surface it to the maintainer and record it as
+   a dated note in the section once they confirm the reconciliation.
    When nobody ruled — a contributor self-checking
    their own submission, or a maintainer deferring the call — leave
    section and block **absent**: the receipt reads "not yet decided"
