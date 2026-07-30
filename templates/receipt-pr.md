@@ -77,8 +77,17 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   courteous, blame-free note about the work, tone-gated.
 - **RP-05 — Findings, filtered.** Findings appear with stable IDs
   (`F-1`, `F-2`, …), structured per `rules/lanes.md` L-33
-  (file / line / severity / canon citation / suggested comment) plus
-  exactly one disposition hint (trivial / relayable / structural).
+  (file / line / severity / canon citation / impact / ask / suggested
+  comment) plus exactly one disposition hint (trivial / relayable /
+  structural) and exactly one **scope** value (in-scope / follow-up /
+  pre-existing) — every finding also passes the L-33b
+  maintainer-actionability test, at every tier. **Impact** and **Ask**
+  are free text and render in this visible section only, never in the
+  footer; **Scope** is enumerated and additionally rides the footer's
+  findings tuple (see the footer schema below). A finding scoped
+  `follow-up` additionally carries a drafted follow-up issue stub
+  (watermarked draft — the human files it, `rules/salvage.md` S-20 /
+  `rules/decision-scoping.md` D-06 posture).
   Deep-dive receipts render **severity-shaped** after the §9 filter
   stage (decided 2026-07): every blocking and major finding renders,
   however many; minor findings always collapse to one count line.
@@ -200,6 +209,25 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   section says so plainly). A `stated` record is legitimate — a local
   tool cannot police its own operator — but it is never silently
   presented as verified.
+  **GitHub state wins over the recorded ruling (decided 2026-07-30).**
+  At finalize, and again on any resumed session, read the item's live
+  GitHub state before trusting or writing a ruling — `gh pr view <n>
+  --json state,mergedAt,mergeCommit` — the same posture as the cache
+  rule elsewhere in this skill set: a local record is a rebuildable
+  convenience, never a source of truth, and the verified state from
+  GitHub outranks it (`skills/review-pr/SKILL.md` Step 2: "the footer
+  wins and the cache is rebuilt from the diff plus the footer" — here
+  it is GitHub's own state that wins over whatever was recorded from a
+  chat ruling). A discrepancy — the receipt records `merge` but the PR
+  is still open on GitHub; the PR has merged or closed but no
+  `### Maintainer decision` section was ever recorded — is never
+  silently rewritten: it is surfaced to the maintainer and, once they
+  confirm how to reconcile it, recorded as a dated note in the visible
+  decision section (e.g. "2026-07-30: PR merged on GitHub; no ruling
+  had been recorded here — reconciled from GitHub state per the
+  maintainer's confirmation"). **Absence of a decision block still
+  never reads as agreement** — a merged-but-undecided item is a
+  discrepancy to surface and ask about, not consent to infer.
   Visible body: who decided (their handle, visible here like the
   attribution line — never in the footer), the ruling in plain
   language, whether it accepted / adjusted / overrode the agent's
@@ -305,7 +333,11 @@ maintainer running the agent)>.
 
 **F-<i> — <severity: blocking | major | minor>** — `<file>:<line>`
 <one-line finding. Canon: <citation>.>
+Impact: <one sentence — what goes wrong, for whom, if unaddressed>
+Ask: <one sentence — who does what next, phrased as a request per
+rules/conduct.md CD-06>
 Disposition hint: <trivial | relayable | structural>
+Scope: <in-scope | follow-up | pre-existing>
 Suggested comment: <ready-to-post text, written for the contributor>
 <if the remedy is a concrete replacement of the cited line(s), L-33a:>
 Suggested change — paste as a review comment on `<file>:<line>`:
@@ -315,6 +347,12 @@ Suggested change — paste as a review comment on `<file>:<line>`:
 Apply path: <the one-line L-33a path for this disposition — e.g.
 "post the drafted comment on <file>:<line> in the PR's Files-changed
 view; the contributor applies it with one click">
+<if scope is follow-up:>
+Drafted follow-up issue (DA-01 watermarked; the human files it):
+```markdown
+<title + body stub for the follow-up issue, crediting context as
+S-22 requires where the idea originated in the contribution>
+```
 
 ### Salvage decomposition (if applied)
 
@@ -382,6 +420,9 @@ what happens to this item and why, in the maintainer's words>.
   overridden: <what the maintainer did instead>>.
 - Feedback for the agent: <none | the maintainer's words — also
   appended to the cross-item feedback log, templates/feedback-log.md>.
+- GitHub state at finalize (`gh pr view --json state,mergedAt,mergeCommit`):
+  <matches the recorded ruling | discrepancy — <date>: <what the
+  states disagreed on and how it was reconciled>>.
 
 ### Drafted public comment (RP-19)
 
@@ -439,7 +480,7 @@ deterministic_checks:
   release_age: <pass|fail|n-a>
   ci_green: <pass|fail|n-a>
 findings:
-  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>}
+  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>}
 findings_filtered: <integer, 0 if none>
 salvage:
   applied: <true|false>
@@ -504,6 +545,12 @@ eval-grading interface (`evals/run-checks.md`).
   quoted payload re-parsed by a later session re-enters at elevated
   trust. Quoted findings, salvage sentences, and contested-request
   text live in the visible body, where humans see them.
+- **`findings[].scope`** (`rules/lanes.md` L-33, decided 2026-07-30):
+  enumerated only — `in-scope` / `follow-up` / `pre-existing`. The
+  finding's **impact** and **ask** are free text and are, like every
+  free-text field, **visible-body only** (RP-05) — they never appear
+  in this footer tuple, which carries `id` / `severity` / `disposition`
+  / `scope` and nothing else.
 - `split_verified` is **always `false`** — the agent never verifies a
   split compiles (design doc §6 step 4); the field exists so a parser
   cannot assume otherwise.

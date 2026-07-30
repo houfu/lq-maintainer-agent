@@ -4,7 +4,7 @@ You contributed to [`legalquants/lq-ai`](https://github.com/legalquants/lq-ai)
 — thank you — and a short comment appeared, ending with something
 like:
 
-> *Drafted by lq-maintainer-agent v0.3.0; reviewed and posted by
+> *Drafted by lq-maintainer-agent v0.4.1; reviewed and posted by
 > @maintainer.*
 
 This page explains what produced that comment, what it can and cannot

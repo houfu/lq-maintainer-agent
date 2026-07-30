@@ -309,18 +309,44 @@ it (L-04).
   TR-07): check 4's full-subsystem read in particular is what a
   Tier-1 quick pass does not do — TR-04's standard-failure-mode scan
   covers the diff and its immediate surroundings only.
-- **L-33 — Structured findings.** Every finding is structured:
-  `file / line / severity / canon citation / suggested comment`, plus
-  exactly one disposition hint:
-  - *trivial* — maintainer fixes it in seconds;
-  - *relayable* — written so a non-engineer contributor can carry it
-    back to their tooling: the comment contains the proposed change
-    itself (the replacement wording, or the L-33a suggestion block),
-    never only the explanation of why — a comment whose reader
-    finishes it not knowing what to do is not relayable, however
-    correct (`rules/tone-gate.md` TG-03.2);
-  - *structural* — recommend close, and draft an issue describing the
-    goal so the idea survives the PR.
+- **L-33 — Structured findings** *(amended 2026-07-30 to add impact,
+  ask, and scope)*. Every finding is structured:
+  `file / line / severity / canon citation / impact / ask / suggested
+  comment`, plus exactly one disposition hint and exactly one scope
+  value:
+  - **Impact** — one sentence: what goes wrong, for whom, if the
+    finding is left unaddressed. Distinct from the suggested comment
+    (the contributor-facing text) and from disposition (routing) —
+    impact is why the finding matters, stated plainly enough that a
+    maintainer skimming a batch does not have to reconstruct the
+    stakes themselves. (Motivating cases: a finding that "does not
+    touch a test" or that "an empty JWT secret skips the guard" is
+    incomplete without a sentence naming what breaks and for whom.)
+  - **Ask** — who does what next, phrased as a request per
+    `rules/conduct.md` CD-06 — never a command, always carrying its
+    reason.
+  - **Scope** — exactly one of:
+    - *in-scope* — addressing this is this PR's burden;
+    - *follow-up* — the finding is real but belongs in a follow-up
+      issue: it carries a drafted follow-up issue stub (watermarked
+      draft — the human files it, the same posture as S-20 in
+      `rules/salvage.md` and D-06 in `rules/decision-scoping.md`);
+    - *pre-existing* — real, observed while reviewing, but not this
+      PR's burden to fix (the S-17 "may simply stay in the PR" posture
+      in `rules/salvage.md`).
+    Scope exists so the maintainer never has to litigate, finding by
+    finding, whether a real observation is this PR's problem — the
+    call is made and stated once, at the finding.
+  - disposition hint, unchanged:
+    - *trivial* — maintainer fixes it in seconds;
+    - *relayable* — written so a non-engineer contributor can carry it
+      back to their tooling: the comment contains the proposed change
+      itself (the replacement wording, or the L-33a suggestion block),
+      never only the explanation of why — a comment whose reader
+      finishes it not knowing what to do is not relayable, however
+      correct (`rules/tone-gate.md` TG-03.2);
+    - *structural* — recommend close, and draft an issue describing the
+      goal so the idea survives the PR.
 - **L-33a — The apply path (decided 2026-07-27).** A finding is not
   actionable until the human knows *how* to act on it, not just what
   is wrong. Where the remedy is a concrete replacement of the cited
@@ -345,6 +371,15 @@ it (L-04).
   and the contributor applies it with one click; *structural* — no
   block; the close-and-draft-issue path above. Posting remains a
   human-gated write like every other (§3.3).
+- **L-33b — The maintainer-actionability test (decided 2026-07-30).**
+  Every finding, at every tier — **including Tier 1**, no exception for
+  the quick pass — is judged against one test: it ends in one concrete,
+  doable action. Where the fix is textual, the finding includes the
+  proposed replacement wording itself; a correct explanation that
+  leaves the reader asking "so what do I do?" is an incomplete finding,
+  however accurate its diagnosis. This binds the finding at its source,
+  before any tone-gating — `rules/tone-gate.md` TG-01 defers to this
+  rule for maintainer-facing actionability rather than restating it.
 
 ### Output format
 

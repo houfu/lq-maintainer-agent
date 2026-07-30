@@ -167,13 +167,26 @@ did not.
      touched is re-reviewed fresh, and the category and tier are
      re-derived from the new diff (Step 3): a head movement can only
      move the item **heavier** on content grounds (TR-09).
-4. **Prior public receipts are read, never rewritten** (decided
+4. **Check GitHub state before trusting a resume** (`RP-18`, decided
+   2026-07-30). Before acting on a parsed footer's `decision` block,
+   read the PR's live state — `gh pr view N --json
+   state,mergedAt,mergeCommit` — the same posture as the cache rule
+   below: GitHub's own state outranks whatever was recorded from a
+   chat ruling. If the PR has merged or closed since the receipt was
+   last written, tell the maintainer plainly and offer to record
+   `final_outcome` straight from that GitHub state rather than from
+   what chat remembers — read the item's own record, not the
+   conversation, exactly as a maintainer may ask for. Any discrepancy
+   (recorded `merge` but the PR is still open; merged/closed with no
+   ruling ever recorded) is surfaced, never silently rewritten, and an
+   absent decision block is never read as agreement.
+5. **Prior public receipts are read, never rewritten** (decided
    2026-07-26). A pre-v0.7 public receipt comment stays where it is as
    the historical record; this run does not edit it into a short note
    and does not post a new public receipt. The living public artifact
    from v0.7 on is the short comment, updated in place per `PC-09`
    (Step 9).
-5. **Check the cache** at
+6. **Check the cache** at
    `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/`
    (design §3.1 — the cache lives outside the plugin tree: installed
    plugins are copied into a version-keyed ephemeral cache and must
@@ -298,7 +311,12 @@ investigation inside Tier 1.
    imports, tests that assert nothing, dead code, duplication,
    unexplained bundled refactors. The **full-subsystem walk is Tier-2
    work** and is explicitly not done here; say so in the coverage
-   statement.
+   statement. Every finding this pass produces — at Tier 1 exactly as
+   at Tier 2 — is structured per `rules/lanes.md` L-33: impact, ask,
+   and scope (in-scope / follow-up / pre-existing) are required
+   alongside severity and the suggested comment, and each finding
+   passes the L-33b maintainer-actionability test before it is
+   recorded.
 6. **The self-attestation cross-check** — re-derive the contributor's
    PR-template checkboxes from evidence (`rules/self-attestation.md`
    T-01/T-02). At Tier 1 you perform the whole cross-check yourself;
@@ -486,9 +504,18 @@ record — or, through it, the deck — unfiltered:
 
 1. **Dedup** — already done in 5.2; a finding appears once.
 2. **Evidence check** — drop any finding that cannot cite the specific
-   diff lines it is about. A finding about the PR's narrative, or
-   about code the diff does not touch, does not qualify (it may
-   survive as a coverage note or an escalation flag, not a finding).
+   code it is about, and drop any finding missing its required
+   `impact` or `ask` (`rules/lanes.md` L-33 — an evidence-grounded
+   finding with no stated impact or ask is still incomplete). A
+   finding about the PR's narrative does not qualify (it may survive
+   as a coverage note or an escalation flag, not a finding). A finding
+   about code the diff does not touch is **no longer dropped to a
+   coverage note** (decided 2026-07-30, superseding the prior rule): it
+   may survive as a finding scoped `pre-existing` or `follow-up`
+   (`rules/lanes.md` L-33), provided it still cites the specific code
+   it is about — the evidence bar is unchanged, only the disposition
+   changes; a `follow-up`-scoped finding also carries its drafted
+   follow-up issue stub.
 3. **Confidence threshold** — findings the member marked
    low-confidence do not reach the record unless they are
    security-relevant (those render as flags for human attention,
@@ -699,6 +726,13 @@ operator is the API-verified maintainer performing the merge
 human's own identity for the human to paste is not the agent signing
 off — you draft; the human performs the merge and owns the message.
 
+Before drafting the trailer block, read the branch's commit authors
+and any existing `Signed-off-by` trailers from `gh pr view N --json
+commits` (gh/git read forms only — never by fetching or checking out
+the PR ref, design 10), so the squash message preserves each
+contributor's own sign-off and adds a `Co-authored-by` line for every
+distinct author being squashed (`MM-05a`).
+
 ## Step 9 — The deck, the discussion, then the gated writes
 
 **The deck is the primary artifact** (design doc v0.7 §8): render it
@@ -736,7 +770,13 @@ prompt), recording `verified: api`, or `verified: stated` where the
 check was declined or unavailable and the section says so plainly; on
 `adjusted`/`overridden` alignment or explicit feedback,
 append the `templates/feedback-log.md` entry (FL-01) and set
-`decision.feedback_logged: true`. Ruling is **optional**: a
+`decision.feedback_logged: true`. Before recording the block, read the
+PR's live GitHub state (`gh pr view N --json
+state,mergedAt,mergeCommit`) — it wins over whatever the ruling
+conversation concluded, the same posture as Step 2's resume check
+(`RP-18`, decided 2026-07-30); a discrepancy between the two is
+surfaced to the maintainer and recorded as a dated note in the
+section, never silently overwritten. Ruling is **optional**: a
 contributor running this skill to check their own PR has no ruling to
 give — leave section and block absent (the record reads "not yet
 decided"), and never press for one. Then **re-render the deck** from

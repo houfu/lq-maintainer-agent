@@ -14,6 +14,11 @@ Pagination / `--since` thresholds are deferred until scale hurts
   standard-lane items the tier (`rules/tiers.md` TR-NN) and category
   (`rules/change-categories.md` G-NN) too — so the human can audit
   the routing of the whole batch at a glance (`rules/lanes.md` L-05).
+  **Amended 2026-07-30: sections render security-first.** The digest
+  leads with the Escalate lane, then Fast lane, then the remaining
+  sections in their prior relative order — the maintainer's
+  highest-risk decisions are never buried below routine merge
+  candidates.
 - **DG-02 — Fast-lane lines** carry the deterministic-check result
   (`7/7 pass`, or the failing check for near-misses that demoted) and
   MUST end with exactly: `merge candidate — human click required.`
@@ -30,7 +35,10 @@ Pagination / `--since` thresholds are deferred until scale hurts
   agent version, and served model ID once for the batch; per-PR head
   SHAs ride the item lines/cards.
 - **DG-07 — Nothing in the digest is an action.** Every write it
-  mentions is a draft awaiting an individual human approval.
+  mentions is a draft awaiting an individual human approval. This
+  includes the merge-order table (DG-13): a recommended order is
+  never a queue the agent works through on its own (`rules/queue.md`
+  Q-03).
 - **DG-08 — Standard-lane lines are action-first** (`rules/tiers.md`
   TR-10). Every category-2/3 line leads with the TR-05 outcome
   (`merge` / `merge-after: <fix>` / `discuss: <question>`), a
@@ -57,6 +65,31 @@ Pagination / `--since` thresholds are deferred until scale hurts
   contributor response, or a design plan's contributor note. The
   receipt is internal evidence and is never posted (design doc v0.7
   §8) — it never appears in this list.
+- **DG-12 — The mergeability table** *(new, batch mode, `rules/queue.md`)*.
+  One row per open PR, rendered once near the top of the digest:
+  item, lane, outcome (or "merge candidate" for fast-lane items),
+  `mergeStateStatus` glossed plainly (`clean` — mergeable as-is;
+  `behind` — base moved, needs an update/rebase; `dirty` — real
+  conflicts; `blocked` — a branch protection rule is unmet; `unknown`
+  — GitHub has not finished computing it, re-check before relying on
+  it), merge-order group (or `—` if none), and deck path. This is the
+  table a maintainer processing PRs one at a time reads first to see
+  what is actually clickable right now.
+- **DG-13 — Merge-order groups** *(new, `rules/queue.md` Q-01/Q-02)*.
+  Rendered immediately under the mergeability table whenever **two or
+  more** open PRs share a dependency manifest or lockfile: the shared
+  path, the group's members, the recommended merge order
+  (security-relevant/advisory-backed member first, Q-02), and the
+  **invalidation warning** — named per remaining PR, never as one
+  vague group-level sentence — stating whose `mergeStateStatus` and
+  CI-green go stale once the first member merges and must be rebased
+  and re-checked. Report-only (Q-03): the digest never merges, rebases,
+  or re-triggers CI for any member.
+- **DG-14 — Every item's line carries its deck path** *(new)*. Each
+  section's item line ends with the path to that item's rendered deck
+  (Step 10). The digest is the batch's deck index — no separate index
+  file is produced — and a missing deck path on a line is a checkable
+  sign that the deck for that item was not actually rendered.
 
 ## Template
 
@@ -66,43 +99,59 @@ Pagination / `--since` thresholds are deferred until scale hurts
 Canon `<sha>` · agent `<x.y.z>` · model `<served model ID>`
 Open PRs: <n> · open issues: <n>
 
+### Mergeability & merge order (`rules/queue.md`; DG-12/DG-13)
+| # | lane | outcome | mergeStateStatus | merge-order group | deck |
+|---|---|---|---|---|---|
+| #<n> | <lane> | <outcome \| merge candidate> | clean\|behind\|dirty\|blocked\|unknown | <group-id \| —> | `<deck path>` |
+
+<for each merge-order group (>=2 members sharing a manifest/lockfile):>
+**Group `<group-id>`** (`<manifest/lockfile path>`, Q-01) — recommended
+order: #<n> first (security-relevant/advisory-backed, Q-02)[, then
+#<n>, #<n> in either order]. Merging #<n> invalidates the
+`mergeStateStatus`/CI-green of #<n>[ and #<n>]: each needs rebase +
+CI re-run before it can merge (Q-02a). Report only — nothing above is
+merged, rebased, or re-run by this digest (Q-03).
+
+### Escalate lane
+- #<n> — <one-line summary> — escalate (<E-NN>[, E-NN…], <confidence>)
+  — committee packet drafted — deck: `<deck path>`
+
 ### Fast lane — merge candidates
 - #<n> — <one-line summary> — fast (<rule-id>, <confidence>) —
-  checks 7/7 pass (head `<sha>`) — merge candidate — human click required.
+  checks 7/7 pass (head `<sha>`) — merge candidate — human click
+  required — deck: `<deck path>`
 
 ### Docs lane
 - #<n> — <one-line summary> — docs (<rule-id>, <confidence>) —
-  <facet findings count> finding(s)
+  <facet findings count> finding(s) — deck: `<deck path>`
 
 ### Standard lane — action recommended (category 2/3; TR-10)
 - #<n> — <outcome: merge | merge-after: <one-clause named fix> |
   discuss: <specific question>> — <one-clause reason> — undo:
   <one-clause undo path> — tier <0-3>[, entering: <TR-07 condition>]
   — standard (<rule-id>, <confidence>) — category <2|3> (<G-NN>)
-  <if salvage: ; salvage applied, <k> parts>
+  <if salvage: ; salvage applied, <k> parts> — deck: `<deck path>`
 
 ### Design path — category 1 (`rules/change-categories.md` G-02)
 - #<n> — <one-line summary> — route-to-design (<rule-id>,
   <confidence>) — plan: `/lq-maintainer:design-plan <pr|issue> <n>`
+  — deck: `<deck path>`
 
 ### Category 4 — refactor / large-scale, holding (G-12)
 - #<n> — <one-line summary> — holding response drafted: large-scale
   process not yet written; decomposition offered (<rule-id>,
-  <confidence>)
-
-### Escalate lane
-- #<n> — <one-line summary> — escalate (<E-NN>[, E-NN…], <confidence>)
-  — committee packet drafted
+  <confidence>) — deck: `<deck path>`
 
 ### Issues
 - #<n> — <bug | feature | question | spam-suspect> (<C-NN>) —
   <lane> (<rule-id>) — <one-line status: repro complete / dup of #k /
-  DE stub drafted / answer drafted / slop-close drafted>
+  DE stub drafted / answer drafted / slop-close drafted> — deck:
+  `<deck path>`
 - issue #<n> — vulnerability-suspect: private-advisory redirect drafted.
 
 ### Held at contributor request (§7.1)
 - #<n> — held: "<three-word gist>" — awaiting a human response;
-  nothing drafted.
+  nothing drafted — deck: `<deck path>`
 
 ### Stale sweep (batch mode; rules/stale-sweep.md)
 - #<n> — status-check drafted (last activity <date>; awaiting

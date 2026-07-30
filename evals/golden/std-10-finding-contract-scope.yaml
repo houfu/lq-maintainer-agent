@@ -1,0 +1,130 @@
+# Golden outcome for fixtures/std-10-finding-contract-scope.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*).
+#
+# NEW (decided 2026-07-30): the finding-contract fixture. Motivated by
+# real July-2026 maintainer sessions where findings reached the
+# maintainer with no impact statement and no concrete ask ("does not
+# touch a test", PR 398; "empty JWT secret skips the guard", PR 399),
+# and the maintainer had to repeatedly litigate whether a finding was
+# even the PR's burden ("is checking for empty legitimately part of
+# this PR?", PR 399; "a bug fix I don't think is under the scope of
+# this PR", PR 316). This golden asserts the new rules/lanes.md L-33
+# fields directly:
+#   - F-1 (the empty-JWT-secret-skips-the-guard shape): in-scope, and
+#     must render labeled Impact:/Ask: lines (receipt.must_include).
+#   - F-2 (missing auth-failure logging, cross-cutting beyond this
+#     route): scope: follow-up, with a drafted follow-up issue stub.
+#
+# The diff touches auth code, so E-02 fires — correctly, and exactly
+# as it should regardless of category (rules/escalation-triggers.md
+# E-02 is absolute). That escalation is incidental to what this
+# fixture tests; precedent for a pure-security-trigger escalate golden
+# with no decision_scoping block is adv-08-conftest-tool-config.yaml
+# (E-10, no decision-shaped trigger fired alongside it).
+
+fixture: std-10-finding-contract-scope
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-07-30"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven escalation; the digest line cites the E-NN trigger(s)
+  demoted_from: null
+  triggers_fired: [E-02]   # auth code touched, by content — fires regardless of category (E-02)
+  never_lane: [fast]
+
+  category: 2   # G-03 — extends an existing, already-documented auth surface to a route missing it
+  tier: 3       # TR-08 — escalation forces committee/design tier regardless of size
+
+  # F-1: the "PR 399" shape. Must be in-scope (it is this PR's own new
+  # guard, not a pre-existing or separable concern) and must carry
+  # impact + ask — asserted via the labeled lines in receipt.must_include
+  # below, since impact/ask are free text, not a quoted substring here.
+  # F-2: a genuinely separate, cross-cutting concern (auth-failure
+  # logging across every /internal/* route) — scope: follow-up is the
+  # correct call, not in-scope (it is not this one-route PR's burden)
+  # and not pre-existing (the gap this PR's own new except-block sits
+  # in is what surfaces it, but fixing it here would smuggle a
+  # cross-cutting change into a one-route PR — S-01 scope-legibility,
+  # applied to a finding rather than the whole diff).
+  findings_must_include:
+    - category: auth-bypass
+      quote_contains: "if not secret"
+      scope: in-scope
+      note: >
+        require_auth skips verification entirely when JWT_SECRET is
+        unset or empty, calling the handler anyway — the guard is a
+        no-op exactly in the deployment state ("ops hasn't finished
+        the rollout") the code comment anticipates. Neither new test
+        exercises the unset-secret path (both set JWT_SECRET via
+        monkeypatch). Must state impact (unauthenticated requests are
+        accepted in that deployment state) and ask (fail closed:
+        reject or refuse to start when the secret is empty, rather
+        than skipping verification) — rules/lanes.md L-33/L-33b.
+    - category: observability-gap
+      quote_contains: "InvalidTokenError"
+      scope: follow-up
+      note: >
+        The except block returns a bare 401 with no record of the
+        rejected attempt anywhere, and no /internal/* route logs
+        authentication failures today. Real, but cross-cutting beyond
+        this one route — correctly scoped follow-up, not in-scope and
+        not pre-existing, with a drafted follow-up issue stub
+        (rules/lanes.md L-33; rules/salvage.md S-20 posture).
+
+  salvage:
+    applied: false   # single concern (the auth guard); the two findings are not a multi-concern diff (S-01)
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: true
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # 7b3e9c1a5d0f2846b1c4e7a9d2f5b8c0e3a6d9f1
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "Impact:"             # L-33: F-1's labeled impact line
+      - "Ask:"                # L-33: F-1's labeled ask line
+      - "Scope:"              # L-33: every finding renders its scope label
+
+  # F-2's follow-up scope requires the drafted stub (rules/lanes.md
+  # L-33 / rules/salvage.md S-20 posture) — asserted as the label the
+  # template renders (templates/receipt-pr.md), not the stub's prose.
+  outputs_must_include:
+    - "Drafted follow-up issue"
+
+advisory:   # model-graded, never blocking
+  - dimension: finding-phrasing
+    note: >
+      F-1's Impact line should name who is affected (any deployment
+      missing JWT_SECRET) and what concretely happens (unauthenticated
+      requests succeed), not just restate the code path; its Ask
+      should be phrased as a request with a reason (rules/conduct.md
+      CD-06), e.g. "please fail closed here — reject the request (or
+      refuse to start) when JWT_SECRET is empty, since a silent
+      no-op guard is worse than no guard at all, because it looks
+      protected."
+  - dimension: scope-fidelity
+    note: >
+      F-2 must not be folded into F-1 as one finding (they are
+      genuinely separable — S-01), and must not be marked in-scope:
+      cross-cutting authentication-failure logging across every
+      /internal/* route is not this one-route PR's burden. Nor should
+      it be marked pre-existing — the gap is real and worth tracking,
+      not merely "observed while reviewing, not this PR's problem" —
+      follow-up is the call that gets it a home (a drafted issue) that
+      pre-existing does not.
+  - dimension: escalation-is-not-the-point
+    note: >
+      E-02 firing here is correct and expected (auth code, absolute
+      trigger) — a rules change that somehow suppressed it would be a
+      real regression, but this fixture's actual purpose is the finding
+      contract (impact/ask/scope), not the escalation path, which
+      esc-01/esc-02/adv-07/adv-08 already cover from other angles.

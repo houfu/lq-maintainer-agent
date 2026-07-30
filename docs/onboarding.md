@@ -105,6 +105,11 @@ push**:
 - Rules changes in this repo take two maintainer reviews before they
   reach a release (see [CONTRIBUTING.md](../CONTRIBUTING.md)), so a
   version bump is a reviewed policy change, not a moving target.
+- The reading deck's provenance footer now stamps the **renderer's
+  own version**, read fresh from the installed plugin manifest at
+  render time (v0.4.1) — so a stale install is visible on the
+  artifact itself, not just inferred from the receipt's pinned
+  `agent_version`.
 
 ## What a review produces now (v0.7)
 

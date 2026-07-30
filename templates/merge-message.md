@@ -27,7 +27,10 @@ the GitHub merge box.
   then exactly these four trailers, in this order:
   `Triage:`, `Reviewed-At:`, `Disposition:`, `Signed-off-by:`.
   `Reviewed-At` carries all **four pinned fields** — pr-head SHA,
-  canon SHA, agent version, and the served **model** ID.
+  canon SHA, agent version, and the served **model** ID. On a squash
+  merge this four-trailer audit block is preceded by the authorship
+  trailers `MM-05a` adds — the block itself, and its internal order,
+  is unchanged.
 - **MM-04 — Disposition wording.** Standard lane: findings-resolved
   count. Fast lane: the deterministic-gate result. Both name the
   human who reviewed the permanently-open human-only items.
@@ -40,6 +43,32 @@ the GitHub merge box.
   line when they paste the message into the merge box. The agent
   never signs off on anything — prefilling the merging human's own
   identity for them to commit is not the agent signing.
+- **MM-05a — Squash-merge authorship (decided 2026-07-30).** A squash
+  merge collapses every commit on the branch into one, so the drafted
+  message preserves who actually did the work:
+  (i) each contributor's own `Signed-off-by:` trailer(s), copied
+  verbatim from their commits, are preserved in the squash commit
+  body;
+  (ii) a `Co-authored-by: <name> <email>` trailer is added for every
+  distinct commit author being squashed, so GitHub attributes the
+  contribution to them even though the merging maintainer's account
+  performs the commit — this is what keeps authorship as, e.g., the
+  contributor rather than the merging maintainer on a squash merge;
+  (iii) trailer order is fixed: contributor `Signed-off-by:` line(s)
+  first, then the `Co-authored-by:` lines, then the audit block
+  (`MM-03`), with the merging maintainer's own `Signed-off-by:` last
+  of all — the maintainer's line is always the final trailer in the
+  message;
+  (iv) in plain language: two `Signed-off-by:` lines on the same
+  commit are not a duplicate or an error — the contributor's certifies
+  the origin of their contribution under the Developer Certificate of
+  Origin, and the merging maintainer's certifies the separate act of
+  merging it. Two different certifications, both intentional, both
+  meaningful on the git record.
+  This does not change `MM-05`'s posture: the agent never signs off on
+  anything: it reads commit authors and existing sign-off trailers and
+  prefills the Co-authored-by / preserved sign-off lines for the human
+  to commit, exactly as it prefills the merging human's own identity.
 - **MM-06 — Immutable skeleton.** Once merged, this block is the
   deletion-proof audit record (receipt comments are editable; the
   trailer is not). It is the *entire* committed audit surface — no
@@ -54,7 +83,11 @@ the GitHub merge box.
 <2–5 lines: what changed and why. Anchor: <kind> <reference>.
 Contributed by @<contributor>.>
 
-Triage: standard lane; receipt at <receipt-comment-url>
+<contributor's own Signed-off-by: trailer(s), copied verbatim from
+their commits — omit this line if none exist>
+Co-authored-by: <contributor name> <email>
+<one Co-authored-by line per additional distinct commit author being squashed>
+Triage: standard lane; receipt at ${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/receipt.md
 Reviewed-At: pr-head <sha> / canon <sha> / agent <version> / model <id>
 Disposition: <n> findings resolved; human-only items reviewed by <maintainer>
 Signed-off-by: <maintainer name> <email>
@@ -68,11 +101,19 @@ Signed-off-by: <maintainer name> <email>
 <1–2 lines: upstream release anchor; e.g. "Anchored to <package> <b>
 release notes. Patch-level; no new packages in lockfile churn.">
 
-Triage: fast lane; receipt at <receipt-comment-url>
+<contributor's own Signed-off-by: trailer(s), copied verbatim from
+their commits — omit this line if none exist>
+Co-authored-by: <contributor name> <email>
+<one Co-authored-by line per additional distinct commit author being squashed>
+Triage: fast lane; receipt at ${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/receipt.md
 Reviewed-At: pr-head <sha> / canon <sha> / agent <version> / model <id>
 Disposition: deterministic gate 7/7 pass; human-only items reviewed by <maintainer>
 Signed-off-by: <maintainer name> <email>
 ```
+
+Trailer order, top to bottom: contributor sign-off(s) → Co-authored-by
+line(s) → the four-key audit block (`MM-03`) → the merging
+maintainer's own `Signed-off-by:`, last (`MM-05a`).
 
 ## Queryability (why the exact keys matter)
 

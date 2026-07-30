@@ -24,7 +24,9 @@ assumed to fail sometimes; the gate is the second.
   sections of the public deck. Internal artifacts (the internal
   receipt/evidence record, committee packets, in-chat digests) are
   exempt — they are maintainer-facing, though CD-NN still binds
-  their voice.
+  their voice. Actionability of maintainer-facing findings (the
+  receipt's `### Findings` section, the triage card) is governed by
+  `rules/lanes.md` L-33b, not by this gate.
 
 ## The banned patterns
 

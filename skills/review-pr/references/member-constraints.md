@@ -44,11 +44,16 @@ material under review:
   a finding that cannot cite them will be dropped by the lead's
   evidence check** / `severity` / `confidence` (high / medium / low) /
   `canon citation` (resolved via the canon map included below) /
+  `impact` (one sentence: what goes wrong, for whom, if left
+  unaddressed) /
+  `ask` (one sentence: who does what next, phrased as a request per
+  CD-06 in the conduct rules, never a command) /
   `suggested comment` (ready to post, written for the contributor,
   and ending in one concrete doable action — where the fix is
   textual, include the proposed replacement wording itself; a correct
   explanation that leaves the reader asking "so what do I do?" is an
-  incomplete finding) /
+  incomplete finding — this is the maintainer-actionability test,
+  `rules/lanes.md` L-33b, and it binds every finding you return) /
   `suggested change` (ONLY where the remedy is a concrete replacement
   of the cited line(s): the exact, complete replacement text for
   those lines, ready for the lead to wrap in a GitHub suggestion
@@ -61,6 +66,12 @@ material under review:
     back to their tooling;
   - `structural` — close and open an issue describing the goal
     instead.
+  Plus `scope` — exactly one of:
+  - `in-scope` — addressing this is this PR's burden;
+  - `follow-up` — real, but belongs in a follow-up issue (draft the
+    stub; the human files it);
+  - `pre-existing` — real, observed while reviewing, but not this
+    PR's burden to fix.
   Plus a one-line `coverage note`: what the pass checked and what it
   could not.
 

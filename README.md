@@ -1,9 +1,10 @@
 # LQ Maintainer Agent
 
-**Status: v0.4.0 — early (M0/M1).** Built against design doc v0.7
-("Momentum"): tiered review with a quick-pass default, four change
-categories with a design path for greenfield work, and a
-public-deck / internal-receipt deliverable split. As of v0.4.0 the
+**Status: v0.4.1 — early (M0/M1).** Built against design doc v0.7.1
+(a delta over v0.7 "Momentum"): tiered review with a quick-pass
+default, four change categories with a design path for greenfield
+work, and a public-deck / internal-receipt deliverable split. As of
+v0.4.1 the
 deck is the one surface a maintainer reads: it carries the
 paste-ready drafts (the short comment; the merge message for merge
 candidates), records the maintainer's final decision once they rule,

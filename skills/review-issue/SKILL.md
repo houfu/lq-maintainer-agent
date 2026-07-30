@@ -302,7 +302,14 @@ maintainer of record; both calls prompt), recording `verified: api`,
 or `verified: stated` where the check was declined or unavailable and
 the section says so plainly; on `adjusted`/`overridden`
 alignment or explicit feedback, append the `templates/feedback-log.md`
-entry (FL-01) and set `decision.feedback_logged: true`. Ruling is
+entry (FL-01) and set `decision.feedback_logged: true`. Before
+recording the block, read the issue's live GitHub state (`gh issue
+view N --json state,stateReason`) — it wins over whatever the ruling
+conversation concluded (`RP-18`, decided 2026-07-30); a discrepancy
+(closed on GitHub with no ruling recorded, or a recorded ruling that
+no longer matches the issue's open/closed state) is surfaced to the
+maintainer and recorded as a dated note in the section, never
+silently overwritten. Ruling is
 **optional**: a contributor running this skill to check their own
 issue has no ruling to give — leave section and block absent, and
 never press for one. Then save the receipt to the evidence store

@@ -149,7 +149,7 @@ Release steps:
 2. Bump `version` in `plugin.json` to the next SemVer. **Never move an
    already-published tag** — if `vX.Y.Z` is already pushed, cut
    `vX.Y.(Z+1)`; moving a tag breaks anyone pinned to it.
-3. Update the changelog.
+3. Update the changelog — add an entry to [CHANGELOG.md](CHANGELOG.md).
 4. Tag the release commit `vX.Y.Z` and push the tag. The tag is the only
    step that makes a build "official"; a branch push does not.
 

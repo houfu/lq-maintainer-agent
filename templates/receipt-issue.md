@@ -133,6 +133,15 @@ normative here; this file states only the issue-profile deltas.
   message section** — an issue merges nothing. The drafted public
   comment is embedded as a fenced block and rendered on the deck as
   the paste-ready card; it is not a separate deliverable.
+  **GitHub state wins here too (decided 2026-07-30, RP-18):** at
+  finalize and on any resume, read the issue's live state
+  (`gh issue view <n> --json state,stateReason`) before trusting or
+  writing a ruling — it outranks whatever ruling is already recorded.
+  A discrepancy (closed on GitHub with no ruling recorded; a recorded
+  ruling that no longer matches the issue's open/closed state) is
+  surfaced to the maintainer and recorded as a dated note in the
+  visible decision section, never silently rewritten — and, as always,
+  an absent decision block is never read as agreement.
 
 ## Template
 
@@ -244,6 +253,9 @@ Decided by @<maintainer> (<date>): <the ruling, in plain language>.
   overridden: <what the maintainer did instead>>.
 - Feedback for the agent: <none | the maintainer's words — also
   appended to the cross-item feedback log, templates/feedback-log.md>.
+- GitHub state at finalize (`gh issue view --json state,stateReason`):
+  <matches the recorded ruling | discrepancy — <date>: <what the
+  states disagreed on and how it was reconciled>>.
 
 ### Drafted public comment (RI-13)
 
@@ -293,7 +305,7 @@ deterministic_checks:
   release_age: n-a
   ci_green: n-a
 findings:
-  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>}
+  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>}
 findings_filtered: <integer, 0 if none>
 salvage:
   applied: <true|false>
