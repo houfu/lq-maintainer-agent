@@ -43,7 +43,7 @@ Either way: one change per PR keeps each idea reviewable on its own
 merits — and it means the good parts land instead of waiting on the
 contested ones. Thanks again for the energy here.
 
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 ```
 

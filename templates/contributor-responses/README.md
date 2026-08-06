@@ -41,6 +41,6 @@ reply** — the agent never posts, closes, or labels (design doc §2.1,
 The attribution line, verbatim (fill version and maintainer):
 
 ```markdown
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 ```

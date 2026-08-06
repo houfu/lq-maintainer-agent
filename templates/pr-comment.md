@@ -123,7 +123,7 @@ thing done, named.>
 <if PC-04 applies: The fuller writeup, if you're curious: <deck link>.>
 
 ---
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 ```
 

@@ -37,6 +37,6 @@ we'll take it from there and keep you posted on this issue.
 looks related to <plain-language area>, but we'll confirm once we can
 reproduce it.>
 
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 ```

@@ -243,7 +243,7 @@ agent's internal evidence records for the items it reviewed.
 | Release conventions | <`canon:release-conventions` @ `<canon sha>` \| not resolved — template default (RN-08)> |
 
 ---
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and published by @<maintainer>.*
 ````
 

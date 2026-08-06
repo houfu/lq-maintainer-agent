@@ -29,11 +29,11 @@ here are always made by a human either way.
 
 If you'd like the full picture of what the agent does and cannot do,
 it's documented here:
-https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md
+https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md
 
 A maintainer will follow up on the substance of your objection.
 
-*Drafted by [lq-maintainer-agent](https://github.com/legalquants/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
+*Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
 v<x.y.z>; reviewed and posted by @<maintainer>.*
 ```
 

@@ -47,7 +47,7 @@ CHECK = "osv"
 ENDPOINT = "https://api.osv.dev/v1/querybatch"
 BATCH = 500
 TIMEOUT = 30
-USER_AGENT = "lq-maintainer-agent-check-osv (+https://github.com/legalquants/lq-maintainer-agent)"
+USER_AGENT = "lq-maintainer-agent-check-osv (+https://github.com/houfu/lq-maintainer-agent)"
 
 # TLS verification is NEVER disabled. Some python3 installs (notably
 # python.org builds on macOS) ship without a wired-up trust store; try
