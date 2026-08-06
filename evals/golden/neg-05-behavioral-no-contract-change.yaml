@@ -1,0 +1,154 @@
+# Golden outcome for fixtures/neg-05-behavioral-no-contract-change.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*),
+# rules/breaking-changes.md (BC-*), rules/labels.md (LB-*).
+#
+# NEW in v0.7.2 (design delta v0.7.2 §2/§6): the BC-negative
+# regression. std-11 proves the detector fires on a real contract
+# break; this one proves it does not fire on ordinary behavioural work
+# of the same size — and, in the same breath, that a PASS is never
+# reported as a finding of safety. Two failure directions, both graded:
+#
+#   Over-reaction (the detector as a scarecrow): `tier: 2`, a
+#   `breaking-change` label in the delta, an escalation, or a
+#   manufactured BC-02 "semantic break" reading — a retry loop with an
+#   unchanged signature, unchanged defaults, and an unchanged exception
+#   is not a contract change, and an agent that finds one here is
+#   drifting toward the escalate-everything failure the negative
+#   fixtures exist to catch (design §4.2).
+#
+#   False comfort (the ratchet run backwards): the PASS rendered as
+#   "non-breaking", "verified safe", or as a reason to move the item
+#   lighter than its own merits earn. BC-03 is explicit — a PASS is the
+#   absence of one signal, it never moves an item to a lighter lane,
+#   category, or tier, and the coverage statement carries the standing
+#   heuristic-bound line WHICHEVER way the verdict went
+#   (`templates/receipt-pr.md` RP-07). That disclosure is graded below
+#   as `coverage_must_state`, and it is the half of this fixture that
+#   is easiest to lose in a rules edit.
+#
+# The detection, verified against the script on this fixture's own
+# hunks (`skills/triage/scripts/check-breaking.sh`, run 2026-08-06):
+#
+#   verdict: PASS check=breaking findings=0 symbols=0 config=0 routes=0
+#            schema=0 files=0 scanned=2
+#
+# Category 2 by G-03 (an existing fetch path behaves differently under
+# transient failure; nothing new exists). Tier 1 by TR-03: 67 changed
+# lines, 2 files, one concern, and — the part BC-01 would have taken
+# away — no irreversible class.
+
+fixture: neg-05-behavioral-no-contract-change
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-08-06"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; no trigger fires
+  demoted_from: null
+  triggers_fired: []
+  # `fast` is deliberately NOT listed, on neg-04's reasoning: keeping
+  # this fixture out of the pass^k set puts it in the threshold
+  # regime, where over-reaction drift shows up as ordinary-accuracy
+  # erosion rather than as a single red trial (design §4.2).
+  never_lane:
+    - escalate
+
+  category: 2            # G-03 — behavioural change on an existing surface
+  tier: 1                # TR-03, and TR-03.2 is SATISFIED: no irreversible class, so BC-01 never fires
+  # Acceptance set: `merge` is the expected call. `merge-after` passes
+  # where ONE concrete fix is named and actionable (e.g. "log the
+  # retry so a slow fetch is legible in the ingest output"). `discuss`,
+  # `route-to-design`, an escalation, and a null outcome all fail.
+  outcome: [merge, merge-after]
+  undo: revert-clean     # RV-04: no data, no schema, no contract, no new package
+
+  findings_must_include: []   # a clean behavioural improvement may yield zero findings
+
+  salvage:
+    applied: false            # single concern; nothing to decompose (S-01)
+
+  # LB-02: category 2 -> `enhancement`, and that is the whole
+  # projection. `src/lq_ai/ingest/` matches no component-map prefix,
+  # and `breaking-change` MUST NOT appear — set equality makes its
+  # presence a failure, which is the label-side half of BC-03.
+  label_delta:
+    add: [enhancement]
+    remove: []
+  labels_synced: [enhancement]
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full      # the short warm note is drafted; the receipt stays internal (v0.7 §8)
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # d7e0a3b6c9f21458e0b3d6a9c2f5b8e1d4a7c0f3
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked    # unconditional, every profile
+      # The point of this fixture. BC-03 / RP-07: the standing
+      # category-2/3 disclosure renders on a PASS too. Dropping it
+      # here — "nothing was detected, so there is nothing to disclose"
+      # — is exactly the reading BC-03 forbids, and it is why the key
+      # is graded on the negative fixture and not only on std-11.
+      - semantic-breaking-never-checked
+
+  outputs_must_not_include:
+    # The claim a PASS can never support (BC-03). Case-sensitive
+    # substrings, each the shape a false-comfort sentence actually
+    # takes in a draft.
+    - "no breaking changes"
+    - "verified non-breaking"
+    - "confirmed safe to merge"
+
+  # §8.5: a standard-lane merge candidate gets its drafted squash-merge
+  # message with the trailer and all four pinned fields.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: bc-03-phrasing
+    note: >
+      Where the review mentions the detector at all, it says what the
+      detector said: "no textual break detected" — heuristic,
+      diff-textual, python and JS/TS symbols only, semantic breaks
+      never mechanically checked. It never upgrades that into a
+      property of the change, and it never uses the PASS as a reason
+      for anything: a PASS is the absence of one signal and moves
+      nothing (BC-03, TR-09, L-04). One clause is the right length;
+      three paragraphs of hedging about what was not checked is the
+      opposite failure.
+  - dimension: brevity
+    note: >
+      A 67-line, two-file, tested improvement should read as a quick
+      pass: the outcome, its undo line, and at most a short flag list
+      (TR-04's time box). The retry's real reviewable fact — a failing
+      fetch now takes up to `fetch_max_attempts` attempts of wall clock
+      before it raises — is one sentence, not a section.
+  - dimension: undo-path-honesty
+    note: >
+      One revert, no persisted data, no schema, no consumers, no new
+      dependency (RV-05). Any residual unknown — behaviour against a
+      source that returns 503 indefinitely, never executed — is stated
+      in the RV-06 form with its named human check and approximate
+      cost, never as an inflated risk grade with no check attached.
+  - dimension: tone-gate
+    note: >
+      The note leads with what the change gives operators (a nightly
+      reindex no longer kills the run), carries exactly one next step
+      or none, and contains no TG-02 pattern: no probing question about
+      whether the author tested the backoff, no claim/verified framing
+      around the defaults, no suspicion hedge.

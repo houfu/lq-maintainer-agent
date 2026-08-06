@@ -6,7 +6,7 @@ carve-outs below. **As of v0.7 this is an internal evidence document,
 not a public artifact** (design doc v0.7 §8): it is no longer posted
 to the PR. It is stored in the maintainer's local cache today, and in
 the community repo's per-item directory
-(`reviews/pr-NNNN/state.yaml` + `notes.md`, `docs/community-repo.md`)
+(`reviews/pr-<NNNN>/state.yaml` + `notes.md`, `docs/community-repo.md`)
 once that repo exists. The public-facing counterpart is now
 `templates/pr-comment.md` — a short warm note, drafted separately and
 tone-gated. **Migration:** prior `receipt:v2` comments posted before
@@ -114,6 +114,16 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   **runtime behavior — never checked: the agent does not execute
   contributed code**, and (for dependency items) **package contents —
   never inspected: the lockfile diff shows name+version+hash only**.
+  A third is standing for **standard-lane items, all categories**
+  (`rules/breaking-changes.md` BC-03): **breaking-change detection is
+  heuristic and diff-textual** — `check-breaking.sh` reads diff text
+  only, scans python and JS/TS symbols only, and never sees a semantic
+  break under an unchanged signature. The **verdict this run** (PASS —
+  no textual break detected / FAIL — <kinds> / not run — <reason>,
+  BC-01's fail-closed form) renders **here in the visible coverage
+  statement**, whichever way it went, because a PASS means "no textual
+  break detected", never
+  "non-breaking", and never moves the item lighter (TR-09, L-04).
   Partial coverage is legitimate and resumable ("covered: vetting
   checklist, anchor; not yet: code-quality, test adequacy"); silent
   partiality is not.
@@ -250,6 +260,24 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   merging remains a separate, individually approved human action.
   The fenced block is mandatory: the comment's own `---` attribution
   divider would otherwise terminate section parsing.
+- **RP-20 — Labels synced (v0.7.2; optional, footer only).** The item's
+  **agent-managed** label set (`rules/labels.md` LB-02/LB-04) as of the
+  last sync, recorded in the optional enumerated footer field
+  `labels_synced` so the next session can diff without refetching label
+  history. The rendering skill writes it at its label-sync step, after
+  the maintainer has run — or declined — each individual label command
+  (`LB-04`: the write itself is theirs; `gh pr edit`/`gh issue edit` are
+  hook-blocked for the agent, §2.1): the list is what is **actually on
+  the item afterwards**, never what was proposed. **Absent means "never synced"** — never "this item has no
+  labels"; an empty list (`[]`) is the positive statement that a sync
+  ran and the agent-managed set is empty. The projection's *reasons*
+  (the category, the BC-01 detection, the docs/dependency path facts)
+  stay in the visible body where they already live, never here, and a
+  mapped label the target repo does not have (`LB-02a`) is a **Next
+  steps** entry (RP-16) — the maintainer's call to make in their repo —
+  never a footer value and never a created label (`LB-05`). Labels
+  remain outputs only: nothing in a resume, lane, category, tier, or
+  queue-group call may read this field (`LB-01`).
 
 ## Template
 
@@ -395,6 +423,14 @@ Never checked, by design:
 - Runtime behavior — this agent does not execute contributed code.
 - Package contents (dependency items) — the lockfile diff shows
   name+version+hash only; contents are never inspected.
+- Semantic breaking changes (standard-lane items) — `check-breaking.sh`
+  detects *textual* breaks only (python/JS/TS symbols, config keys, env
+  vars, CLI flags, routes, schema hunks). A behavioral break under an
+  unchanged signature is never mechanically checked, and a PASS is not
+  a claim that the change is non-breaking (BC-03). The run's verdict is
+  not this bullet's business — it renders in the visible coverage
+  statement above (RP-07); what is never checked is the semantic bound,
+  whichever way the verdict went.
 
 ### Next steps — for the human reviewer (B-14)
 
@@ -498,6 +534,7 @@ coverage:
   - {item: salvage, status: <covered|not-covered|n-a>}
   - {item: runtime-behavior, status: never-by-design}
   - {item: package-contents, status: <never-by-design|n-a>}
+  - {item: semantic-breaking-change, status: <never-by-design|n-a>}
 burden:
   overall: <blocked|low|medium|high>
   blockers: [<ci-red|known-vuln|data-harm|missing-dco|incompatible-license|attack-escalation|vuln-suspect>, ...]
@@ -519,6 +556,7 @@ tier: <0|1|2|3|null>
 outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
 undo: <revert-clean|residue|irreversible-class|null>
 tone_gate: <applied|n-a>
+labels_synced: [<name>, ...]
 decision:
   final_outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
   alignment: <accepted|adjusted|overridden|null>
@@ -554,6 +592,15 @@ eval-grading interface (`evals/run-checks.md`).
 - `split_verified` is **always `false`** — the agent never verifies a
   split compiles (design doc §6 step 4); the field exists so a parser
   cannot assume otherwise.
+- **`coverage[] {item: semantic-breaking-change}`**
+  (`rules/breaking-changes.md` BC-03, v0.7.2) — an **optional**,
+  additive coverage item: `never-by-design` on a standard-lane item
+  (`check-breaking.sh` ran and reads diff text only; a behavioral break
+  under an unchanged signature is never mechanically checked), `n-a`
+  otherwise or where the run predates the item. It carries the
+  disclosure onto the deck's never-checked rail, which renders from
+  this list — the script's own verdict and its `break:` evidence lines
+  live in the visible coverage statement and the findings, never here.
 - **`burden`** (design doc §5.2, `rules/burden.md`): enumerated only —
   `overall` (`blocked`/`low`/`medium`/`high`), `blockers` (a list of the
   `B-02` slugs, empty if none), and the five axis levels (`scope`,
@@ -591,6 +638,25 @@ eval-grading interface (`evals/run-checks.md`).
   fast-lane merge) or the run predates the field's introduction.
   Enumerated only, like every field here — which pattern the gate
   rewrote, if any, is never recorded here.
+- **`labels_synced`** (RP-20, `rules/labels.md` LB-02/LB-04, v0.7.2) —
+  a sixth **optional**, additive field, carrying the same
+  backward-compatibility posture as the `decision_scoping` block: an
+  inline list of the agent-managed label names on the item after the
+  last sync. **Absent** = never synced (a run predating the field, or an
+  item no sync has touched); **`[]`** = synced and nothing
+  agent-managed is on the item. **Never free text**: the vocabulary is
+  closed by `rules/labels.md`'s LB-02 table — only names that table can
+  produce and the repo actually has (`LB-02a`) may appear, so a
+  maintainer-applied `frozen`, a `security`, or any `LB-03` judgment
+  label can never enter this field even when it is on the item. A label
+  whose name contains `--` is omitted from the list with a one-line note
+  in the visible body, since that sequence would terminate the HTML
+  comment (see the last bullet of this section). The field is a
+  **projection record, not evidence** (`LB-01`): no resume, lane,
+  category, tier, or queue-group call may read it. Its one sanctioned
+  consumer is `templates/release-notes.md` RN-02's breaking-section
+  membership, an output-side union in which a missing label never moves
+  an item lighter (`RN-10`).
 - **`decision`** (RP-18) — an **optional**, additive block, present if
   and only if a maintainer has ruled on the item (Step 10 finalize).
   **Absence means "not yet decided" — a parser must never read a
@@ -625,7 +691,10 @@ eval-grading interface (`evals/run-checks.md`).
   `recommendation` field (`IV-01`) alongside — not instead of — the
   `outcome`/`category`/`tier`/`undo` fields above, and `recommendation`
   gains the new value `design` for a category-1 ask (design doc v0.7
-  §8, `rules/burden.md` B-10).
+  §8, `rules/burden.md` B-10). `labels_synced` applies unchanged
+  (`templates/receipt-issue.md` RI-14), with the one mapping-side
+  difference that an issue has no diff and therefore never carries a
+  component label (`rules/labels.md` LB-02).
 - **Plan-profile deltas** (`templates/design-plan.md`, rendered by
   `skills/design-plan/SKILL.md` for every category-1 item): `profile:
   plan`; `kind` (`pr`/`issue`, so `pinned.pr_head_sha: n-a` on the
@@ -639,7 +708,9 @@ eval-grading interface (`evals/run-checks.md`).
   (`RV-05`); and the additive `plan` counts block — `decisions`,
   `settled`, `adrs_drafted`, `de_stubs`, `obstacles`,
   `atomic_changes` (all integers) — as `templates/design-plan.md`
-  DP-12 declares it. This receipt is the single authoritative footer
+  DP-12 declares it. `labels_synced` is **absent** on this profile: a
+  plan syncs no labels, and the underlying PR or issue carries its own
+  projection (RP-20). This receipt is the single authoritative footer
   schema; the plan profile is defined here, not only in
   `templates/design-plan.md`.
 - **Author verification before trust.** A consuming session resumes

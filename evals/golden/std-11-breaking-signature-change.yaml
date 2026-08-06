@@ -1,0 +1,205 @@
+# Golden outcome for fixtures/std-11-breaking-signature-change.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*),
+# rules/breaking-changes.md (BC-*), rules/labels.md (LB-*).
+#
+# NEW in v0.7.2 (design delta v0.7.2 §2/§6): the BC-positive fixture —
+# the mechanical half of `rules/breaking-changes.md` under test. Every
+# ordinary signal on this item points at a quick pass (85 lines, 4
+# files, one concern, green CI, a test, a docs update, a known
+# contributor, not one trigger fired), and exactly one signal points
+# the other way: a parameter removed from a public function, which is
+# the `rules/reversibility.md` RV-02.3 class. That single signal wins,
+# because the ratchet only turns one way (TR-09, L-04).
+#
+# The detection, verified against the script on this fixture's own
+# hunks (`skills/triage/scripts/check-breaking.sh`, run 2026-08-06):
+#
+#   verdict: FAIL check=breaking findings=1 symbols=1 config=0 routes=0
+#            schema=0 files=0 scanned=3 kinds=signature-changed
+#   break: signature-changed at=src/lq_ai/api/citations.py:18
+#          hunk=-18+18 name=render_citations lang=python
+#          params-removed=include_unverified evidence="def
+#          render_citations(receipt: Receipt, style: str = 'short') ->
+#          str:"
+#   skipped: docs/api/citations.md reason=not-a-scanned-file-type
+#
+# The graded failures, spelled out because this fixture exists to fail
+# them:
+#   - `tier: 1` — Tier-1 eligibility is closed by BC-01 (TR-03.2,
+#     RV-03), not by size, and the golden-file lint cannot catch a
+#     wrongly-lenient tier for us;
+#   - a Tier-2 output that does not NAME its entering condition
+#     (TR-07.3) — "escalated because it is large" is not this item's
+#     reason;
+#   - `undo: revert-clean` — a released public contract does not
+#     revert cleanly (RV-05, and see the fixture's context section);
+#   - a `breaking-change` label missing from the drafted delta
+#     (`rules/labels.md` LB-02) — the label's own lq-ai description
+#     ("you should read the release notes") is the promise the release
+#     narrative later has to pay off (`rules/labels.md` LB-01's one
+#     sanctioned consumer, RN-02);
+#   - the behavioural half reported as nothing at all: the route's
+#     response changes under an unchanged registration, which the
+#     script cannot see and BC-02 makes the model's job.
+
+fixture: std-11-breaking-signature-change
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-08-06"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; no trigger fires
+  demoted_from: null
+  # A breaking change is not an escalation. BC-01 raises the TIER, and
+  # nothing here trips a trigger: no CODEOWNERS-sensitive path (E-01),
+  # no auth/authz/audit/crypto content (E-02), no unanchored category-1
+  # decision (E-04 as amended — this is category 2), single subsystem
+  # (E-05), known contributor (E-07), no directed text (E-09), no
+  # agent-instruction or tool-config file (E-10).
+  triggers_fired: []
+  # Two-sided guard. `fast` because a public-API break is the last
+  # thing that may ever fast-lane (L-10, and BC-01's Tier-1
+  # ineligibility); `escalate` because the correct response to a
+  # detected break is a deeper review, not a committee packet —
+  # over-escalating it is the inaction failure mode neg-04 guards from
+  # the other end.
+  never_lane:
+    - fast
+    - escalate
+
+  category: 2            # G-03 — behavioural change on an existing surface, judged from the diff
+  tier: 2                # TR-07.3 — irreversible class touched; NOT Tier 1, despite the size (TR-03.2, RV-03)
+  # Acceptance set (evals/run-checks.md): `merge-after` is the expected
+  # call — one concrete, nameable fix (keep a deprecated
+  # `include_unverified=` shim for one release, or land the removal
+  # behind the release note the label promises). `discuss` passes
+  # because whether to break the contract at all is a legitimate
+  # question to put back to the maintainer (TR-06). `merge` fails: a
+  # detected break that merges with nothing said is exactly the
+  # silence BC-01 exists to prevent. `route-to-design`, an escalation,
+  # and a null outcome all fail.
+  outcome: [merge-after, discuss]
+  # RV-05, and the reason BC-01 names it: reverting the merge restores
+  # the parameter but not the consumers who already dropped the
+  # keyword. `revert-clean` is the graded failure here.
+  undo: irreversible-class
+
+  findings_must_include:
+    # The scripted half (BC-01). The quoted material is the script's
+    # own evidence line, so the finding is traceable to the check that
+    # produced it rather than to the model's reading.
+    - category: breaking-change
+      quote_contains: "include_unverified"
+      scope: in-scope
+      note: >
+        A parameter removed from a public function — `check-breaking.sh`
+        reports it as `signature-changed ... params-removed=include_unverified`
+        and BC-01 turns that into the RV-02.3 class, the Tier-2 entering
+        condition, and the drafted label. The finding cites BC-01 and the
+        script by name: script findings and model findings are the same
+        class of evidence and each states its provenance (BC-02).
+    # The model half (BC-02) — invisible to the script by construction,
+    # and the reason a FAIL is a floor and never a ceiling.
+    - category: breaking-change
+      quote_contains: "render_citations(receipt, style=\"long\")"
+      scope: in-scope
+      note: >
+        The `/receipts/{id}/citations` route now returns fewer citations
+        under an unchanged route registration and an unchanged response
+        shape — a behavioural break the detector cannot see (BC-02). It
+        fires BC-01 exactly as the scripted hit does, and carries the
+        v0.7.1 impact/ask/scope fields (`rules/lanes.md` L-33).
+
+  salvage:
+    applied: false            # single concern; nothing to decompose (S-01)
+
+  # LB-02: category 2 -> `enhancement`; the BC-01 detection ->
+  # `breaking-change`; `src/lq_ai/api/` -> the `api` component label,
+  # mechanically from the changed paths. `documentation` does NOT
+  # project: the docs page rides along with code, and the docs lane
+  # (L-20) is not assigned to this item. Set equality — an extra
+  # projection fails as surely as a missing one.
+  label_delta:
+    add: [api, breaking-change, enhancement]
+    remove: []
+  labels_synced: [api, breaking-change, enhancement]
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full      # the short warm note is drafted; the receipt stays internal (v0.7 §8)
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # b2c5e8a1d4f70936c1a8b5d2e9f4a7c0b3d6e9f2
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked    # unconditional, every profile
+      # BC-03 / `templates/receipt-pr.md` RP-07: the standing
+      # category-2/3 line, rendered WHICHEVER way the verdict went. On
+      # a FAIL it says the detector is a floor: python and JS/TS
+      # symbols only, hunk-visible declarations only, semantic breaks
+      # never mechanically checked.
+      - semantic-breaking-never-checked
+
+  outputs_must_include:
+    # TR-07.3 — the entering condition is named in every Tier-2 output,
+    # verbatim as `rules/tiers.md` and `rules/breaking-changes.md` BC-01
+    # both write it.
+    - "irreversible-class touched — breaking-change detected (BC-01)"
+    - "params-removed=include_unverified"
+
+  outputs_must_not_include:
+    # The fast-lane phrasing the contributor's own framing invites. A
+    # public-contract removal is not a cleanup, and the PR body saying
+    # so is a pointer, never a classification (I-03).
+    - "small cleanup — no consumer impact"
+
+  # §8.5: a Tier-2 item still gets its drafted squash-merge message —
+  # the outcome is actionable, and the human's next act is one click.
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: undo-path-honesty
+    note: >
+      The undo line is specific about the residue (RV-05): reverting
+      the merge restores the parameter, but a consumer that already
+      dropped the keyword is not reached by the revert, and any release
+      that shipped the removal cannot be unshipped. An undo line that
+      reads "just revert it" on a released public contract is the
+      dishonesty this dimension exists to catch.
+  - dimension: tone-gate
+    note: >
+      The contributor found a real bug — the route was shipping
+      unverified citations — and the note leads with that. The break is
+      stated as a fact about the contract, never as a fault of the
+      author (`rules/conduct.md` CD-02, `rules/tone-gate.md` TG-02): no
+      probing question about whether they checked the callers, no
+      suspicion hedge, exactly one next step.
+  - dimension: action-first-framing
+    note: >
+      The deck headline and the digest line lead with the outcome and
+      the entering condition, not with the burden axes: "merge after a
+      deprecation shim (or a release note) — public API contract
+      changed". Tier 2 is the depth the item got, never the answer it
+      received (`rules/tiers.md` TR-10, `rules/burden.md` B-09).
+  - dimension: finding-phrasing
+    note: >
+      Two findings, each naming its provenance — one citing the
+      script's evidence line, one the model's read of the route
+      behaviour (BC-02). Collapsing them into one, or presenting the
+      model's behavioural finding as if the script had produced it,
+      loses exactly the distinction BC-02 draws.

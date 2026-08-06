@@ -46,6 +46,14 @@ permission architecture and by lq-ai's written policy
   is a human maintainer's, always.
 - **It cannot post anything on its own.** Every write to GitHub goes
   through an individual human approval.
+- **It cannot label your PR or issue.** The agent may *propose* labels
+  — always from the repo's own existing label set, mapped from its
+  classification (a `bug`/`enhancement` category call, a
+  `breaking-change` detection, a component from the changed paths) —
+  but a maintainer applies every one. If a label on your item looks
+  wrong, say so: labels mirror the review state and get corrected when
+  the fuller review runs; they are never themselves evidence against
+  you.
 - **It never runs your code.** No tests, no installs, no builds — your
   code is read, not executed. If runtime verification happened, a
   human did it and will say so in their own name.

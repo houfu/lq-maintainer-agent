@@ -88,7 +88,10 @@ depth is entered by a named condition, never by habit.
   one of:
   1. an escalation trigger fired (E-NN);
   2. the item exceeds the TR-03 size bounds;
-  3. an irreversible-class path is touched (RV-03);
+  3. an irreversible-class path is touched (RV-03) — including a
+     breaking-change detection, scripted or model-found, which enters
+     as "irreversible-class touched — breaking-change detected
+     (BC-01)" (`rules/breaking-changes.md`);
   4. a Tier-1 pass ended `discuss` and the maintainer asks for
      depth;
   5. the maintainer requests it.
