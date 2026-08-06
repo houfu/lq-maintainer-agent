@@ -45,7 +45,7 @@ from datetime import datetime, timezone
 CHECK = "release-age"
 DEFAULT_MIN_DAYS = 7
 TIMEOUT = 30
-USER_AGENT = "lq-maintainer-agent-check-release-age (+https://github.com/legalquants/lq-maintainer-agent)"
+USER_AGENT = "lq-maintainer-agent-check-release-age (+https://github.com/houfu/lq-maintainer-agent)"
 
 # TLS verification is NEVER disabled. Some python3 installs (notably
 # python.org builds on macOS) ship without a wired-up trust store; try
