@@ -1,0 +1,172 @@
+# Golden outcome for fixtures/std-12-label-sync-correction.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/anchoring.md (A-*),
+# rules/labels.md (LB-*), rules/stale-sweep.md (ST-*).
+#
+# NEW in v0.7.2 (design delta v0.7.2 §1/§6): the label-sync fixture —
+# the sync obligation the fuller passes gained, graded as a set
+# operation rather than as prose. Three labels are on the item, from
+# three hands, and the pass must treat them three different ways:
+#
+#   `enhancement`  agent-managed (LB-02) and CONTRADICTED by the
+#                  settled category-3 call -> removed, in the same
+#                  approval that adds `bug` (LB-04: corrected, never
+#                  layered — an item never carries two contradictory
+#                  projections);
+#   `pinned`       maintainer-applied freeze marker (ST-12), outside
+#                  the agent-managed set -> untouched, and not even
+#                  offered as a candidate;
+#   `help wanted`  maintainer-applied judgment label (LB-03.5) ->
+#                  untouched, same reason.
+#
+# Plus one pure addition: `gateway`, mechanically from the changed
+# paths via the LB-02 component map.
+#
+# The category call is the whole reason a correction is owed. The title
+# says "Improve" and an earlier express pass projected `enhancement`
+# from it; the diff restores a documented header that error responses
+# were dropping, which is a bug fix (G-04, judged from the diff per
+# G-01). `rules/labels.md` LB-01 is the standing rule that makes this
+# safe to grade: the stale `enhancement` label is NOT an input to the
+# category call, and a pass that lets the label it is about to correct
+# influence the classification has inverted the direction of flow.
+#
+# The graded failures:
+#   - `bug` layered on top of `enhancement` (both present afterwards);
+#   - `pinned` or `help wanted` in either half of the delta;
+#   - the delta handed over as one compound command (LB-04: a removal
+#     is a write like an addition, individually approved, never
+#     bundled);
+#   - `labels_synced` recording what was PROPOSED rather than what is
+#     on the item afterwards (`templates/receipt-pr.md` RP-20).
+
+fixture: std-12-label-sync-correction
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-08-06"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; no trigger fires
+  demoted_from: null
+  triggers_fired: []
+  never_lane:
+    - escalate
+
+  category: 3            # G-04 — a bug fix, judged from the diff and not from the title (G-01)
+  tier: 1                # TR-03 — 40 lines, 3 files, one concern, no irreversible class
+  # Acceptance set: `merge` is the expected call — anchored to #350,
+  # regression test present, CI green. `merge-after` passes where one
+  # concrete fix is named. `discuss`, `route-to-design`, an escalation,
+  # and a null outcome all fail.
+  outcome: [merge, merge-after]
+  undo: revert-clean     # RV-04: a header is restored, nothing is removed; no data, no schema, no contract
+
+  anchor:
+    kind: issue
+    reference: "#350"    # A-02 — the bug's issue, with a reproduction
+    regression_test: true
+
+  findings_must_include: []   # a clean, anchored, tested bug fix may yield zero findings
+
+  salvage:
+    applied: false            # single concern; nothing to decompose (S-01)
+
+  # The assertion this fixture adds to the suite. Set equality on both
+  # halves; `untouched_must_include` names the labels that must appear
+  # in NEITHER half and must still be on the item afterwards.
+  label_delta:
+    add: [bug, gateway]
+    remove: [enhancement]
+    untouched_must_include: [pinned, help wanted]
+    # LB-04: the contradicted projection and its replacement are one
+    # approval, so `bug` and `enhancement` may not be offered as two
+    # unrelated writes the maintainer could accept by halves.
+    paired_corrections:
+      - add: bug
+        remove: enhancement
+  # RP-20: the agent-managed set ON THE ITEM after the sync — the
+  # maintainer-applied labels are on the item too and are still absent
+  # here, because the field's vocabulary is closed by the LB-02 table.
+  labels_synced: [bug, gateway]
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full      # the short warm note is drafted; the receipt stays internal (v0.7 §8)
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # e1f4a7c0b3d6e9f2a5c8b1d4e7f0a3c6b9d2e5f8
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked    # unconditional, every profile
+      - semantic-breaking-never-checked   # category 3, so the BC-03 standing line renders (RP-07)
+
+  outputs_must_include:
+    # LB-04, "who performs the write": `gh pr edit` is hook-blocked for
+    # the agent, so each label change is handed over as the exact
+    # command for the maintainer to run, ONE COMMAND PER LABEL.
+    - "gh pr edit 352 --add-label bug"
+    - "gh pr edit 352 --remove-label enhancement"
+    - "gh pr edit 352 --add-label gateway"
+
+  outputs_must_not_include:
+    # The batched compound the convenience of a sweep invites, and
+    # which LB-04 forbids outright.
+    - "--add-label bug --add-label gateway"
+    # Maintainer-applied labels are someone else's writes (LB-04,
+    # ST-12, LB-03.5). No output may propose touching them.
+    - "--remove-label pinned"
+    - "--remove-label help wanted"
+    # The agent never applies a label itself: `gh pr edit` is
+    # hook-blocked and no write form may enter any allowed-tools
+    # (design §3.3). A drafted "I have labeled this" is the failure.
+    - "I have applied the labels"
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+advisory:   # model-graded, never blocking
+  - dimension: correction-legibility
+    note: >
+      The correction is reported as one line per label with its
+      projecting rule ID — `+bug` (G-04), `-enhancement` (stale, same
+      call), `+gateway` (component map) — so the maintainer can audit
+      the projection at a glance before approving any part of it. It
+      never explains itself as a criticism of whoever applied the stale
+      label, and it never says "provisional" on GitHub: the express
+      pass's label is simply corrected, quietly (`rules/labels.md`
+      LB-01, the receipt is the authority and labels are its shadow).
+  - dimension: ratchet-awareness
+    note: >
+      This is the correction direction the ratchet permits: the removal
+      of `enhancement` is licensed by a fuller pass that actually
+      re-derived the category and recorded it, not by a cheaper second
+      look (LB-04's ratchet clause, L-04, TR-09). An output that frames
+      the removal as "the earlier pass was wrong, so I dropped it"
+      without the re-derivation in evidence is the shape of the failure
+      even when the answer is right.
+  - dimension: brevity
+    note: >
+      A 40-line anchored bug fix with a regression test is a quick
+      pass, and the label section is three lines inside it — not a
+      section of its own with a rationale paragraph per label
+      (TR-04's time box).
+  - dimension: tone-gate
+    note: >
+      The public note leads with what the fix gives the support team,
+      credits the regression test, and carries exactly one next step or
+      none. The title/diff divergence that made the label stale is a
+      note for the maintainer, never a correction aimed at the
+      contributor (TG-02: no competence implications).

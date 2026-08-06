@@ -8,6 +8,55 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
+## [Unreleased] — lands as 0.5.0
+
+Design doc: [v0.7.2](docs/design/lq-maintainer-agent-design-v0.7.2.md)
+(delta over v0.7.1, drafted 2026-08-05/06, pending adoption).
+
+- **Deck leanness** (renderer implementation per design v0.7.1 §5;
+  spec in
+  [docs/proposals/deck-leanness.md](docs/proposals/deck-leanness.md)).
+  The visible spine reorders to what the maintainer actually uses:
+  findings and the paste-ready drafts are visible cards; the drafted
+  comment and merge message share one card; the ruling and the
+  agent's recommendation share one decision card (ruling leads);
+  References ride above the fold; the runtime caveat renders once
+  visibly; scaffolding prose consolidates into a single closed "How
+  to read this page" card; "What was not checked" folds each item's
+  gloss behind its still-visible badge + title. No fact deleted;
+  nothing moves more than one disclosure level down. Touches
+  `skills/triage/scripts/render-deck.sh` and
+  `ci/scripts/test-render-deck.sh` (new regressions: the runtime
+  gloss renders once in the visible region; no merge-message block on
+  issue decks).
+- **Breaking-change detection** — new deterministic check script
+  `skills/triage/scripts/check-breaking.sh` (diff-text-only, no
+  network) and `rules/breaking-changes.md` (BC-01–BC-04); wired into
+  triage Step 6b and review-pr. A detection (`findings ≥ 1`) fires
+  the RV-02 public-API class; a fail-closed FAIL is an
+  infrastructural failure, not a detection; a PASS proves nothing and
+  moves nothing lighter.
+- **Label projection** — new skill `/lq-maintainer:label` and
+  `rules/labels.md` (LB-01–LB-05): provisional classification mapped
+  onto the target repo's own labels, hand-over of one exact command
+  per label (the hooks block `gh pr edit`/`gh issue edit` outright),
+  sync steps in triage/review-pr/review-issue, `labels_synced` footer
+  field. Security carve-outs bind labels as public output; the agent
+  never proposes `security` or the judgment labels.
+- **Release narrative** — new skill `/lq-maintainer:release-notes`
+  and `templates/release-notes.md` (RN-NN): drafts the target repo's
+  release notes from merge trailers and receipt evidence, breaking
+  changes leading, semver suggested with evidence but never decided.
+  Security note: the skill's allow-list carries `git tag --list` only
+  — plain `git tag` would permit promptless local tag creation, which
+  the hook does not block.
+- **Eval suite** — five new fixture/golden pairs (BC positive and
+  negative, E-21 empty-label-delta, label-sync correction,
+  release-range narrative) and the v0.7.2 golden-file lint in
+  `ci/scripts/grade-evals.sh` (closed label vocabulary, three-state
+  `labels_synced`, semver enum, the E-21/C-40 label-suspension
+  consistency check, release-range lane-pass skip).
+
 ## [0.4.1] — 2026-07-30
 
 Design doc: [v0.7.1](docs/design/lq-maintainer-agent-design-v0.7.1.md)

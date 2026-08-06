@@ -107,7 +107,7 @@ local read access to the canon and to `main`.
    are `/lq-maintainer:triage` and `/lq-maintainer:review-pr`, not a bare
    `/triage`.
 
-The plugin declares the four skills and the **PreToolUse safety hooks**
+The plugin declares the six skills and the **PreToolUse safety hooks**
 ([hooks/hooks.json](hooks/hooks.json)) that block merge, approve, close,
 push, and PR-ref checkout in the session. A reference copy of the same
 block for lq-ai's own `.claude/`
@@ -121,12 +121,15 @@ canon SHA it was judged against, the agent version, and the served model
 ID for the session — so any triage decision is reproducible and any
 dispute auditable.
 
-## The four skills
+## The six skills
 
 All are explicit-invocation-only (`disable-model-invocation: true`) —
 nothing fires unprompted. One **router** sorts the queue; two **reviewers**
 handle a single item at the right tier; one **designer** turns greenfield
-feature work into a ratifiable plan.
+feature work into a ratifiable plan; one **labeler** gives an arriving
+item a cheap, provisional first touch; and one **release drafter** turns
+the accumulated review evidence into the target repo's release
+narrative.
 
 - **`/lq-maintainer:triage`** ([skills/triage/](skills/triage/)) — the
   breadth pass / queue router, for PRs and issues in batch. Produces a
@@ -159,10 +162,28 @@ feature work into a ratifiable plan.
   ADR(s), the predicted obstacles, and a decomposition into atomic
   reviewable changes — so the contributor's energy becomes design input
   for the committee instead of a stalled PR.
+- **`/lq-maintainer:label (pr|issue) N`** ([skills/label/](skills/label/))
+  *(v0.7.2)* — the express first touch. Makes a provisional
+  classification from the same rules the router uses and maps it onto
+  the **target repo's own labels** (never an invented taxonomy, never a
+  created label); every label change is handed over for the maintainer
+  to apply. Labels are outputs only — nothing ever routes on them — and
+  the security carve-outs bind them (no label on a vulnerability-suspect
+  issue, ever). The fuller pass corrects labels via a sync step; the
+  receipt stays the authority.
+- **`/lq-maintainer:release-notes [range]`**
+  ([skills/release-notes/](skills/release-notes/)) *(v0.7.2)* — drafts
+  the target repo's release narrative from merge trailers and the
+  accumulated review evidence: breaking changes lead with their
+  undo/migration lines, contributors are credited per item, and a
+  semver bump is suggested with evidence — drafted, never decided. The
+  human tags and publishes, always.
 
-Rule of thumb: `/lq-maintainer:triage` to decide what deserves attention;
-`review-pr` / `review-issue` for one item; `design-plan` when the item is
-really a feature proposal wearing a PR.
+Rule of thumb: `/lq-maintainer:label` for a cheap first touch when
+something arrives; `/lq-maintainer:triage` to decide what deserves
+attention; `review-pr` / `review-issue` for one item; `design-plan` when
+the item is really a feature proposal wearing a PR; `release-notes` when
+cutting a release.
 
 ## Categories and tiers
 
@@ -192,7 +213,11 @@ A dependency bump is a merge candidate only if **every** mechanical check
 passes: verified bot App identity, manifest/lockfile-only diff, semver
 patch/minor on a ≥1.0.0 dependency, **no new package names anywhere in the
 diff** (the typosquat control), a clean OSV batch lookup, a ≥7-day
-release-age cooldown, and green CI. The checks are scripts
+release-age cooldown, and green CI. Standard-lane PRs additionally get
+a mechanical breaking-change scan (`check-breaking.sh` — removed public
+symbols, signatures, config keys, CLI flags, routes, schema drops; a
+detection blocks the quick pass and drafts the `breaking-change` label,
+while a PASS proves nothing and moves nothing lighter). The checks are scripts
 ([skills/triage/scripts/](skills/triage/scripts/)), rendered pass/fail in
 the receipt; the LLM anchors the bump to a real upstream release and flags
 anomalies — it never re-derives what the ecosystem decides

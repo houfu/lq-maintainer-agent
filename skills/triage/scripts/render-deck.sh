@@ -25,9 +25,10 @@ Input  : the rendered receipt markdown on stdin (the exact text Step 9 of
          Optional receipt sections, rendered when present (decided
          2026-07-26 -- the deck carries the drafts, so they are not
          separate deliverables): `### Drafted public comment` and
-         `### Drafted merge message` (each a fenced block; shown as
-         collapsed paste-ready cards) and `### Maintainer decision`
-         (the human's recorded ruling; shown as a visible card).
+         `### Drafted merge message` (each a fenced block; shown as the
+         two paste-ready blocks of ONE visible card, the merge message
+         PR-profile-only) and `### Maintainer decision` (the human's
+         recorded ruling; leads the single decision card).
          Optional argv[1]: the path of the deep-dive cache report
          (skills/review-pr/SKILL.md Step 4). Only its `### Below threshold`
          section is read -- the low-confidence findings the Step 5 filter
@@ -57,6 +58,16 @@ Design contract honoured (see docs/design v0.6, v0.7 §7/§8, and rules/):
     undo path (rules/reversibility.md RV-05), and the five burden axes demote
     to the auditor section as internal evidence (rules/burden.md B-09). A
     footer without those fields renders the v0.6 burden-led hero unchanged.
+  - v0.7.2 §4 (deck leanness), adopting docs/proposals/deck-leanness.md: the
+    VISIBLE SPINE is hero · not-checked alert · the decision (one card) ·
+    findings · the drafts (one card, two paste-ready blocks) · references ·
+    next steps · glance tiles + gate meter · "How to read this page" (closed) ·
+    the folded detail · provenance footer. Findings and the drafts are never
+    behind a click; the runtime caveat is stated once where it is visible; the
+    per-card intros, standing disclaimers, and footer boilerplate consolidate
+    into the one closed how-to-read card. No fact is deleted and nothing moves
+    more than one disclosure level down -- the v0.6 §8 constraint above is met
+    by visibility of the ITEM (badge + title), never of its gloss.
   - All contributor-derived free text (PR title, findings) is NFKC-normalised,
     stripped of invisible/bidi/tag characters (visibly flagged if any were
     present -- rules/injection-posture.md I-10), then HTML-escaped. It is
@@ -330,34 +341,51 @@ def extract_draft_block(md, header_re):
     return "\n".join(buf).strip("\n") if in_fence else ""
 
 
-def render_draft_card(md, header_re, title, subtitle):
-    """A collapsed paste-ready card for a draft the receipt embeds (decided
-    2026-07-26: the deck carries the drafted public comment and, for merge
-    candidates, the drafted merge message -- they are no longer separate
-    deliverables). The draft is agent-authored but quotes contributor
-    content, so it is sanitised and shown verbatim as escaped text --
-    paste fidelity over pretty rendering."""
-    raw = extract_draft_block(md, header_re)
-    if not raw:
+def build_drafts_card(md, merge_message=True):
+    """'What you'd tell the contributor' -- ONE visible card carrying both
+    paste-ready blocks (v0.7.2 §4, deck-leanness change 2): the drafted public
+    comment and, for merge candidates, the drafted merge message. They are one
+    act -- what you say to the contributor and what goes in the squash box --
+    and the maintainer reads them together, against the findings.
+
+    The merge-message block is PR-profile-only (`merge_message=False` on the
+    issue profile, which has no merge to make) and absent whenever the receipt
+    carries no `### Drafted merge message` section. Returns '' when neither
+    block is present, so a discussion-stage receipt grows no empty card.
+
+    Each draft is agent-authored but quotes contributor content, so it is
+    sanitised and shown verbatim as escaped text inside a `user-select:all`
+    block -- paste fidelity over pretty rendering, unchanged."""
+    blocks = [("The drafted comment", extract_draft_block(md, r"Drafted public comment"))]
+    if merge_message:
+        blocks.append(("The drafted merge message",
+                       extract_draft_block(md, r"Drafted merge message")))
+    if not any(raw for _, raw in blocks):
         return ""
-    txt, hidden = sanitize(raw)
-    flag = ('<div class="flagline">⚠ Hidden characters were found in this draft '
-            'and removed before display. Treat the receipt copy with suspicion.</div>'
-            if hidden else "")
-    return ('<details class="dd"><summary>%s'
-            '<span class="tag g-mute">paste-ready</span></summary><div class="body">'
-            '<p class="intro">%s Click the block once to select it whole, '
-            'then copy.</p>%s<pre class="receipt paste">%s</pre></div></details>'
-            % (esc(title), esc(subtitle), flag, txt))
+    out = ['<section class="card vcard drafts"><h2>What you’d tell the contributor'
+           '<span class="tag g-mute">paste-ready</span></h2>']
+    for label, raw in blocks:
+        if not raw:
+            continue
+        txt, hidden = sanitize(raw)
+        out.append('<h3>%s</h3>' % esc(label))
+        if hidden:
+            out.append('<div class="flagline">⚠ Hidden characters were found in this '
+                       'draft and removed before display. Treat the receipt copy '
+                       'with suspicion.</div>')
+        out.append('<pre class="receipt paste">%s</pre>' % txt)
+    out.append('</section>')
+    return "".join(out)
 
 
-def build_decision_record_card(md, base):
-    """The 'What the maintainer decided' card, rendered if and only if the
-    receipt carries a `### Maintainer decision` section -- the human ruling
-    recorded at finalize (Step 10 of skills/triage/SKILL.md). Absent on the
-    discussion-stage render and on every receipt written before the section
-    existed, so those decks are unchanged. The ruling is the maintainer's
-    words; sanitised and link-rendered like every body section."""
+def maintainer_ruling_html(md, base):
+    """The maintainer's recorded ruling (RP-18) as decision-card paragraphs,
+    rendered if and only if the receipt carries a `### Maintainer decision`
+    section -- the human ruling recorded at finalize (Step 10 of
+    skills/triage/SKILL.md). Absent on the discussion-stage render and on every
+    receipt written before the section existed. The ruling is the maintainer's
+    words; sanitised and link-rendered like every body section. Returns '' when
+    there is no ruling to show."""
     raw = extract_section(md, r"Maintainer decision")
     if not raw:
         return ""
@@ -375,10 +403,154 @@ def build_decision_record_card(md, base):
         return ""
     flag = ('<div class="flagline">⚠ Hidden characters were found in this section '
             'and removed before display.</div>' if hidden else "")
-    return ('<section class="card decision"><h2>What the maintainer decided</h2>'
-            '%s%s<p class="standing">Recorded after a maintainer read this review '
-            'and ruled. The ruling is theirs; the agent only recorded it.</p>'
-            '</section>' % (flag, "".join(paras)))
+    return ('%s<p class="ruled-k">What the maintainer decided</p>%s'
+            % (flag, "".join(paras)))
+
+
+def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False):
+    """The decision card -- ONE card, never two (v0.7.2 §4): the maintainer's
+    recorded ruling (RP-18) leads where it exists, and the agent's
+    recommendation-shaped line rides under it, labelled, so the two can never
+    be read as each other. With no ruling recorded the recommendation line is
+    the card, exactly as before.
+
+    The standing 'a human decides, every time' disclaimer moves into the
+    'How to read this page' card -- consolidated, not deleted (change 4)."""
+    out = ['<section class="card decision">', '<h2>The decision</h2>']
+    ruling = maintainer_ruling_html(md, base)
+    if ruling:
+        out.append(ruling)
+        out.append('<p class="agentline"><b>The agent had recommended:</b> %s</p>'
+                   % esc(agent_line))
+    else:
+        out.append('<p>%s</p>' % esc(agent_line))
+    if undo_note:
+        out.append('<p class="decnote%s">%s</p>'
+                   % (" d-bad" if undo_bad else "", esc(undo_note)))
+    out.append('</section>')
+    return "".join(out)
+
+
+def build_not_checked_card(coverage, g, human_rows, why_intro, title_suffix=""):
+    """'What was not checked' -- badge + item title VISIBLE, the per-item gloss
+    folded one level into a nested sub-disclosure (v0.7.2 §4, change 5).
+
+    The v0.6 §8 constraint is met exactly: every never-checked coverage item and
+    every permanently-open human-only judgment RENDERS, carries its
+    non-resolvable badge, and can never read as done. Only its explanation
+    moves -- one disclosure level, never out of the page (nothing is deleted).
+    The card itself stays `open`: the honesty rail is not something a reader
+    has to find."""
+    rows, glosses = [], []
+    for c in coverage:
+        st = _cov_status(c)
+        if st not in ("never-by-design", "not-covered"):
+            continue
+        it = _cov_item(c)
+        badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
+                 else '<span class="open">Not yet — resumable</span>')
+        title = _cov_title(it)
+        rows.append('<li>%s <span class="h">%s</span></li>' % (badge, esc(title)))
+        d = g.dec("coverage:" + it) or g.cap("coverage:" + it, "")
+        if d:
+            glosses.append('<li><span class="h">%s</span><div class="d">%s</div></li>'
+                           % (esc(title), esc(d)))
+    for hk, htitle in human_rows:
+        rows.append('<li><span class="open">Human-only</span> <span class="h">%s</span></li>'
+                    % esc(htitle))
+        d = g.cap(hk, "")
+        if d:
+            glosses.append('<li><span class="h">%s</span><div class="d">%s</div></li>'
+                           % (esc(htitle), esc(d)))
+    sub = ""
+    if glosses:
+        sub = ('<details class="dd sub"><summary>Why each of these is not checked'
+               '<span class="tag g-mute">%d</span></summary><div class="body">'
+               '<p class="intro">%s</p><ul class="cov">%s</ul></div></details>'
+               % (len(glosses), esc(why_intro), "".join(glosses)))
+    return ('<details class="dd" open><summary>What was <em>not</em> checked%s'
+            '<span class="tag g-bad">read this</span></summary><div class="body">'
+            '<ul class="cov">%s</ul>%s</div></details>'
+            % (esc(title_suffix), "".join(rows), sub))
+
+
+# The one closed 'How to read this page' card (v0.7.2 §4, change 4). It absorbs
+# the per-card intros, the standing disclaimers, and the footer boilerplate that
+# used to be repeated across the page: a first-time reader clicks once and gets
+# MORE context than the scattered prose gave them, a repeat reader never opens
+# it. The deck is JS-free by contract, so this is a native <details> and nothing
+# else -- no state, no script. Nothing here is deleted from the page; it is the
+# same standing text, said once.
+_HOWTO_COMMON = (
+    ("A human decides, every time",
+     "The agent has not merged, approved, closed, labelled, filed, or posted "
+     "anything. Every GitHub action named on this page is a maintainer’s to "
+     "take, and each one is a separate, individually approved act."),
+    ("The decision card",
+     "Where a maintainer has already ruled, their ruling leads it, recorded as "
+     "they gave it — the ruling is theirs; the agent only wrote it down. The "
+     "agent’s own recommendation sits underneath, labelled, and is a reading of "
+     "the change, never an action taken on it."),
+    ("The paste-ready drafts",
+     "Click a draft block once to select it whole, then copy. The tone gate has "
+     "already run, so copy it verbatim. Posting the comment and performing the "
+     "merge are separate human actions the maintainer takes; the agent drafted "
+     "the words and nothing more."),
+    ("What was not checked",
+     "Two kinds live there: items never machine-checked by design — a human "
+     "judgment that can never be marked done — and passes not yet run this "
+     "session, which a later run can still cover. Neither can ever be resolved "
+     "by this page."),
+    ("The record behind it",
+     "This is a plain-language reading view of the internal evidence record, "
+     "generated by lq-maintainer-agent. It reformats that record only — the "
+     "record is the source, and it is carried verbatim at the foot of the page."),
+)
+
+_HOWTO_PR = (
+    ("Findings",
+     "Issues the review raised in the lines this change touches. Blocking and "
+     "major findings read inline; minor and nit findings fold into the sub-card "
+     "because none of them stops a merge on its own. Any low-confidence notes "
+     "the review filter held back are shown below rather than dropped."),
+    ("Next steps",
+     "The follow-ups only a person can do before this is decided — each one "
+     "closable, none of them a grade."),
+)
+
+_HOWTO_GATE = (
+    ("The safety gate",
+     "Automated checks that decide whether a dependency bump is routine enough "
+     "to fast-track. Clearing them is not a verdict on the change — what they "
+     "do not cover is listed under “what was not checked”."),
+)
+
+_HOWTO_ISSUE = (
+    ("Findings and obstacles",
+     "Points the triage raised on this issue, and the rule-grounded obstacles it "
+     "would meet if it became a PR. Neither is a grade of the issue or its filer."),
+    ("Next steps",
+     "The follow-ups only a person can do before this is acted on — each one "
+     "closable, none of them a grade."),
+    ("An issue is a proposal, not a change",
+     "There is no diff to grade here: nothing is validated by running it, so the "
+     "safety gate, the burden axes, and the auto-merge read do not apply."),
+)
+
+
+def build_howto_card(profile="pr", gate=False):
+    """The closed how-to card. `gate` adds the safety-gate paragraph only when
+    this deck actually shows a gate, so the card never explains furniture the
+    reader cannot see."""
+    entries = (_HOWTO_PR if profile == "pr" else _HOWTO_ISSUE)
+    if gate:
+        entries = entries + _HOWTO_GATE
+    rows = "".join('<li><span class="h">%s</span><div class="d">%s</div></li>'
+                   % (esc(k), esc(v))
+                   for k, v in entries + _HOWTO_COMMON)
+    return ('<details class="dd howto"><summary>How to read this page'
+            '<span class="tag g-mute">first time here?</span></summary>'
+            '<div class="body"><ul class="cov">%s</ul></div></details>' % rows)
 
 
 def render_grounding_card(md, base, header_re, css_cls, title):
@@ -723,18 +895,23 @@ body{
 .dot{width:19px; height:19px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:700; color:#fff}
 .dot.d-pass{background:var(--ok)} .dot.d-fail{background:var(--bad)} .dot.d-na{background:var(--ink-faint); opacity:.5}
 .legend{font-size:12.5px; color:var(--ink-faint); margin-left:auto}
-/* Decision */
+/* Decision — ONE card: the maintainer's recorded ruling (RP-18) where present,
+   with the agent's recommendation-shaped line under it (v0.7.2 §4) */
 .decision{padding:22px 24px; margin-bottom:22px; border:1px solid var(--accent); border-left-width:4px}
 .decision h2{font-family:var(--serif); font-size:21px; font-weight:600; margin:0 0 8px}
 .decision p{margin:0 0 8px; font-size:16px}
-.decision .standing{
-  margin-top:12px; padding-top:12px; border-top:1px solid var(--line-soft);
-  font-size:14px; color:var(--ink-soft); font-style:italic;
+.decision .ruled-k{
+  font-size:12.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin:0 0 6px;
 }
+.decision .agentline{
+  margin:12px 0 0; padding-top:12px; border-top:1px solid var(--line-soft);
+  font-size:14.5px; color:var(--ink-soft);
+}
+.decision .agentline b{color:var(--ink-soft); font-weight:600}
 /* Next steps checklist */
 .nextsteps{padding:22px 24px; margin-bottom:22px; border:1px solid var(--info-line); background:var(--info-bg)}
-.nextsteps h2{font-family:var(--serif); font-size:21px; font-weight:600; margin:0 0 3px}
-.nextsteps .ns-intro{margin:0 0 10px; font-size:14px; color:var(--ink-soft)}
+.nextsteps h2{font-family:var(--serif); font-size:21px; font-weight:600; margin:0 0 8px}
 .nextsteps ul{margin:0; padding:0; list-style:none}
 .nextsteps li{position:relative; padding:9px 0 9px 30px; border-top:1px solid var(--line-soft); font-size:15px}
 .nextsteps li:first-child{border-top:0}
@@ -826,7 +1003,24 @@ pre.receipt.paste{
 .grounding.g-ref li::before{content:"\\2192"; color:var(--info)}
 .grounding.g-obs li::before{content:"\\25B8"; color:var(--warn)}
 .grounding .refk{font-weight:600}
-.grounding a, .dd a, .nextsteps a, .decision a, .cov a{color:var(--accent-ink); text-underline-offset:2px}
+/* visible content cards (v0.7.2 §4 deck leanness): the findings and the
+   paste-ready drafts are part of the visible spine, never behind a click */
+.vcard{padding:22px 24px; margin-bottom:14px}
+.vcard>h2{
+  font-family:var(--serif); font-size:20px; font-weight:600; margin:0 0 4px;
+  display:flex; align-items:center; gap:10px;
+}
+.vcard>h2 .tag{
+  margin-left:auto; font-family:var(--sans); font-size:12px; font-weight:600;
+  padding:2px 9px; border-radius:20px;
+}
+.vcard h3{
+  font-size:12.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin:18px 0 0;
+}
+.vcard h3:first-of-type{margin-top:8px}
+.vcard>.checks{margin-top:2px}
+.grounding a, .dd a, .nextsteps a, .decision a, .cov a, .vcard a{color:var(--accent-ink); text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 @media (max-width:560px){
@@ -1030,14 +1224,28 @@ def build_deck(md, g, below=None):
           '<ul style="margin:6px 0 0;padding-left:18px">%s</ul></p></div>'
           % (items or "<li>a blocking condition is present</li>"))
 
-    # up-front "not checked" alert (runtime behaviour never-by-design)
+    # ---- spine 2: the runtime caveat, stated ONCE where it is visible ----
+    # v0.7.2 §4 (change 3): the alert stays -- 25 words, safety-critical, top of
+    # page -- and every coverage item it has already spoken for is recorded in
+    # `alerted_coverage` so the Next-steps builder below does not repeat it. The
+    # folded "what was not checked" card keeps its own copy: that card IS the
+    # non-resolvable rendering the v0.6 §8 constraint requires, and suppressing
+    # it there would delete a fact rather than de-duplicate one.
     never = [c for c in coverage if _cov_status(c) == "never-by-design"]
+    alerted_coverage = set()
     runtime_dec = g.dec("coverage:runtime-behavior")
     if any(_cov_item(c) == "runtime-behavior" for c in never) and runtime_dec:
         A('<div class="alert"><span class="mark">⚠</span><p>'
           '<strong>Not checked:</strong> %s</p></div>' % esc(runtime_dec))
+        alerted_coverage.add("runtime-behavior")
 
-    # glance tiles
+    # ---- glance tiles + gate meter ----
+    # Built here (the folded "what was checked" card and the Next-steps builder
+    # both read these figures) but EMITTED at spine position 8, below the
+    # findings, the drafts, the references, and the next steps: they orient, and
+    # orientation is not what a reference reader opens the deck for (v0.7.2 §4).
+    glance = []
+    GA = glance.append
     considered = [(k, checks.get(k)) for k in CHECK_ORDER if checks.get(k) in ("pass", "fail")]
     npass = sum(1 for _, v in considered if v == "pass")
     ntot = len(considered)
@@ -1045,23 +1253,23 @@ def build_deck(md, g, below=None):
     if burden and burden.get("overall") and not action_first:
         # burden axes are the glance tiles
         TLEVEL = {"low": "t-ok", "medium": "t-warn", "high": "t-bad"}
-        A('<div class="tiles tiles-5">')
+        GA('<div class="tiles tiles-5">')
         for key in ("scope", "review", "tests", "carry", "safety"):
             lvl = str(burden.get(key, "low"))
-            A(_tile(TLEVEL.get(lvl, "t-ok"),
-                    g.cap("burden:%s:label" % key, key.title()),
-                    esc(lvl.title()),
-                    g.cap("burden:%s:concern" % key, "")))
-        A('</div>')
+            GA(_tile(TLEVEL.get(lvl, "t-ok"),
+                     g.cap("burden:%s:label" % key, key.title()),
+                     esc(lvl.title()),
+                     g.cap("burden:%s:concern" % key, "")))
+        GA('</div>')
     else:
-        A('<div class="tiles">')
+        GA('<div class="tiles">')
         if ntot:
             gate_cls = "t-ok" if not failed_names else "t-warn"
             nfail = len(failed_names)
             sub = ("all passed" if not nfail else "%d flagged for a person" % nfail)
-            A(_tile(gate_cls, "Safety gate", "%d / %d" % (npass, ntot), sub))
+            GA(_tile(gate_cls, "Safety gate", "%d / %d" % (npass, ntot), sub))
         fcls = "t-ok" if not findings else "t-warn"
-        A(_tile(fcls, "Findings", str(len(findings)), "issues in the changed lines"))
+        GA(_tile(fcls, "Findings", str(len(findings)), "issues in the changed lines"))
         if action_first and (undo or undo_raw):
             # In action-first mode the third tile is the undo cost, not the
             # auto-merge status the hero has already stated (RV-05/TR-10).
@@ -1070,161 +1278,59 @@ def build_deck(md, g, below=None):
             UNDO_TILE_S = {"revert-clean": "nothing downstream to unpick",
                            "residue": "something it did already stays",
                            "irreversible-class": "cannot be cleanly undone"}
-            A(_tile(UNDO_TILE.get(undo, "t-warn"), "If it goes wrong",
-                    esc(UNDO_TILE_V.get(undo, undo_raw)),
-                    UNDO_TILE_S.get(undo, "undo path recorded, not glossed")))
+            GA(_tile(UNDO_TILE.get(undo, "t-warn"), "If it goes wrong",
+                     esc(UNDO_TILE_V.get(undo, undo_raw)),
+                     UNDO_TILE_S.get(undo, "undo path recorded, not glossed")))
         elif lane == "fast":
-            A(_tile("t-ok", "Auto-merge", "Yes", "cleared every check"))
+            GA(_tile("t-ok", "Auto-merge", "Yes", "cleared every check"))
         elif lane == "escalate":
-            A(_tile("t-bad", "Auto-merge", "No", "needs escalation"))
+            GA(_tile("t-bad", "Auto-merge", "No", "needs escalation"))
         elif held:
-            A(_tile("t-warn", "Status", "On hold", "contributor asked"))
+            GA(_tile("t-warn", "Status", "On hold", "contributor asked"))
         else:
-            A(_tile("t-warn", "Auto-merge", "No", "a person reviews this"))
-        A('</div>')
-
-    # gate meter (glance)
+            GA(_tile("t-warn", "Auto-merge", "No", "a person reviews this"))
+        GA('</div>')
     if ntot:
-        A('<div class="meter"><span class="lab">Safety gate</span><div class="dots">')
+        GA('<div class="meter"><span class="lab">Safety gate</span><div class="dots">')
         for k in CHECK_ORDER:
             st = checks.get(k)
             if st not in ("pass", "fail", "n-a"):
                 continue
             cls, gl = DOT_WORD.get(st, ("d-na", "–"))
             label = g.cap("check:%s:label" % k, k.replace("_", " "))
-            A('<span class="dot %s" title="%s: %s" aria-label="%s: %s">%s</span>'
-              % (cls, esc(label), esc(st), esc(label), esc(st), gl))
-        A('</div><span class="legend">✓ passed · ✗ needs a human</span></div>')
+            GA('<span class="dot %s" title="%s: %s" aria-label="%s: %s">%s</span>'
+               % (cls, esc(label), esc(st), esc(label), esc(st), gl))
+        GA('</div><span class="legend">✓ passed · ✗ needs a human</span></div>')
 
-    # decision box — the human's, always (L-01); action-first where v0.7 fields
-    # are present, lane-shaped otherwise.
-    A('<section class="card decision">')
-    A('<h2>The decision</h2>')
+    # ---- spine 3: the decision — the human's, always (L-01) ----
+    # ONE card (v0.7.2 §4): the maintainer's recorded ruling (RP-18) where the
+    # receipt carries one, the agent's recommendation-shaped line otherwise and
+    # underneath it where both exist. Action-first where the v0.7 fields are
+    # present, lane-shaped otherwise. Decisions ride near the top: the deck is a
+    # reference document, and the ruling is what a reference reader looks up.
     if action_first:
-        A('<p>%s</p>' % esc(_outcome_decision_line(outcome, outcome_raw, held, num)))
+        agent_line = _outcome_decision_line(outcome, outcome_raw, held, num)
         undo_note = g.dec("undo:%s" % undo) if undo else ""
-        if undo_note:
-            A('<p class="decnote%s">%s</p>'
-              % (" d-bad" if undo == "irreversible-class" else "", esc(undo_note)))
     else:
-        A('<p>%s</p>' % esc(_decision_line(lane, demoted, held)))
-    A('<p class="standing">The agent has not merged, approved, closed, or posted anything. '
-      'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
-    A('</section>')
+        agent_line = _decision_line(lane, demoted, held)
+        undo_note = ""
+    A(build_decision_card(md, base, agent_line, undo_note,
+                          undo == "irreversible-class"))
 
-    # what the maintainer decided — present only once the receipt records the
-    # human ruling (finalize-stage renders; decided 2026-07-26)
-    A(build_decision_record_card(md, base))
-
-    # next steps — the concrete human follow-ups (rules/burden.md B-14)
-    steps = []
-    if burden and str(burden.get("overall")) == "blocked":
-        for b in burden.get("blockers") or []:
-            steps.append("Resolve: " + g.cap("blocker:%s" % b, str(b)))
-    for k in CHECK_ORDER:
-        if checks.get(k) == "fail":
-            d = g.dec("check:%s:fail" % k)
-            if d:
-                steps.append(d)
-    for c in coverage:
-        if _cov_status(c) == "never-by-design":
-            d = g.dec("coverage:%s" % _cov_item(c))
-            if d:
-                steps.append(d)
-    if burden:
-        for ax in ("scope", "review", "tests", "carry", "safety"):
-            if str(burden.get(ax)) in ("medium", "high"):
-                d = g.cap("burden:%s:next" % ax, "")
-                if d:
-                    steps.append(d)
-    seen, uniq = set(), []
-    for s in steps:
-        key = s.strip()
-        if key and key not in seen:
-            seen.add(key)
-            uniq.append(s)
-    if uniq:
-        A('<section class="card nextsteps"><h2>Next steps to check</h2>'
-          '<p class="ns-intro">The follow-ups only a person can do before this is '
-          'decided — each one closable, none of them a grade.</p><ul>')
-        for s in uniq:
-            A('<li>%s</li>' % esc(s))
-        A('</ul></section>')
-
-    # references / grounding (RP-15) — agent-performed cross-reference, linked
-    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
-
-    # why this escalated (E-NN) — the fired mechanical triggers, glossed
-    A(build_triggers_card(r, g))
-
-    # decisions to make (D-13) — escalated v2 receipts only
-    A(build_scoping_card(r, g))
-
-    # ---- drill-downs ----
-    A('<p class="sec-h">The detail, on demand</p>')
-
-    # why not auto-approved (only when a bump was demoted / a check failed)
-    if failed_names and (demoted or lane == "standard"):
-        A('<details class="dd"><summary>Why it’s not auto-approved'
-          '<span class="tag g-warn">a person decides</span></summary><div class="body">')
-        for k in failed_names:
-            A(_check_row(k, "fail", g, note=True))
-        A('</div></details>')
-
-    # what was checked
-    if ntot:
-        tag = "g-ok" if not failed_names else "g-warn"
-        A('<details class="dd"><summary>What was checked — the %d-point safety gate'
-          '<span class="tag %s">%d / %d</span></summary><div class="body">'
-          % (ntot, tag, npass, ntot))
-        A('<p class="intro">Automated checks that decide whether a dependency bump is routine enough to fast-track.</p>')
-        A('<ul class="checks">')
-        for k in CHECK_ORDER:
-            st = checks.get(k)
-            if st not in ("pass", "fail", "n-a"):
-                continue
-            A(_check_row(k, st, g, note=(st == "fail")))
-        A('</ul></div></details>')
-
-    # what was NOT checked
-    A('<details class="dd" open><summary>What was <em>not</em> checked (on purpose)'
-      '<span class="tag g-bad">read this</span></summary><div class="body">')
-    A('<p class="intro">Two kinds live here: items <b>never machine-checked by design</b> — a '
-      'human judgment that can never be marked done — and passes <b>not yet run this session</b>, '
-      'which a later run can still cover.</p><ul class="cov">')
-    for c in coverage:
-        st = _cov_status(c)
-        if st not in ("never-by-design", "not-covered"):
-            continue
-        it = _cov_item(c)
-        badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
-                 else '<span class="open">Not yet — resumable</span>')
-        A('<li>%s <span class="h">%s</span><div class="d">%s</div></li>'
-          % (badge, esc(_cov_title(it)),
-             esc(g.dec("coverage:" + it) or g.cap("coverage:" + it, ""))))
-    for hk, htitle in (("human:contributor-trust", "Do you trust this contributor"),
-                       ("human:supply-chain-hygiene", "Do you trust this dependency")):
-        A('<li><span class="open">Human-only</span> <span class="h">%s</span>'
-          '<div class="d">%s</div></li>' % (esc(htitle), esc(g.cap(hk, ""))))
-    A('</ul></div></details>')
-
-    # findings
-    # Open by default when anything blocking/major is present: a maintainer
-    # should not have to discover a merge-stopping finding behind a click.
-    # Minor/nit-only sets stay collapsed, as does the below-threshold card,
-    # so the disclosure still does its job of keeping low-signal notes folded.
-    _sev_open = any(str(f.get("severity", "")).lower() not in LOW_SEVERITIES
-                    for f in findings)
-    A('<details class="dd"%s><summary>Findings'
-      '<span class="tag %s">%d</span></summary><div class="body">'
-      % (" open" if _sev_open else "",
-         "g-mute" if not findings else "g-warn", len(findings)))
+    # ---- spine 4: findings — VISIBLE, never behind a click (v0.7.2 §4) ----
+    # Blocking/major read inline; minor/nit fold into the nested sub-card, the
+    # one severity split that survives (rules/lanes.md L-33). A finding carrying
+    # an unknown severity word counts as high — an unrecognised label must never
+    # be the reason something stays hidden.
+    A('<section class="card vcard findings"><h2>Findings'
+      '<span class="tag %s">%d</span></h2>'
+      % ("g-mute" if not findings else "g-warn", len(findings)))
     if not findings:
         try:
             filt = int(r.get("findings_filtered") or 0)
         except (TypeError, ValueError):
             filt = 0
-        A('<p class="intro">No issues were raised in the lines this change touches.%s</p>'
+        A('<p>No issues were raised in the lines this change touches.%s</p>'
           % ("" if filt <= 0 else " (%d low-signal note%s were filtered out.)"
              % (filt, "" if filt == 1 else "s")))
     else:
@@ -1250,14 +1356,10 @@ def build_deck(md, g, below=None):
                     % (esc(sev.title()), esc(fid),
                        (" · " + esc(disp_txt)) if disp_txt else "", scope_tag, txt_html))
 
-        # Severity split: what stops a merge reads inline; the rest folds away.
-        # A finding carrying an unknown severity word counts as high — an
-        # unrecognised label must never be the reason something stays hidden.
         _hi = [f for f in findings
                if str(f.get("severity", "")).lower() not in LOW_SEVERITIES]
         _lo = [f for f in findings
                if str(f.get("severity", "")).lower() in LOW_SEVERITIES]
-        A('<p class="intro">Issues the review raised in the lines this change touches.</p>')
         if _hi:
             A('<ul class="checks">')
             for f in _hi:
@@ -1267,14 +1369,104 @@ def build_deck(md, g, below=None):
             A('<details class="dd sub"><summary>Minor findings'
               '<span class="tag g-mute">%d</span></summary><div class="body">'
               % len(_lo))
-            A('<p class="intro">Worth fixing, but none of these blocks a merge '
-              'on their own.</p>')
             A('<ul class="checks">')
             for f in _lo:
                 A(_finding_li(f))
             A('</ul>')
             A('</div></details>')
-    A('</div></details>')
+    A('</section>')
+
+    # ---- spine 5: what you'd tell the contributor ----
+    # The drafted comment and the drafted merge message in ONE visible card,
+    # two paste-ready blocks (v0.7.2 §4, change 2) — they are one act, and the
+    # maintainer reads them together, against the findings above.
+    A(build_drafts_card(md, merge_message=True))
+
+    # ---- spine 6: references (RP-15) — agent-performed cross-reference ----
+    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+
+    # why this escalated (E-NN) — the fired mechanical triggers, glossed
+    A(build_triggers_card(r, g))
+
+    # decisions to make (D-13) — escalated v2 receipts only
+    A(build_scoping_card(r, g))
+
+    # ---- spine 7: next steps — the concrete human follow-ups (B-14) ----
+    steps = []
+    if burden and str(burden.get("overall")) == "blocked":
+        for b in burden.get("blockers") or []:
+            steps.append("Resolve: " + g.cap("blocker:%s" % b, str(b)))
+    for k in CHECK_ORDER:
+        if checks.get(k) == "fail":
+            d = g.dec("check:%s:fail" % k)
+            if d:
+                steps.append(d)
+    for c in coverage:
+        # v0.7.2 §4 (change 3): a never-by-design item the top alert has already
+        # spoken for is not repeated here, so Next steps opens on a real action
+        # instead of a sentence the reader has just read.
+        if _cov_status(c) == "never-by-design" and _cov_item(c) not in alerted_coverage:
+            d = g.dec("coverage:%s" % _cov_item(c))
+            if d:
+                steps.append(d)
+    if burden:
+        for ax in ("scope", "review", "tests", "carry", "safety"):
+            if str(burden.get(ax)) in ("medium", "high"):
+                d = g.cap("burden:%s:next" % ax, "")
+                if d:
+                    steps.append(d)
+    seen, uniq = set(), []
+    for s in steps:
+        key = s.strip()
+        if key and key not in seen:
+            seen.add(key)
+            uniq.append(s)
+    if uniq:
+        A('<section class="card nextsteps"><h2>Next steps to check</h2><ul>')
+        for s in uniq:
+            A('<li>%s</li>' % esc(s))
+        A('</ul></section>')
+
+    # ---- spine 8: the glance figures, built above ----
+    A("".join(glance))
+
+    # ---- spine 9: how to read this page — closed, absorbs the scaffolding ----
+    A(build_howto_card("pr", gate=bool(ntot)))
+
+    # ---- spine 10: the folded detail ----
+    A('<p class="sec-h">The detail, on demand</p>')
+
+    # why not auto-approved (only when a bump was demoted / a check failed)
+    if failed_names and (demoted or lane == "standard"):
+        A('<details class="dd"><summary>Why it’s not auto-approved'
+          '<span class="tag g-warn">a person decides</span></summary><div class="body">')
+        for k in failed_names:
+            A(_check_row(k, "fail", g, note=True))
+        A('</div></details>')
+
+    # what was checked
+    if ntot:
+        tag = "g-ok" if not failed_names else "g-warn"
+        A('<details class="dd"><summary>What was checked — the %d-point safety gate'
+          '<span class="tag %s">%d / %d</span></summary><div class="body">'
+          % (ntot, tag, npass, ntot))
+        A('<ul class="checks">')
+        for k in CHECK_ORDER:
+            st = checks.get(k)
+            if st not in ("pass", "fail", "n-a"):
+                continue
+            A(_check_row(k, st, g, note=(st == "fail")))
+        A('</ul></div></details>')
+
+    # what was NOT checked — badge + title visible, gloss one level down
+    A(build_not_checked_card(
+        coverage, g,
+        (("human:contributor-trust", "Do you trust this contributor"),
+         ("human:supply-chain-hygiene", "Do you trust this dependency")),
+        "Two kinds live here: items never machine-checked by design — a human "
+        "judgment that can never be marked done — and passes not yet run this "
+        "session, which a later run can still cover.",
+        " (on purpose)"))
 
     # how this was reviewed — category, tier, and the demoted burden axes, as
     # internal evidence beneath the action outcome (design v0.7 §7, B-09).
@@ -1299,19 +1491,6 @@ def build_deck(md, g, below=None):
               % txt_html)
         A('</ul></div></details>')
 
-    # the embedded drafts (decided 2026-07-26): the deck carries the
-    # paste-ready public comment and, for merge candidates, the drafted
-    # merge message — they are no longer separate deliverables.
-    A(render_draft_card(md, r"Drafted public comment", "The drafted comment",
-                        "The short public note drafted for this item — the only "
-                        "thing routinely posted to it. Posting is a separate, "
-                        "individually approved human action; copy it verbatim — "
-                        "the tone gate has already run."))
-    A(render_draft_card(md, r"Drafted merge message", "The drafted merge message",
-                        "The squash-merge commit message drafted for the GitHub "
-                        "merge box, audit trailer included. The human performs "
-                        "the merge and owns the message; the agent only drafted it."))
-
     # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
     A('<details class="dd"><summary>The full technical record'
@@ -1320,18 +1499,19 @@ def build_deck(md, g, below=None):
       'exactly as written — the auditable source behind every line above.</p>')
     A('<pre class="receipt">%s</pre></div></details>' % receipt_txt)
 
-    # provenance footer
+    # ---- spine 11: provenance footer ----
+    # The four pinned fields plus the renderer stamp; the standing "this is a
+    # reading view, the record is the source" boilerplate now lives once, in the
+    # "How to read this page" card above (v0.7.2 §4, change 4).
     A('<footer class="foot"><dl class="prov">')
     A('<dt>PR head SHA</dt><dd>%s</dd>' % _sanidd(pinned.get("pr_head_sha")))
     A('<dt>Canon SHA</dt><dd>%s</dd>' % _sanidd(pinned.get("canon_sha")))
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
-    A('<p>Rendered by lq-maintainer-agent v%s renderer.</p>' % esc(renderer_version()))
-    A('<p>A plain-language reading view of the internal evidence record, generated '
-      'by lq-maintainer-agent. It reformats that record only — the record is the '
-      'source. Nothing here was posted, merged, or filed by the agent; a human '
-      'decides, every time.</p>')
+    A('<p>Rendered by lq-maintainer-agent v%s renderer. Nothing here was posted, '
+      'merged, or filed by the agent; a human decides, every time.</p>'
+      % esc(renderer_version()))
     A('</footer>')
 
     return "".join(out)
@@ -1575,83 +1755,16 @@ def build_issue_deck(r, md, g, base):
           'drafted nothing further. A maintainer reads their message in the record and '
           'answers it themselves.</p></div>')
 
-    # predicted obstacles (IV-02) — rule-grounded, no grade
-    A(render_grounding_card(md, base, r"Predicted obstacles", "g-obs",
-                            "Predicted obstacles — if this became a PR"))
-    # references (IV-03) — agent-performed four-bucket cross-reference, linked
-    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+    # ---- spine 3: the decision — ONE card (v0.7.2 §4) ----
+    # The maintainer's recorded ruling (RP-18) leads where the receipt carries
+    # one; the agent's recommendation-shaped line is the card otherwise, and
+    # rides underneath it, labelled, where both exist.
+    A(build_decision_card(md, base, _issue_decision_line(reco, held, num)))
 
-    # why this escalated (E-NN) — the fired mechanical triggers, glossed
-    A(build_triggers_card(r, g))
-
-    # decisions to make (D-13) — escalated v2 receipts only
-    A(build_scoping_card(r, g))
-
-    # decision box
-    A('<section class="card decision">')
-    A('<h2>The decision</h2>')
-    A('<p>%s</p>' % esc(_issue_decision_line(reco, held, num)))
-    A('<p class="standing">The agent has not filed, labelled, closed, or posted anything. '
-      'Every GitHub action here is a maintainer’s to take — a human decides, every time.</p>')
-    A('</section>')
-
-    # what the maintainer decided — present only once the receipt records the
-    # human ruling (finalize-stage renders; decided 2026-07-26)
-    A(build_decision_record_card(md, base))
-
-    # next steps — derived from the recommendation + never-checked coverage gaps
-    steps = []
-    if reco:
-        d = _num_subst(g.cap("recommendation:%s:next" % reco, ""), num)
-        if d:
-            steps.append(d)
-    for c in coverage:
-        if _cov_status(c) == "never-by-design":
-            d = g.dec("coverage:%s" % _cov_item(c))
-            if d:
-                steps.append(d)
-    seen, uniq = set(), []
-    for s in steps:
-        k = s.strip()
-        if k and k not in seen:
-            seen.add(k)
-            uniq.append(s)
-    if uniq:
-        A('<section class="card nextsteps"><h2>Next steps to check</h2>'
-          '<p class="ns-intro">The follow-ups only a person can do before this is '
-          'acted on.</p><ul>')
-        for s in uniq:
-            A('<li>%s</li>' % esc(s))
-        A('</ul></section>')
-
-    A('<p class="sec-h">The detail, on demand</p>')
-
-    # what was NOT checked + the permanently-open human-only judgments
-    A('<details class="dd" open><summary>What was <em>not</em> checked'
-      '<span class="tag g-bad">read this</span></summary><div class="body">')
-    A('<p class="intro">An issue is a proposal, not a change — nothing here is validated by '
-      'running it, and these stay human judgments.</p><ul class="cov">')
-    for c in coverage:
-        st = _cov_status(c)
-        if st not in ("never-by-design", "not-covered"):
-            continue
-        it = _cov_item(c)
-        badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
-                 else '<span class="open">Not yet — resumable</span>')
-        A('<li>%s <span class="h">%s</span><div class="d">%s</div></li>'
-          % (badge, esc(_cov_title(it)),
-             esc(g.dec("coverage:" + it) or g.cap("coverage:" + it, ""))))
-    for hk, htitle in (("human:roadmap-worth", "Worth roadmap space"),
-                       ("human:engagement-tone", "Engagement tone")):
-        A('<li><span class="open">Human-only</span> <span class="h">%s</span>'
-          '<div class="d">%s</div></li>' % (esc(htitle), esc(g.cap(hk, ""))))
-    A('</ul></div></details>')
-
-    # findings (issues may carry them)
+    # ---- spine 4: findings — VISIBLE (issues may carry them) ----
     if findings:
-        A('<details class="dd"><summary>Findings'
-          '<span class="tag g-warn">%d</span></summary><div class="body">' % len(findings))
-        A('<p class="intro">Points the triage raised on this issue.</p><ul class="checks">')
+        A('<section class="card vcard findings"><h2>Findings'
+          '<span class="tag g-warn">%d</span></h2><ul class="checks">' % len(findings))
         for f in findings:
             fid = str(f.get("id", "F"))
             sev = str(f.get("severity", "minor"))
@@ -1671,16 +1784,63 @@ def build_issue_deck(r, md, g, base):
               '<div class="txt">%s</div></div></li>'
               % (esc(sev.title()), esc(fid), (" · " + esc(disp_txt)) if disp_txt else "",
                  scope_tag, txt_html))
-        A('</ul></div></details>')
+        A('</ul></section>')
 
-    # the embedded drafted comment (decided 2026-07-26): the deck carries the
-    # paste-ready public note — no longer a separate deliverable. Issues have
-    # no merge message; that card is PR-profile only.
-    A(render_draft_card(md, r"Drafted public comment", "The drafted comment",
-                        "The short public note drafted for this item — the only "
-                        "thing routinely posted to it. Posting is a separate, "
-                        "individually approved human action; copy it verbatim — "
-                        "the tone gate has already run."))
+    # ---- spine 5: what you'd tell the contributor ----
+    # The drafted public comment, visible and paste-ready. An issue has no merge
+    # to make, so the merge-message block is PR-profile-only and never rendered
+    # here, whatever the receipt carries (v0.7.2 §4, change 2).
+    A(build_drafts_card(md, merge_message=False))
+
+    # predicted obstacles (IV-02) — rule-grounded, no grade
+    A(render_grounding_card(md, base, r"Predicted obstacles", "g-obs",
+                            "Predicted obstacles — if this became a PR"))
+    # ---- spine 6: references (IV-03) — four-bucket cross-reference, linked ----
+    A(render_grounding_card(md, base, r"References", "g-ref", "References"))
+
+    # why this escalated (E-NN) — the fired mechanical triggers, glossed
+    A(build_triggers_card(r, g))
+
+    # decisions to make (D-13) — escalated v2 receipts only
+    A(build_scoping_card(r, g))
+
+    # ---- spine 7: next steps — recommendation + never-checked coverage gaps ----
+    steps = []
+    if reco:
+        d = _num_subst(g.cap("recommendation:%s:next" % reco, ""), num)
+        if d:
+            steps.append(d)
+    for c in coverage:
+        if _cov_status(c) == "never-by-design":
+            d = g.dec("coverage:%s" % _cov_item(c))
+            if d:
+                steps.append(d)
+    seen, uniq = set(), []
+    for s in steps:
+        k = s.strip()
+        if k and k not in seen:
+            seen.add(k)
+            uniq.append(s)
+    if uniq:
+        A('<section class="card nextsteps"><h2>Next steps to check</h2><ul>')
+        for s in uniq:
+            A('<li>%s</li>' % esc(s))
+        A('</ul></section>')
+
+    # ---- spine 9: how to read this page — closed, absorbs the scaffolding ----
+    A(build_howto_card("issue"))
+
+    # ---- spine 10: the folded detail ----
+    A('<p class="sec-h">The detail, on demand</p>')
+
+    # what was NOT checked + the permanently-open human-only judgments:
+    # badge + title visible, the per-item gloss one level down (v0.7.2 §4)
+    A(build_not_checked_card(
+        coverage, g,
+        (("human:roadmap-worth", "Worth roadmap space"),
+         ("human:engagement-tone", "Engagement tone")),
+        "An issue is a proposal, not a change — nothing here is validated by "
+        "running it, and these stay human judgments."))
 
     # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())
@@ -1697,11 +1857,9 @@ def build_issue_deck(r, md, g, base):
     A('<dt>Agent version</dt><dd>%s</dd>' % _sanidd(pinned.get("agent_version")))
     A('<dt>Model</dt><dd>%s</dd>' % _sanidd(pinned.get("model_id")))
     A('</dl>')
-    A('<p>Rendered by lq-maintainer-agent v%s renderer.</p>' % esc(renderer_version()))
-    A('<p>A plain-language reading view of the issue’s internal evidence record, '
-      'generated by lq-maintainer-agent. It reformats that record only — the record '
-      'is the source. Nothing here was filed, labelled, closed, or posted by the '
-      'agent; a human decides, every time.</p>')
+    A('<p>Rendered by lq-maintainer-agent v%s renderer. Nothing here was filed, '
+      'labelled, closed, or posted by the agent; a human decides, every time.</p>'
+      % esc(renderer_version()))
     A('</footer>')
 
     return "".join(out)
@@ -1782,6 +1940,7 @@ def _cov_status(c):
 
 _COV_TITLES = {
     "runtime-behavior": "Whether the code actually runs correctly",
+    "semantic-breaking-change": "Breaking changes the diff text cannot show",
     "package-contents": "What is inside the dependency package",
     "code-quality": "A close read of the code",
     "test-adequacy": "Whether it is covered by tests",

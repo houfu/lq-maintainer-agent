@@ -142,6 +142,21 @@ normative here; this file states only the issue-profile deltas.
   surfaced to the maintainer and recorded as a dated note in the
   visible decision section, never silently rewritten — and, as always,
   an absent decision block is never read as agreement.
+- **RI-14 — Labels synced (v0.7.2; optional, footer only).** Exactly as
+  `templates/receipt-pr.md` RP-20 — the agent-managed label set
+  (`rules/labels.md` LB-02/LB-04) as it stands after the last sync,
+  carried in the optional enumerated `labels_synced` footer field;
+  **absent means "never synced"**, `[]` means synced with nothing
+  agent-managed on the item, and the closed LB-02 vocabulary is the only
+  thing that may appear (never free text, never a maintainer-applied
+  label). Two issue-profile deltas: an issue has **no diff**, so it
+  never carries a component label (`api`/`gateway`/`web`/`ci`); and a
+  **vulnerability-suspect issue never reaches this field at all** —
+  C-04/C-40 means no receipt and no label, period (`LB-03`), so there is
+  nothing to record. The projection's reasons — the classification
+  (`C-NN`), the `needs-info` recommendation (`IV-01`), the agent's own
+  C-60 duplicate bucket — stay in the visible body; an LB-02a miss is
+  reported to the maintainer as their call, never created (`LB-05`).
 
 ## Template
 
@@ -334,6 +349,7 @@ tier: <0|1|2|3|null>
 outcome: null
 undo: <revert-clean|residue|irreversible-class|null>
 tone_gate: <applied|n-a>
+labels_synced: [<name>, ...]
 decision:
   final_outcome: <needs-info|decompose|proceed|design|escalate|hold|null>
   alignment: <accepted|adjusted|overridden|null>
@@ -352,7 +368,11 @@ own `recommendation` field above instead (`IV-01`, extended with
 include a reversibility call; `tone_gate` records `applied`/`n-a`
 exactly as on the PR profile — `applied` once the gate has run over
 every contributor-facing draft this issue produced, `n-a` when none
-was produced or the run predates the field. The optional `decision`
+was produced or the run predates the field. The optional
+`labels_synced` list (RP-20/RI-14, v0.7.2) is shared on the same
+additive terms — absent until a sync has run, `[]` once one has with
+nothing agent-managed on the item, closed LB-02 vocabulary only. The
+optional `decision`
 block (RP-18) is shared too — absent until a maintainer rules, with
 the IV-01 vocabulary permitted in `final_outcome` on this profile.
 

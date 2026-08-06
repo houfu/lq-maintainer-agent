@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -50,9 +50,22 @@ from memory):
 - `${CLAUDE_PLUGIN_ROOT}/rules/reversibility.md` — the irreversible
   classes (`RV-02`), the revert-clean check, and the undo-path line
   every outcome carries.
+- `${CLAUDE_PLUGIN_ROOT}/rules/breaking-changes.md` — what a
+  `check-breaking.sh` detection means (`BC-NN`): it fires the RV-02
+  public-API class and names the Tier-2 entering condition (BC-01),
+  your judgment layers on top of the script and never instead of it
+  (BC-02), and a PASS means only "no textual break detected" (BC-03).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` — the gate every
   contributor-facing draft passes (`TG-NN`) before it is offered for
   posting.
+- `${CLAUDE_PLUGIN_ROOT}/rules/labels.md` — the public projection of
+  the settled classification (`LB-NN`): the target repo's own taxonomy
+  and component path map (LB-02), the `gh label list` existence check
+  (LB-02a), what never becomes a label — lanes, tiers, and the §8.3
+  carve-outs (LB-03) — and correction-not-layering inside the
+  agent-managed set (LB-04). Loaded for **Step 9's label sync** and
+  nothing else: labels are outputs only, never inputs (LB-01), so no
+  category, tier, or lane call in Step 3 may read one.
 - `${CLAUDE_PLUGIN_ROOT}/rules/lanes.md` and
   `${CLAUDE_PLUGIN_ROOT}/rules/escalation-triggers.md` — lane
   semantics and the mechanical trigger list. The security triggers
@@ -324,12 +337,27 @@ investigation inside Tier 1.
    results are **internal evidence** (`T-07` as amended) — a genuine
    `verified-fail` reaches the contributor as at most one courteous,
    blame-free note about the work, never as a caught claim.
-7. **The revert-clean check (`RV-04`).** Confirm from the diff: no
-   persisted data or schema written, no external consumer contract
-   changed, no new package names, no irreversible-class path touched.
-   That confirmation is what licenses this pass's confidence — if it
-   fails, you have discovered an irreversible-class change: re-route
-   to Tier 2 (`RV-03`/`TR-07.3`).
+7. **The revert-clean check (`RV-04`), deterministic half first.** Run
+   `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh` over
+   the diff (`gh pr diff N | …/check-breaking.sh` — diff text only, no
+   network): a `FAIL` carrying `findings=N ≥ 1` is the mechanical form
+   of "an external consumer contract changed" (a fail-closed `FAIL`
+   with `reason=`/`error=` and no findings is an infrastructural
+   failure, `BC-01` — re-run or record the check as not run, never
+   treat it as a detection), and it fires the RV-02 public-API class with the
+   Tier-2 entering condition "irreversible-class touched —
+   breaking-change detected (BC-01)", the `break:` evidence lines
+   quoted into the record. Layer your own reading **on top of** it,
+   never instead (`BC-02`) — a semantic break under an unchanged
+   signature is an L-33 finding that fires BC-01 the same way — and
+   treat a `PASS` as "no textual break detected" only, disclosed as
+   such in the coverage statement and never a reason to stay lighter
+   (`BC-03`, `TR-09`). Then confirm the rest from the diff: no
+   persisted data or schema written, no new package names, no
+   irreversible-class path touched. That confirmation is what licenses
+   this pass's confidence — if it fails, you have discovered an
+   irreversible-class change: re-route to Tier 2
+   (`RV-03`/`TR-07.3`).
 8. **Uncertainty becomes a named check, never a grade (`RV-06`).**
    Anything you could not verify is reported as *what was not
    verified* → *the specific human check that settles it* → *its
@@ -391,6 +419,15 @@ now is.
 ### 5.1 — Estimate the budget, then dispatch the four-member team
 
 Stage the diff and PR metadata already fetched in Step 3 for the team.
+**Run `check-breaking.sh` yourself before dispatching** and stage its
+output alongside the diff: members hold Read/Grep/Glob only and cannot
+run it, and both the security-vetting and code-quality passes reason
+about the same surface it reports — a `FAIL` is already the entering
+condition for this deep dive where BC-01 is why you are here, and its
+`break:` lines tell those two passes exactly which hunks carry a
+contract change. Its `PASS` is staged with the same caveat it prints:
+"no textual break detected", never "non-breaking" (`BC-03`), and the
+semantic breaks it cannot see remain the passes' own job (`BC-02`).
 
 **Budget gate first (design §9).** Estimate the cost of the dispatch
 from the diff size, file count, and the subsystem surface the
@@ -806,6 +843,33 @@ exactly the item they asked for. Only for items they approve:
   same gated flow. If no prior comment exists, post one new comment —
   also permission-prompted. A pre-v0.7 public receipt comment is left
   as it stands (Step 2.4).
+- **The label sync** (`rules/labels.md` LB-NN). Once the outcome has
+  settled, diff this PR's **agent-managed** labels (exactly the LB-02
+  set, existence-checked against a read-only `gh label list` this run,
+  `LB-02a`) against the settled classification — category, the BC-01
+  breaking flag, the docs/dependency path facts, the component map —
+  and offer the corrections as **gated writes, one at a time**:
+  `gh pr edit --add-label`/`--remove-label` is absent from this skill's
+  allow-list *and* hook-blocked for the agent (design §2.1), so each
+  correction is handed over as the exact command for the maintainer to
+  run — one command per label (`LB-04`, "who performs the write").
+  Stale projections are
+  **corrected, not layered** (`LB-04`) — the contradicted label is
+  removed in the same approval that adds its replacement — and a label
+  **outside** the agent-managed set is never touched (`frozen`/
+  `no-stale`/`pinned`, `security`, the `LB-03` judgment labels are
+  someone else's writes). **The evidence record is the authority;
+  labels are its public shadow** (`LB-01` — no call in Step 3 read
+  one), so a provisional label left by `/lq-maintainer:label` is simply
+  corrected here. **The `LB-03` carve-outs bind absolutely:** an `E-21`
+  item gets no label write at all until the maintainer rules, exploit
+  detail never labels (`E-08`/`C-40`), and lanes and tiers never
+  project. The ratchet binds too — nothing here removes a heavier
+  projection on lighter evidence (`L-04`, `TR-09`, `BC-03`: a detector
+  `PASS` never lifts `breaking-change`). Record the resulting
+  agent-managed set in the record's `labels_synced` footer field
+  (`templates/receipt-pr.md` RP-20); an LB-02a miss becomes a **Next
+  steps** entry (`RP-16`), never a created label (`LB-05`).
 - **No new public receipts are posted, at any tier.** The evidence
   record is stored (Step 6), not commented.
 - Individual findings the maintainer wants relayed are drafted as

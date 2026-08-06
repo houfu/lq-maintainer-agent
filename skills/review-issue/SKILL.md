@@ -18,7 +18,7 @@ description: >-
   single-item review.
 disable-model-invocation: true
 argument-hint: <issue-number>
-allowed-tools: Read, Grep, Glob, Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh pr list:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
+allowed-tools: Read, Grep, Glob, Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh pr list:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
 ---
 
 # /lq-maintainer:review-issue — the single-issue reviewer
@@ -78,6 +78,16 @@ Load these first — they are data, not to be paraphrased from memory:
   contributor responses, the deck's contributor-readable sections) must
   survive after drafting, before it is offered for posting (`TG-NN`).
   The internal receipt and in-session state blocks are exempt.
+- `${CLAUDE_PLUGIN_ROOT}/rules/labels.md` *(v0.7.2)* — the public
+  projection of the settled classification (`LB-NN`): the target repo's
+  own taxonomy (LB-02 — issues project `bug`/`enhancement`, `question`,
+  `duplicate`, and `documentation`, never a component label, since an
+  issue has no diff), the `gh label list` existence check (LB-02a),
+  what never becomes a label (LB-03 — lanes, tiers, and the C-40
+  carve-out), and correction-not-layering inside the agent-managed set
+  (LB-04). Loaded for **Step 8's label sync** and nothing else: labels
+  are outputs only, never inputs (LB-01), so no classification or
+  recommendation call reads one.
 
 ## Step 0 — Preconditions and the pinned fields
 
@@ -316,7 +326,41 @@ never press for one. Then save the receipt to the evidence store
 (Step 7) and **re-render the deck** from the finalized receipt (same
 command, same path), so the final deck carries the paste-ready comment
 and, where recorded, the "What the maintainer decided" card. Saving is not a
-GitHub write and needs no permission prompt. **Then offer the
+GitHub write and needs no permission prompt.
+
+**Sync the issue's labels** (`rules/labels.md` LB-NN). Once the
+recommendation has settled, diff this issue's **agent-managed** labels
+(exactly the LB-02 set, existence-checked against a read-only
+`gh label list` this run, `LB-02a`) against the settled state — the
+classification (`C-01`/`C-02`), a `needs-info` recommendation
+(`IV-01`), a non-empty **duplicate** bucket from the agent's own C-60
+cross-reference (never the filer's claim, `I-13`), and the docs-lane
+call — and offer the corrections as **gated writes, one at a time**:
+`gh issue edit --add-label`/`--remove-label` is absent from this
+skill's allow-list *and* hook-blocked for the agent (design §2.1), so
+each correction is handed over as the exact command for the maintainer
+to run — one command per label (`LB-04`, "who performs the write").
+Stale projections
+are **corrected, not layered** (`LB-04`) — the contradicted label is
+removed in the same approval that adds its replacement — and a label
+**outside** the agent-managed set is never touched (`frozen`/
+`no-stale`/`pinned`, `security`, the `LB-03` judgment labels are
+someone else's writes). **The internal receipt is the authority;
+labels are its public shadow** (`LB-01` — no classification or
+recommendation call above read one), so a provisional label left by
+`/lq-maintainer:label` is simply corrected here. **The `LB-03`
+carve-outs bind absolutely:** a vulnerability-suspect issue gets **no
+label, period** (`C-04`/`C-40` — this step is never reached for one,
+and the `security` label is never drafted), an `E-21` item gets no
+label write until the maintainer rules, and lanes and tiers never
+project. The ratchet binds too — nothing here removes a heavier
+projection on lighter evidence (`L-04`, `TR-09`). Record the resulting
+agent-managed set in the receipt footer's `labels_synced` field
+(`templates/receipt-issue.md` RI-14); an LB-02a miss — a mapped label
+this repo does not have — is reported to the maintainer as their call
+to make, never created (`LB-05`).
+
+**Then offer the
 remaining writes one at a time**,
 each behind its own permission prompt (or hand the text to paste): post
 the short public comment (`templates/pr-comment.md`), the drafted repro

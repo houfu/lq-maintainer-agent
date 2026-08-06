@@ -43,10 +43,14 @@ path.
    /plugin install lq-maintainer@lq-maintainer-agent
    ```
 
-That's it. The plugin declares the four skills — `/lq-maintainer:triage`,
-`/lq-maintainer:review-pr`, `/lq-maintainer:review-issue`, and
+That's it. The plugin declares the six skills — `/lq-maintainer:triage`,
+`/lq-maintainer:review-pr`, `/lq-maintainer:review-issue`,
 `/lq-maintainer:design-plan` (new in v0.7, for category-1 greenfield
-work — see the walkthrough below) — and the PreToolUse safety hooks
+work — see the walkthrough below), `/lq-maintainer:label` (v0.7.2, the
+express first touch that maps a provisional classification onto the
+target repo's own labels), and `/lq-maintainer:release-notes` (v0.7.2,
+drafts the target repo's release narrative from the accumulated review
+evidence) — and the PreToolUse safety hooks
 ([hooks/hooks.json](../hooks/hooks.json)) that block
 merge/approve/close/push/PR-checkout in your session. **Skill
 invocation is namespaced by the plugin name** — there is no bare

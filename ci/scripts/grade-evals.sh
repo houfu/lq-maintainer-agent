@@ -193,6 +193,25 @@ expected_scalar() {
     | tr -s ' 	' ' ' | sed -e 's/^ //' -e 's/ $//'
 }
 
+label_delta_list() {
+  # $1=key (add|remove) $2=golden — the list value of
+  # `expected.label_delta.<key>` (four-space indent inside the
+  # two-space `label_delta:` block), inline or block form, brackets
+  # and commas stripped, one word per line (v0.7.2 lint).
+  awk -v key="$1" '
+    /^  label_delta:/ { inblock = 1; next }
+    inblock && /^ {0,3}[^ ]/ { inblock = 0 }
+    inblock && $0 ~ "^    " key ":" {
+      line = $0
+      sub(".*" key ":[[:space:]]*", "", line)
+      sub(/[[:space:]]*#.*$/, "", line)
+      gsub(/[][",]/, " ", line)
+      n = split(line, a, /[[:space:]]+/)
+      for (i = 1; i <= n; i++) if (length(a[i])) print a[i]
+    }
+  ' "$2" 2>/dev/null
+}
+
 if [ ! -d "$FIXDIR" ] || [ -z "$(ls -A "$FIXDIR" 2>/dev/null)" ]; then
   echo "::notice::grade-evals: no fixtures found under $FIXDIR — the eval corpus lands with M1 (design doc §14). Nothing to grade; this is NOT a pass on judgment."
   exit 0
@@ -361,6 +380,67 @@ for g in $(graded_goldens); do
       *) err "$g" "golden is marked 'adversarial: true' but does not list 'fast' in never_lane — the §4.2 never-fast-lane invariant may not be weakened by editing the golden" ;;
     esac
   fi
+
+  # ---- v0.7.2 additions (rules/labels.md, templates/release-notes.md,
+  # evals/run-checks.md) ----
+  #
+  # label_delta.add / .remove name only labels the LB-02 table can
+  # produce — the agent-managed set is closed, and a golden may not
+  # widen it. untouched_must_include is deliberately NOT held to this
+  # set: it names the labels the agent must leave alone, which are
+  # typically exactly the maintainer-applied ones outside it. Keep
+  # SET_label in step with the rules/labels.md LB-02 table — the lint
+  # and the table change together.
+  SET_label="bug enhancement breaking-change question duplicate documentation dependencies api gateway web ci"
+  ld_add=$(label_delta_list add "$g" | tr '\n' ' ')
+  ld_remove=$(label_delta_list remove "$g" | tr '\n' ' ')
+  for w in $ld_add $ld_remove; do
+    case " $SET_label " in
+      *" $w "*) : ;;
+      *) err "$g" "golden's label_delta names '$w', which the rules/labels.md LB-02 table cannot produce — the agent-managed set is closed (evals/run-checks.md)" ;;
+    esac
+  done
+
+  # labels_synced is a list, [], or the literal `absent` — nothing
+  # else. templates/receipt-pr.md RP-20: absent means "never synced";
+  # [] positively asserts a sync ran and found nothing agent-managed.
+  # The three-state distinction may not be edited away.
+  if grep -qE '^  labels_synced:' "$g" 2>/dev/null; then
+    ls_raw=$(grep -m1 -E '^  labels_synced:' "$g" \
+             | sed -e 's/^  labels_synced:[[:space:]]*//' -e 's/[[:space:]]*#.*$//' \
+             | sed -e 's/[[:space:]]*$//')
+    case "$ls_raw" in
+      absent) : ;;
+      ''|\[*)
+        for w in $(yaml_list labels_synced "$g" '^  '); do
+          case " $SET_label " in
+            *" $w "*) : ;;
+            *) err "$g" "golden's labels_synced lists '$w', which the rules/labels.md LB-02 table cannot produce — only agent-managed labels are ever synced (LB-04)" ;;
+          esac
+        done ;;
+      *) err "$g" "golden's labels_synced is '$ls_raw' — it must be a list, [], or the literal 'absent' (templates/receipt-pr.md RP-20; the three-state distinction may not be edited away)" ;;
+    esac
+  fi
+
+  # release_notes.semver_suggestion is drafted, never decided — but
+  # its vocabulary is closed either way.
+  for w in $(grep -oE '^[[:space:]]+semver_suggestion:[[:space:]]*[A-Za-z-]+' "$g" 2>/dev/null \
+             | sed -E 's/^[[:space:]]+semver_suggestion:[[:space:]]*//'); do
+    case " major minor patch " in
+      *" $w "*) : ;;
+      *) err "$g" "golden's semver_suggestion is '$w', which is not in the canonical vocabulary (major minor patch) — evals/run-checks.md" ;;
+    esac
+  done
+
+  # E-21 / C-40 suspend label writes absolutely (rules/labels.md
+  # LB-03.2/LB-03.3): a golden may not encode its way around that by
+  # asserting a non-empty label_delta on a suspended item.
+  if [ -n "$(printf '%s' "$ld_add$ld_remove" | tr -d ' ')" ]; then
+    if grep -qE '^[[:space:]]+carve_out:[[:space:]]*suspected-deliberate' "$g" 2>/dev/null \
+       || grep -qE '^[[:space:]]+profile:[[:space:]]*none' "$g" 2>/dev/null; then
+      err "$g" "golden asserts a non-empty label_delta alongside receipt.carve_out: suspected-deliberate / receipt.profile: none — E-21 and C-40 suspend label writes absolutely (rules/labels.md LB-03), and that is not a judgment a golden may encode its way around"
+    fi
+  fi
 done
 
 # ---- 6. lane/trigger outcomes: pass^k, threshold, confusion matrix ----
@@ -375,6 +455,15 @@ else
   while IFS= read -r b; do
     g=$(golden_file "$b") || continue          # pairing already failed it above
     fx=$(first_entry "$FIXDIR" "$b") || continue
+
+    # v0.7.2: a release-range golden asserts a cross-item narrative,
+    # not a routing — a commit range is not routed, so the lane pass
+    # skips it entirely (evals/run-checks.md; the per-item lane calls
+    # were graded when those items were reviewed, by their own
+    # fixtures).
+    if yaml_scalar kind "$g" | grep -qiE '^release-range$'; then
+      continue
+    fi
 
     lanes=$(yaml_scalar lane "$g" | tr '[:upper:]' '[:lower:]')
     if [ -z "$lanes" ]; then

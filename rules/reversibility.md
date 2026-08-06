@@ -39,7 +39,12 @@ it.
      exposure is permanent.
   3. **Public API contracts and wire formats**: once consumed by
      clients, a contract is a commitment; reverting it breaks the
-     consumers the mistake invited.
+     consumers the mistake invited. Alone among these classes this one
+     had no mechanical detector; it now has one —
+     `skills/triage/scripts/check-breaking.sh`, whose `FAIL` fires this
+     class per `rules/breaking-changes.md` BC-01, and whose `PASS`
+     means only "no textual break detected" and clears nothing
+     (BC-03).
   4. **CI / workflow files and agent-instruction / tool-config
      files** (the E-01 `.github/workflows/**` and E-10 surfaces):
      they execute with elevated credentials on arrival.

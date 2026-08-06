@@ -23,6 +23,14 @@ rules/injection-posture.md):
      decision) render as cards when present, survive a `---` divider inside
      the fenced draft, keep the link allow-list, and are ABSENT — not
      empty — on every receipt written before the sections existed.
+  5. The v0.7.2 §4 visible spine (docs/proposals/deck-leanness.md) holds: the
+     decision (ONE card, ruling + recommendation), the findings, the drafts
+     (ONE card, two paste-ready blocks) and the references all render VISIBLY
+     and in that order, ahead of the glance tiles and the folded detail; the
+     runtime caveat is stated exactly ONCE in the visible region; the
+     merge-message block is PR-profile-only; and the v0.6 §8 honesty rail is
+     unmoved — every never-checked item and human-only judgment still renders
+     with its badge, only its gloss folds one level.
 
 Pure stdlib, no tokens, no canon clone, no network — safe as a blocking CI
 check. Run from anywhere: `sh ci/scripts/test-render-deck.sh` or directly.
@@ -32,6 +40,7 @@ The file is a sh/python3 polyglot (repo convention); do not lint with `sh -n`.
 import importlib.machinery
 import importlib.util
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -73,6 +82,41 @@ def load_module():
     mod = importlib.util.module_from_spec(spec)
     loader.exec_module(mod)  # __name__ != __main__, so main() does not run
     return mod
+
+
+_DETAILS = re.compile(r"<details\b[^>]*>|</details>")
+
+
+def visible(html):
+    """Everything OUTSIDE every <details> element — what the deck shows before
+    a single click (v0.7.2 §4's "visible spine"). Nesting-aware, because the
+    minor-findings sub-card and the not-checked gloss are disclosures inside
+    other blocks. Order is preserved, so index comparisons on the result are
+    assertions about the visible reading order."""
+    out, depth, i = [], 0, 0
+    for m in _DETAILS.finditer(html):
+        if m.group(0).startswith("</"):
+            depth -= 1
+            if depth == 0:
+                i = m.end()
+        else:
+            if depth == 0:
+                out.append(html[i:m.start()])
+            depth += 1
+    if depth == 0:            # a stray unclosed <details> keeps its tail folded
+        out.append(html[i:])
+    return "".join(out)
+
+
+def in_order(hay, *needles):
+    """True when every needle appears in `hay`, in the order given."""
+    pos = -1
+    for n in needles:
+        nxt = hay.find(n, pos + 1)
+        if nxt < 0:
+            return False
+        pos = nxt
+    return True
 
 
 # --------------------------------------------------------------------------
@@ -316,6 +360,18 @@ PR_WITH_DRAFTS = PR_TIER1_V2.replace(
     "  verified: api\n  feedback_logged: false\n"
 )
 
+# An issue receipt that (wrongly) carries a `### Drafted merge message` section:
+# the block is PR-profile-only (v0.7.2 §4, change 2), so the issue deck must not
+# render it even when the text is sitting right there in the receipt.
+ISSUE_WITH_MERGE_MESSAGE = ISSUE_ESCALATE.replace(
+    "<!-- lq-maintainer-agent:receipt:v1\n",
+    "### Drafted public comment\n\n"
+    "```markdown\nHi @filer — noted, this goes to the committee.\n```\n\n"
+    "### Drafted merge message\n\n"
+    "```text\nAn issue has nothing to merge (#901)\n```\n\n"
+    "<!-- lq-maintainer-agent:receipt:v1\n"
+)
+
 ISSUE_WITH_DRAFT = ISSUE_ESCALATE.replace(
     "<!-- lq-maintainer-agent:receipt:v1\n",
     "### Maintainer decision\n\n"
@@ -408,8 +464,7 @@ def main():
     check("grounding: nested entry text kept", "research-surface pressure." in ghtml)
 
     # --- unit: CSS content glyphs are real escapes, not python-octal mangling ---
-    import re as _re
-    glyphs = dict((m.group(1), m.group(2)) for m in _re.finditer(
+    glyphs = dict((m.group(1), m.group(2)) for m in re.finditer(
         r'grounding\.g-(ref|obs) li::before\{content:"([^"]*)"', mod.CSS))
     check("css: grounding glyphs are CSS escapes",
           glyphs.get("ref") == "\\2192" and glyphs.get("obs") == "\\25B8",
@@ -496,18 +551,23 @@ def main():
           and "u-bad" in out, "rc=%d" % rc)
 
     # --- e2e: findings severity split, scope/disposition glossing, triggers ---
+    # v0.7.2 §4: the findings card is part of the VISIBLE spine — never behind a
+    # disclosure, whatever the severities. Only the minor/nit sub-card folds.
     rc, out = run(PR_BLOCKED)
-    check("findings: auto-open when a major/blocking finding exists",
-          '<details class="dd" open><summary>Findings' in out, "rc=%d" % rc)
+    check("findings: visible card, never behind a click (major/blocking)",
+          '<section class="card vcard findings"><h2>Findings' in visible(out)
+          and "<summary>Findings" not in out, "rc=%d" % rc)
     rc, out = run(PR_TIER1_V2)
-    check("findings: stays collapsed when only minor/nit findings exist",
-          '<details class="dd"><summary>Findings' in out
-          and '<details class="dd" open><summary>Findings' not in out)
-    check("findings: minor findings fold into the nested sub-disclosure",
-          '<details class="dd sub"><summary>Minor findings' in out)
+    check("findings: visible card even when only minor/nit findings exist",
+          '<section class="card vcard findings"><h2>Findings' in visible(out)
+          and "<summary>Findings" not in out)
+    check("findings: minor findings still fold into the nested sub-disclosure",
+          '<details class="dd sub"><summary>Minor findings' in out
+          and "Minor findings" not in visible(out))
     rc, out = run(PR_NIT_ONLY)
-    check("findings: nit-only stays collapsed too",
-          '<details class="dd" open><summary>Findings' not in out, "rc=%d" % rc)
+    check("findings: nit-only renders as a visible card too",
+          '<section class="card vcard findings"><h2>Findings' in visible(out),
+          "rc=%d" % rc)
     check("findings: nit finding folds into the sub-disclosure",
           '<details class="dd sub"><summary>Minor findings' in out)
     check("findings: nit with no body text still gets a non-empty caption",
@@ -544,22 +604,27 @@ def main():
 
     # --- e2e: embedded drafts + maintainer decision (decided 2026-07-26) ---
     rc, out = run(PR_WITH_DRAFTS)
+    vis = visible(out)
     check("drafts PR: exit 0", rc == 0, "rc=%d" % rc)
-    check("drafts PR: comment card present, marked paste-ready",
-          "The drafted comment" in out and "paste-ready" in out)
+    check("drafts PR: ONE visible card carries both paste-ready blocks (v0.7.2 §4)",
+          out.count('class="card vcard drafts"') == 1
+          and in_order(vis, "What you’d tell the contributor",
+                       "The drafted comment", "The drafted merge message")
+          and "paste-ready" in vis)
     check("drafts PR: block is one-click-selectable (user-select:all, no JS)",
-          'class="receipt paste"' in out and "user-select:all" in out
+          'class="receipt paste"' in vis and "user-select:all" in out
           and "<script" not in out)
     check("drafts PR: comment survives its own --- divider (attribution kept)",
-          "reviewed and posted by @maintainer" in out)
-    check("drafts PR: merge-message card present with the drafted subject",
-          "The drafted merge message" in out
-          and "Pin the request timeout default (#904)" in out)
+          "reviewed and posted by @maintainer" in vis)
+    check("drafts PR: merge-message block carries the drafted subject",
+          "Pin the request timeout default (#904)" in vis)
     check("drafts PR: off-host URL inside a draft is inert text, never a href",
           'href="https://evil' not in out)
-    check("drafts PR: decision-record card present with the ruling",
-          "What the maintainer decided" in out
-          and "merge after the named fix lands" in out)
+    check("drafts PR: the ruling leads ONE decision card, not a second card",
+          out.count('class="card decision"') == 1
+          and in_order(vis, "What the maintainer decided",
+                       "merge after the named fix lands",
+                       "The agent had recommended:"))
     check("drafts PR: decision footer block parses (additive, no crash)",
           "verdict" in out)  # rc==0 above is the real assertion; keep a probe
     rc, out = run(PR_TIER1_V2)
@@ -569,14 +634,94 @@ def main():
           and "What the maintainer decided" not in out)
     rc, out = run(ISSUE_WITH_DRAFT)
     check("drafts issue: exit 0", rc == 0, "rc=%d" % rc)
-    check("drafts issue: comment card present",
-          "The drafted comment" in out
-          and "thanks for the detailed report" in out)
-    check("drafts issue: decision-record card present",
-          "What the maintainer decided" in out
-          and "hold for the committee agenda" in out)
+    check("drafts issue: comment card present and visible",
+          "The drafted comment" in visible(out)
+          and "thanks for the detailed report" in visible(out))
+    check("drafts issue: the ruling leads ONE decision card",
+          out.count('class="card decision"') == 1
+          and "What the maintainer decided" in visible(out)
+          and "hold for the committee agenda" in visible(out))
     check("drafts issue: no merge-message card on the issue profile",
           "The drafted merge message" not in out)
+
+    # ---------------------------------------------------------------------
+    # v0.7.2 §4 — deck leanness (docs/proposals/deck-leanness.md).
+    # Reordering and demoting, never deleting: the two named regressions from
+    # the proposal, plus the visible spine and the v0.6 §8 honesty rail that
+    # the reordering must not have loosened.
+    # ---------------------------------------------------------------------
+    RUNTIME_GLOSS = "Exercise the affected feature yourself before merging."
+
+    # (a) the runtime caveat is stated ONCE in the visible region: the top alert
+    # keeps it; the Next-steps builder suppresses the never-by-design entry the
+    # alert already rendered (change 3). The not-checked card keeps its own copy
+    # — folded, so it is evidence, not a third reading of the same sentence.
+    rc, out = run(PR_TIER1_V2)
+    vis = visible(out)
+    check("leanness: coverage:runtime-behavior gloss renders exactly ONCE visibly",
+          rc == 0 and vis.count(RUNTIME_GLOSS) == 1,
+          "visible=%d total=%d" % (vis.count(RUNTIME_GLOSS), out.count(RUNTIME_GLOSS)))
+    _ns = vis.split('class="card nextsteps"', 1)
+    check("leanness: the one visible copy is the top alert, not a Next step",
+          "<strong>Not checked:</strong>" in vis
+          and (len(_ns) == 1 or RUNTIME_GLOSS not in _ns[1]))
+    check("leanness: the not-checked card still keeps its own copy (v0.6 §8)",
+          out.count(RUNTIME_GLOSS) >= 2 and "Why each of these is not checked" in out)
+
+    # (b) the merge-message block is PR-profile-only: absent from an issue deck
+    # even when the receipt carries a `### Drafted merge message` section.
+    rc, out = run(ISSUE_WITH_MERGE_MESSAGE)
+    vis = visible(out)
+    check("leanness: issue deck renders the drafted comment", rc == 0
+          and "this goes to the committee" in vis, "rc=%d" % rc)
+    check("leanness: merge-message block ABSENT from the issue-profile deck",
+          "The drafted merge message" not in vis
+          and "An issue has nothing to merge (#901)" not in vis)
+
+    # the visible spine, in order (proposal §1, blocks 1–10)
+    rc, out = run(PR_WITH_DRAFTS)
+    vis = visible(out)
+    check("leanness: visible spine is in the v0.7.2 order",
+          in_order(vis,
+                   'class="card verdict',                 # 1 hero
+                   '<strong>Not checked:</strong>',       # 2 runtime alert
+                   'class="card decision"',               # 3 the decision
+                   'class="card vcard findings"',         # 4 findings
+                   'class="card vcard drafts"',           # 5 the drafts
+                   'class="card grounding g-ref"',        # 6 references
+                   'class="card nextsteps"',              # 7 next steps
+                   'class="tiles"',                       # 8 glance tiles
+                   'class="sec-h"',                       # 10 the folded detail
+                   'class="foot"'),                       # 11 provenance
+          "spine out of order")
+    check("leanness: one closed 'How to read this page' card, JS-free",
+          out.count("How to read this page") == 1
+          and '<details class="dd howto"><summary>How to read this page' in out
+          and "How to read this page" not in vis
+          and "<script" not in out)
+    check("leanness: the standing disclaimers consolidate into that card",
+          'class="standing"' not in out
+          and "A human decides, every time" in out
+          and "The agent has not merged, approved, closed, labelled, filed, "
+              "or posted anything." in out)
+
+    # change 5 — "What was not checked" shrinks to badge + title, gloss folds
+    # ONE level. The item itself must still render and must never read as
+    # resolved (v0.6 §8, restated in v0.7.2 §4).
+    rc, out = run(PR_BLOCKED)
+    nc = out.split("What was <em>not</em> checked", 1)[1]
+    nc_head = nc.split('<details class="dd sub">', 1)[0]
+    check("leanness: not-checked shows badge + title without its gloss",
+          "Never checked" in nc_head
+          and "Whether the code actually runs correctly" in nc_head
+          and "Human-only" in nc_head
+          and "Do you trust this contributor" in nc_head
+          and RUNTIME_GLOSS not in nc_head)
+    check("leanness: the gloss moved exactly one level, into the sub-disclosure",
+          '<details class="dd sub"><summary>Why each of these is not checked' in nc
+          and RUNTIME_GLOSS in nc)
+    check("leanness: human-only judgments keep their gloss too (nothing deleted)",
+          "The agent scores changes, never people" in nc)
 
     # --- e2e: below-threshold card (deck-only, from the cache report) ---
     check("PR without report arg: no below-threshold card",

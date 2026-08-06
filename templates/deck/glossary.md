@@ -331,6 +331,14 @@ What is actually inside the dependency package.
 hashes — never the code inside the package. Whether the published package matches
 its stated source is a human trust judgment.
 
+### coverage:semantic-breaking-change
+Breaking changes the diff text cannot show.
+→ The breaking-change check is a heuristic over the diff's text: it catches removed
+symbols, signatures, config keys, flags, routes, and schema drops, but a behavioral
+contract change under an unchanged signature — a moved default, a changed error
+code — is invisible to it, and runtime behavior is never checked. A PASS is the
+absence of one signal, never a promise the change is safe.
+
 ---
 
 ## Human-only judgments — permanently open
