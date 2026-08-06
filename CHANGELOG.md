@@ -8,10 +8,10 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
-## [Unreleased] — lands as 0.5.0
+## [0.5.0] — 2026-08-06
 
 Design doc: [v0.7.2](docs/design/lq-maintainer-agent-design-v0.7.2.md)
-(delta over v0.7.1, drafted 2026-08-05/06, pending adoption).
+(delta over v0.7.1, adopted 2026-08-06). PRs #11 and #12.
 
 - **Deck leanness** (renderer implementation per design v0.7.1 §5;
   spec in
@@ -56,6 +56,18 @@ Design doc: [v0.7.2](docs/design/lq-maintainer-agent-design-v0.7.2.md)
   `ci/scripts/grade-evals.sh` (closed label vocabulary, three-state
   `labels_synced`, semver enum, the E-21/C-40 label-suspension
   consistency check, release-range lane-pass skip).
+- **Canon-drift check green again** — the nightly job had been red
+  since 2026-08-03 on six pre-existing dangling citations (bare-domain
+  `canon:repo` tokens; literal evidence-store paths). Fixed alongside
+  the four this cycle introduced: the labels component-path table
+  moved into `rules/canon-map.md` as `canon:component-paths` (§2.2 —
+  the only file allowed to encode target-repo structure), and
+  evidence-store citations take the angle-bracket placeholder form.
+- **Agent-repo links corrected** — every template attribution line
+  and the check scripts' User-Agent URLs now point at
+  `houfu/lq-maintainer-agent` (they said `legalquants/`, which is not
+  where this repo lives). Archived design docs keep their original
+  references, per the never-edit-old-versions convention.
 
 ## [0.4.1] — 2026-07-30
 

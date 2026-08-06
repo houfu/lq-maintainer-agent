@@ -1,18 +1,20 @@
 # LQ Maintainer Agent
 
-**Status: v0.4.1 — early (M0/M1).** Built against design doc v0.7.1
-(a delta over v0.7 "Momentum"): tiered review with a quick-pass
-default, four change categories with a design path for greenfield
-work, and a public-deck / internal-receipt deliverable split. As of
-v0.4.1 the
-deck is the one surface a maintainer reads: it carries the
-paste-ready drafts (the short comment; the merge message for merge
-candidates), records the maintainer's final decision once they rule,
-and findings with a concrete textual fix arrive as one-click GitHub
-suggestions. The eval harness and canon-drift check are being wired
-up; batch digests and the community repo land in later milestones.
-See [docs/design/](docs/design/) for the full design and milestone
-plan.
+**Status: v0.5.0 — early (M0/M1).** Built against design doc v0.7.2
+(a delta over v0.7.1): tiered review with a quick-pass default, four
+change categories with a design path for greenfield work, and a
+public-deck / internal-receipt deliverable split. As of v0.5.0 the
+agent also detects breaking changes mechanically from the diff,
+projects its classification onto the target repo's own labels (a
+cheap first touch on arrival, human-applied like every write), and
+drafts the target repo's release narrative from the accumulated
+review evidence. The deck is the one surface a maintainer reads —
+leaner as of this release: findings and the paste-ready drafts lead,
+the maintainer's ruling rides one decision card, and the scaffolding
+folds away. The eval harness and canon-drift check are wired and
+green in CI; batch digests and the community repo land in later
+milestones. See [docs/design/](docs/design/) for the full design and
+milestone plan.
 
 ## What this is
 

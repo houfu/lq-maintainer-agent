@@ -1,7 +1,8 @@
 # LQ Maintainer Agent — Design Doc v0.7.2
 
-**Status: DRAFTED 2026-08-05, extended 2026-08-06 — pending
-adoption.** This document is a **delta over v0.7.1**
+**Status: adopted 2026-08-06** (drafted 2026-08-05/06; implemented
+and merged the same cycle, PR #11). This document is a **delta over
+v0.7.1**
 (`lq-maintainer-agent-design-v0.7.1.md`): it records three normative
 additions proposed and ruled 2026-08-05
 (`docs/proposals/v0.7.2-labels-breaking-changes-release-narrative.md`

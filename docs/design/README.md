@@ -9,10 +9,25 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| v0.7.2 | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | **Drafted 2026-08-05/06 — pending adoption** (delta over v0.7.1: labels, breaking-change detection, release narrative — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) — plus the [deck-leanness](../proposals/deck-leanness.md) visible spine) |
-| **v0.7.1** | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | **Current** (Adopted 2026-07-30; delta over v0.7) |
+| **v0.7.2** | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | **Current** (Adopted 2026-08-06; delta over v0.7.1 — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) and [../proposals/deck-leanness.md](../proposals/deck-leanness.md)) |
+| v0.7.1 | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | Base document — normative where v0.7.2 is silent (Adopted 2026-07-30; delta over v0.7) |
 | v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
+
+Headline of v0.7.2 — three features that compose, plus a leaner deck:
+the agent's classification now **projects onto the target repo's own
+labels** (a new express skill for the first touch on arrival; labels
+are outputs only, nothing ever routes on them, and the security
+carve-outs bind them as public output); **breaking changes are
+detected mechanically** from the diff (a new deterministic check
+script feeding the RV-02 public-API irreversible class — a detection
+blocks the quick pass, a PASS proves nothing); a new skill drafts the
+target repo's **release narrative** from merge trailers and receipt
+evidence, breaking changes leading, semver suggested but never
+decided; and the deck's **visible spine** is now normative — findings
+and the paste-ready drafts lead, the ruling rides one decision card,
+and the scaffolding folds away. An always-on labeling service was
+considered and rejected as M4 territory.
 
 Headline of v0.7.1 — four normative changes drawn from real maintainer
 field sessions on `legalquants/lq-ai` in July 2026: every finding now
