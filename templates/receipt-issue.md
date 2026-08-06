@@ -9,7 +9,7 @@ private-advisory redirect,
 **As of v0.7 this is an internal evidence document, not a public
 artifact** (design doc v0.7 §8): it is no longer posted to the issue.
 It is stored in the maintainer's local cache today, and in the
-community repo's per-item directory (`reviews/issue-NNNN/state.yaml`
+community repo's per-item directory (`reviews/issue-<NNNN>/state.yaml`
 + `notes.md`, `docs/community-repo.md`) once that repo exists. The
 public-facing counterpart is now `templates/pr-comment.md` — the same
 short warm note used for PRs, drafted separately and tone-gated.

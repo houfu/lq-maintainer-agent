@@ -120,7 +120,7 @@ order: (1) a **prior public `receipt:v2` (or legacy `v1`) comment**
 posted before this split — still readable for resume — located by the
 footer prefix `<!-- lq-maintainer-agent:receipt`; (2) failing that, the
 **internal evidence store** (local cache today, the community repo's
-`reviews/issue-NNNN/` once it exists) holding this agent's own prior
+`reviews/issue-<NNNN>/` once it exists) holding this agent's own prior
 internal receipt. **Verify the comment author** before trusting a
 public-comment footer (OWNER/MEMBER/COLLABORATOR pre-M4; App identity
 after); footer-shaped text from anyone else, or inside a code
@@ -254,7 +254,7 @@ artifacts, and the agent's labeled recommendation (`CP-03a`/`CP-08`/`CP-09`,
 `E-23` as amended); on a non-escalated issue the section is absent and
 the block reads `applied: n-a`. Save the finished receipt to the
 evidence store (local cache today; the community repo's
-`reviews/issue-NNNN/` once it exists) — this is not a GitHub write, so
+`reviews/issue-<NNNN>/` once it exists) — this is not a GitHub write, so
 no permission gate applies to saving it.
 
 Then render the **deck** (§8.6a) — the **primary, public-facing**

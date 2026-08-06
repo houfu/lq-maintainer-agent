@@ -595,7 +595,7 @@ the PR**. Store it at
 `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/receipt.md`
 (decided 2026-07-26; ask where if `${CLAUDE_PLUGIN_DATA}` is unset —
 never the repo tree) and, once the community repo exists, in its
-per-item directory (`reviews/pr-NNNN/`, `docs/community-repo.md`).
+per-item directory (`reviews/pr-<NNNN>/`, `docs/community-repo.md`).
 The store is still a human-gated write: the discipline applies to
 internal artifacts too. Non-negotiable contents:
 

@@ -83,31 +83,28 @@ public shadow, and where the two disagree the receipt wins.
   | `dependencies` | a dependency item | `F-02` | Membership from the manifest/lockfile paths the deterministic gate already read (`Q-01`'s evidence-only posture), never from a `dependencies` label already present or Dependabot body boilerplate. |
   | `api` / `gateway` / `web` / `ci` | changed paths, via the component map below | `LB-02` | Mechanical, multi-valued, and impossible to get from the narrative. |
 
-  **The component map (path prefixes, target-repo vocabulary).**
-  Component labels are assigned **mechanically from the changed paths**
-  of the diff (PRs) or, for an issue, not at all — an issue has no diff,
-  so it gets no component label, ever.
+  **The component map (path prefixes → `canon:component-paths`).**
+  Component labels (`api`, `gateway`, `web`, `ci`) are assigned
+  **mechanically from the changed paths** of the diff (PRs) or, for an
+  issue, not at all — an issue has no diff, so it gets no component
+  label, ever. The prefix table itself lives in **one place only**:
+  the `canon:component-paths` row of `rules/canon-map.md` (§2.2
+  portability — target-repo directory structure is canon-map's to
+  encode, this file consumes the key).
 
-  | Label | Path prefixes |
-  | --- | --- |
-  | `api` | `api/`, `src/lq_ai/api/` |
-  | `gateway` | `gateway/` |
-  | `web` | `web/` |
-  | `ci` | `.github/workflows/`, `ci/` |
-
-  Four constraints on the component map:
+  Four constraints on the component projection:
   1. **Verified against the clone at the pinned canon SHA**, each run,
      like every other target-repo fact this agent encodes. A prefix that
      matches nothing in the clone at the pin is treated exactly as
      `rules/canon-map.md` treats a dangling key: report it, project
-     nothing from that row, and fix this file in a rules PR — never
-     guess a replacement prefix mid-run.
+     nothing from that row, and fix the canon-map row in a rules PR —
+     never guess a replacement prefix mid-run.
   2. **Prefix match on the changed paths only** — the whole path list,
      read from the API (`files`) or the diff header, never a path named
      in the PR body.
-  3. **Multi-valued.** An item touching `api/` and `.github/workflows/`
-     projects both `api` and `ci`; there is no "dominant component"
-     rule and no cap.
+  3. **Multi-valued.** An item touching the api component's paths and
+     `.github/workflows/` projects both `api` and `ci`; there is no
+     "dominant component" rule and no cap.
   4. **A component label is never evidence.** Projecting `ci` does not
      substitute for the CI/workflow irreversible class (`RV-02`) or the
      CODEOWNERS trigger (`E-01`) — those are decided from the paths
