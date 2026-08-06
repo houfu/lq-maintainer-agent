@@ -9,6 +9,7 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
+| v0.7.2 | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | **Drafted 2026-08-05/06 — pending adoption** (delta over v0.7.1: labels, breaking-change detection, release narrative — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) — plus the [deck-leanness](../proposals/deck-leanness.md) visible spine) |
 | **v0.7.1** | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | **Current** (Adopted 2026-07-30; delta over v0.7) |
 | v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
