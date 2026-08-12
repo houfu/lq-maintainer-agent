@@ -1,4 +1,9 @@
-# Findings you can act on, and a record of what the run did (PROPOSED 2026-08-12)
+# Findings you can act on, and a record of what the run did (PROPOSED 2026-08-12; ADOPTED into design delta v0.7.3, 2026-08-12)
+
+> **2026-08-12:** adopted as `docs/design/lq-maintainer-agent-design-v0.7.3.md`,
+> which makes the work log and the two cards' contents normative and
+> leaves the mechanics below as the implementation spec, recorded in
+> `CHANGELOG.md` per v0.7.1 §5. Ships as plugin v0.5.1.
 
 Field feedback from the maintainer after reading v0.5.0 decks — the
 leanness pass landed, and two things it did not touch are now the

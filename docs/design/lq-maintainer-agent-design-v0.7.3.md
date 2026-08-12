@@ -1,6 +1,7 @@
 # LQ Maintainer Agent — Design Doc v0.7.3
 
-**Status: proposed 2026-08-12.** This document is a **delta over
+**Status: adopted 2026-08-12** (drafted and implemented the same
+cycle, shipping as plugin v0.5.1). This document is a **delta over
 v0.7.2** (`lq-maintainer-agent-design-v0.7.2.md`): it records two
 normative additions drawn from maintainer field feedback on v0.5.0
 decks (`docs/proposals/deck-findings-and-work-log.md` carries the

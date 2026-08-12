@@ -1,7 +1,7 @@
 # LQ Maintainer Agent
 
-**Status: v0.5.0 — early (M0/M1).** Built against design doc v0.7.2
-(a delta over v0.7.1): tiered review with a quick-pass default, four
+**Status: v0.5.1 — early (M0/M1).** Built against design doc v0.7.3
+(a delta over v0.7.2): tiered review with a quick-pass default, four
 change categories with a design path for greenfield work, and a
 public-deck / internal-receipt deliverable split. As of v0.5.0 the
 agent also detects breaking changes mechanically from the diff,
@@ -9,9 +9,13 @@ projects its classification onto the target repo's own labels (a
 cheap first touch on arrival, human-applied like every write), and
 drafts the target repo's release narrative from the accumulated
 review evidence. The deck is the one surface a maintainer reads —
-leaner as of this release: findings and the paste-ready drafts lead,
-the maintainer's ruling rides one decision card, and the scaffolding
-folds away. The eval harness and canon-drift check are wired and
+lean since v0.5.0 (findings and the paste-ready drafts lead, the
+maintainer's ruling rides one decision card, the scaffolding folds
+away) and, as of this release, **checkable**: every finding names
+where it is, what to change and why, with its drafted replacement
+ready to apply in one click, and a work log records what the run
+actually did — what it read, which checks ran, and which passes did
+**not** run. The eval harness and canon-drift check are wired and
 green in CI; batch digests and the community repo land in later
 milestones. See [docs/design/](docs/design/) for the full design and
 milestone plan.
@@ -33,11 +37,9 @@ evidence record; the PR itself gets a short, warm comment. The deck
 carries the paste-ready drafts — the comment, and the squash-merge
 message for merge candidates — so nothing is delivered as loose chat
 text, and once the maintainer rules, the deck shows **what the
-maintainer decided** alongside what the agent recommended. Each finding
-names where it is, what to change and why, with the drafted replacement
-ready to apply in one click; a **work log** on the deck records what the
-run actually did — what it read, which checks ran, and which passes did
-**not** run — so coverage is checkable rather than asserted. Divergences
+maintainer decided** alongside what the agent recommended. The findings
+carry their structure onto the page and the work log carries the run's
+own acts, so coverage is checkable rather than asserted. Divergences
 and maintainer feedback aggregate into a local feedback log
 ([templates/feedback-log.md](templates/feedback-log.md)) that seeds
 the golden-eval suite.

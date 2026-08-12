@@ -8,10 +8,10 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
-## [Unreleased]
+## [0.5.1] — 2026-08-12
 
 Design doc: [v0.7.3](docs/design/lq-maintainer-agent-design-v0.7.3.md)
-(delta over v0.7.2, proposed 2026-08-12). Spec and measurement in
+(delta over v0.7.2, adopted 2026-08-12). Spec and measurement in
 [docs/proposals/deck-findings-and-work-log.md](docs/proposals/deck-findings-and-work-log.md).
 Both items come from maintainer field feedback on v0.5.0 decks.
 
