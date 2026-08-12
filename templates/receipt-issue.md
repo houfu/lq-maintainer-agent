@@ -157,6 +157,21 @@ normative here; this file states only the issue-profile deltas.
   (`C-NN`), the `needs-info` recommendation (`IV-01`), the agent's own
   C-60 duplicate bucket — stay in the visible body; an LB-02a miss is
   reported to the maintainer as their call, never created (`LB-05`).
+- **RI-15 — The work log (v0.7.3).** Exactly as
+  `templates/receipt-pr.md` RP-21 — one row per act this run actually
+  performed, in the order it happened, with enumerated `Act` and
+  `Result`, short factual `What` and `Evidence`, and a `not-run` row
+  for every named pass that did not run. Written as the work happens,
+  never reconstructed. Two issue-profile deltas: there is **no diff**,
+  so `read` rows cite the issue body, linked items, and files on
+  `main` at the canon SHA rather than hunks at a head SHA; and the
+  deterministic dependency scripts never apply, so `script` rows are
+  usually absent rather than `n-a`. The duplicate/adjacent search the
+  agent performs itself (`C-60`, `IV-03`) is a `query` row with what it
+  actually searched — the row is what makes "searched by the agent, not
+  by the filer's claim" (`I-13`) checkable rather than asserted. The
+  deck renders it as the visible "What I checked" card.
+
 
 ## Template
 
@@ -174,6 +189,15 @@ normative here; this file states only the issue-profile deltas.
 > **Held at contributor request.** "<verbatim quoted request>"
 > This item is marked human-only; the agent drafts nothing further for
 > it except at explicit maintainer request. A maintainer will respond.
+
+### Work log (RI-15)
+
+Every act this run performed, in order — including the passes that did
+not run. Enumerated `Act` and `Result`; one line each.
+
+| Act | What | Evidence | Result |
+| --- | --- | --- | --- |
+| <read / canon / query / review / draft> | <the specific target — the issue body, a linked item, a path @ canon SHA, or the named pass with its rule ID> | <what came back, in one clause> | <done / pass / fail / not-run / partial / n-a> |
 
 ### Predicted obstacles — if this became a PR (IV-02)
 

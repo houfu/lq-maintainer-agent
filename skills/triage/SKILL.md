@@ -566,6 +566,16 @@ GitHub comment shrinks to a short warm note; the receipt becomes an
 
 Non-negotiable content rules:
 
+- **The work log** (`RP-21` / `RI-15`) in every internal receipt: one
+  row per act this run performed — each file or hunk read, each check
+  script run, each named pass run **or skipped** — with what came back,
+  in the order it happened. Keep it as you go, from Step 3 onward;
+  never reconstruct it at the end from what the receipt concluded. A
+  pass that did not run gets a `not-run` row with its reason, and a
+  later session that runs it updates that row rather than deleting it.
+  The coverage statement below says what was covered; the work log is
+  the evidence that it was, and the deck renders it as the visible
+  "What I checked" card.
 - **Coverage statement** in every internal receipt: what was checked
   and what explicitly was not. Runtime behavior is *always* listed as
   not checked; for dependency items, package contents are *always*

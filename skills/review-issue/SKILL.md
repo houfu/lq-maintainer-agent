@@ -163,6 +163,14 @@ session only** (for resume and grading), then stop.
 
 ## Step 5 — Cross-reference yourself (never the filer's claim)
 
+**Log the search as you run it (`RI-15`).** Each source you actually
+searched is one `query` row in the receipt's work log, carrying what
+came back — "open issues, `state:open` on the two terms → #402, #388";
+"the DE list at canon 3c1de99 → nothing on this surface". This is what
+makes "searched by the agent, not by the filer's claim" checkable
+rather than asserted, and a source you did not reach gets a `not-run`
+row instead of a silence.
+
 Perform the `C-60` cross-reference **yourself** — the filer's ticked
 "searched, no duplicates" box is a claim, not the search (`I-13`). Read open
 issues, open PRs, the DE list, and the roadmap (via `canon-map`, using
@@ -237,7 +245,11 @@ is the single-issue version of it.
 Render the internal Triage Receipt from
 `${CLAUDE_PLUGIN_ROOT}/templates/receipt-issue.md` (fill it, don't
 restructure): the recommendation headline (including `design` where it
-applies), classification + lane + rules, predicted obstacles, the
+applies), the **work log** (`RI-15`) — the rows kept from Step 1
+onward, in the order the acts happened, including every `not-run` row,
+rendered as the deck's visible "What I checked" card and updated (never
+dropped) on a resume — classification + lane + rules, predicted
+obstacles, the
 four-bucket References, repro/anchor, salvage with drafted sub-issue
 titles, the **coverage statement** (runtime behavior — never checked:
 the agent does not execute repro steps or contributed code), the pinned

@@ -8,6 +8,73 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
+## [Unreleased]
+
+Design doc: [v0.7.3](docs/design/lq-maintainer-agent-design-v0.7.3.md)
+(delta over v0.7.2, proposed 2026-08-12). Spec and measurement in
+[docs/proposals/deck-findings-and-work-log.md](docs/proposals/deck-findings-and-work-log.md).
+Both items come from maintainer field feedback on v0.5.0 decks.
+
+- **Findings render as their L-33 structure, not as a paragraph**
+  (design v0.7.3 §2). Each finding is now a card: severity / scope /
+  disposition chips, the diagnosis, then labelled `where` (a
+  click-through blob link pinned to the reviewed head SHA), `change`
+  (the L-33 ask) and `why` (the impact) slots, the drafted
+  replacement **verbatim** in a click-to-select block with its apply
+  path, and the per-finding comment and follow-up stub one disclosure
+  down. A scan strip above the cards lists every finding — including
+  the minor ones folded below — with a ⚡ on the ones carrying a
+  one-click replacement. **Bug fixed:** the inline-backtick pass was
+  chewing the ` ```suggestion ` fence, so the L-33a one-click block
+  arrived mangled and unselectable — the single most actionable
+  element on the page. Disposition/scope glosses moved to the how-to
+  card and each chip's tooltip instead of a sentence per finding.
+- **The work log** (`templates/receipt-pr.md` RP-21,
+  `templates/receipt-issue.md` RI-15; design v0.7.3 §1). Every
+  internal evidence record now carries one row per act the run
+  performed, in order — what was read, which scripts ran, which named
+  passes ran and which did **not** — with enumerated `Act`/`Result`
+  and a `not-run` row (never a silence) for every skipped pass, updated
+  rather than deleted on resume. Emission steps added to
+  `skills/review-pr` (Step 4 and 5.2), `skills/review-issue` (Step 5
+  and 7) and `skills/triage` (Step 9). Visible body only — the
+  `receipt:v2` footer schema is **unchanged**, no version bump.
+- **"What I checked" is a visible deck card** (design v0.7.3 §2). The
+  work log, the anchor determination, the checks that ran, the vetting
+  checklist and the self-attestation cross-check with its evidence
+  column were all already in the record and were rendered nowhere but
+  the raw dump at the foot of the page. They now render as one visible
+  card, directly above "what was not checked".
+- **The seven-point gate stops claiming a clearance it never ran.**
+  The gate tile, dot meter and explainer render only on items the
+  dependency gate actually judged; a code PR no longer shows "Safety
+  gate — 3 / 3 — all passed" for a gate where four checks were `n-a`.
+  The checks that did run still render as evidence, without their
+  dependency-flavoured glosses.
+- **The "Decisions to make" panel renders the decisions** (design v0.7.3
+  §2). It was rendering the footer's counts and enums only, so an
+  escalated deck named no decision to be made and repeated a 30-word
+  explainer of what a draft ADR is, once per row. Each residual now
+  carries its sentence, each settled entry its click-through citation,
+  and each reserved-human row the permanently-open badge; the artifact is
+  a short chip and its gloss moved to the how-to card. A residual the
+  footer counts but the body never states renders as a row marked
+  unstated. Fixes a defect against `rules/decision-scoping.md` D-13 as
+  written. The drafted ADR / DE stub stays in the committee packet — the
+  panel now says so.
+- **A standing caveat is no longer a "next step."** Never-by-design
+  coverage entries stop seeding the Next-steps list; they render,
+  unresolvable, in the "what was not checked" card as always.
+- Renderer hardening: a finding location containing a `..` segment or a
+  leading slash never builds a link.
+- `ci/scripts/test-render-deck.sh` — 42 new checks (169 total): the
+  L-33 slots and the label words never rendering as prose, the
+  head-SHA-pinned location link, the `suggestion` fence surviving
+  verbatim, the scan strip's presence/absence rules, each evidence
+  table, `not-run` rendering as not run, gate suppression on code
+  items, the injection allow-list holding on every new surface, and the
+  decision ledger.
+
 ## [0.5.0] — 2026-08-06
 
 Design doc: [v0.7.2](docs/design/lq-maintainer-agent-design-v0.7.2.md)

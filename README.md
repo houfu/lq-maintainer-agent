@@ -33,7 +33,11 @@ evidence record; the PR itself gets a short, warm comment. The deck
 carries the paste-ready drafts — the comment, and the squash-merge
 message for merge candidates — so nothing is delivered as loose chat
 text, and once the maintainer rules, the deck shows **what the
-maintainer decided** alongside what the agent recommended. Divergences
+maintainer decided** alongside what the agent recommended. Each finding
+names where it is, what to change and why, with the drafted replacement
+ready to apply in one click; a **work log** on the deck records what the
+run actually did — what it read, which checks ran, and which passes did
+**not** run — so coverage is checkable rather than asserted. Divergences
 and maintainer feedback aggregate into a local feedback log
 ([templates/feedback-log.md](templates/feedback-log.md)) that seeds
 the golden-eval suite.

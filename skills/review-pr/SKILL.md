@@ -296,6 +296,18 @@ Time-boxed by discipline: when a question surfaces that reading cannot
 settle, that question **is** the outcome — never an open-ended
 investigation inside Tier 1.
 
+**Log as you go (`RP-21`).** Every act in the pass below — each hunk
+and file read, each script run, each numbered pass performed or
+skipped — gets **one row in the receipt's work log at the moment it
+happens**, carrying what actually came back: the line range read, the
+script's verdict line, the finding IDs the pass produced, or the
+reason it did not run. Written during the pass, never reconstructed at
+the end: a log rebuilt from the finished record is a summary of the
+record, and the maintainer already has one. A pass you deliberately do
+not run (the full-subsystem walk at Tier 1, test adequacy on a trimmed
+session) gets a `not-run` row naming why and what would close it —
+that row is how a coverage claim stays checkable instead of asserted.
+
 **The pass, in order:**
 
 1. **Read the diff hunk by hunk.** Everything below is evidence from
@@ -522,6 +534,14 @@ cache, is the record either way.
 
 ### 5.2 — Merge into the long-form report
 
+**Each member's pass is a work-log row** (`RP-21`), written when the
+member returns: the pass name, what it covered (the subsystem it
+walked, the surface it read), and what it produced (its finding IDs) —
+plus a `not-run` row, with its reason, for every pass the maintainer
+trimmed at the budget gate. Four members and four rows: the deck's
+"What I checked" card is where a maintainer sees that the deep dive
+was actually deep, and which quarter of it was skipped.
+
 As lead, merge the four findings sets: deduplicate overlapping
 findings (keep the higher severity, union the citations), order by
 severity, resolve conflicts by re-reading the relevant code yourself,
@@ -599,6 +619,13 @@ per-item directory (`reviews/pr-<NNNN>/`, `docs/community-repo.md`).
 The store is still a human-gated write: the discipline applies to
 internal artifacts too. Non-negotiable contents:
 
+- the **work log** (`RP-21`) — the rows kept during the pass, in the
+  order the acts happened, including every `not-run` row. It is
+  rendered, not summarised: the deck's visible "What I checked" card is
+  this table, and it is the only place a maintainer can see what the
+  run *did* rather than what it concluded. On an in-place update or a
+  resumed session, existing rows are **updated, never dropped** — a
+  `not-run` row becomes its result when the pass actually runs;
 - the **action outcome** (`TR-05`) with its undo path (`RV-05`) as the
   headline (`B-09`, `TR-10`), the **category** and **tier** with their
   assigning rules and — at Tier 2 — the entering condition, and the
