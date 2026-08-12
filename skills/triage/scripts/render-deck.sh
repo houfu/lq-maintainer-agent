@@ -61,13 +61,25 @@ Design contract honoured (see docs/design v0.6, v0.7 §7/§8, and rules/):
   - v0.7.2 §4 (deck leanness), adopting docs/proposals/deck-leanness.md: the
     VISIBLE SPINE is hero · not-checked alert · the decision (one card) ·
     findings · the drafts (one card, two paste-ready blocks) · references ·
-    next steps · glance tiles + gate meter · "How to read this page" (closed) ·
-    the folded detail · provenance footer. Findings and the drafts are never
+    [v0.7.3: what I checked · what was NOT checked] · next steps · glance
+    tiles + gate meter · "How to read this page" (closed) · the folded detail ·
+    provenance footer. Findings and the drafts are never
     behind a click; the runtime caveat is stated once where it is visible; the
     per-card intros, standing disclaimers, and footer boilerplate consolidate
     into the one closed how-to-read card. No fact is deleted and nothing moves
     more than one disclosure level down -- the v0.6 §8 constraint above is met
     by visibility of the ITEM (badge + title), never of its gloss.
+  - v0.7.3 §2, adopting docs/proposals/deck-findings-and-work-log.md: the
+    INSIDE of two cards is normative too. A finding renders as its L-33
+    structure -- chips, then labelled where/change/why slots, then the L-33a
+    drafted replacement VERBATIM in a click-to-select block with its apply
+    path -- above a scan strip listing every finding, folded ones included.
+    The run's own evidence (the RP-21/RI-15 work log, the RP-02 anchor, the
+    checks that applied, the RP-04 vetting checklist and the RP-04a
+    self-attestation cross-check) renders as a visible "What I checked" card,
+    directly above what was NOT checked. The seven-point deterministic gate is
+    the DEPENDENCY gate: its tile, meter and explainer render only on items it
+    judged, never as a clearance figure on a code change.
   - All contributor-derived free text (PR title, findings) is NFKC-normalised,
     stripped of invisible/bidi/tag characters (visibly flagged if any were
     present -- rules/injection-posture.md I-10), then HTML-escaped. It is
@@ -509,10 +521,21 @@ _HOWTO_COMMON = (
 
 _HOWTO_PR = (
     ("Findings",
-     "Issues the review raised in the lines this change touches. Blocking and "
-     "major findings read inline; minor and nit findings fold into the sub-card "
-     "because none of them stops a merge on its own. Any low-confidence notes "
-     "the review filter held back are shown below rather than dropped."),
+     "Issues the review raised in the lines this change touches. Each one names "
+     "where it is, what to change, and why it matters, and carries the drafted "
+     "replacement where the fix is a concrete edit — click a block once to "
+     "select it whole. The strip at the top of the card lists every finding, "
+     "including the minor ones folded below; ⚡ marks the ones with a drafted "
+     "replacement ready to apply. Blocking and major findings read inline; "
+     "minor and nit findings fold into the sub-card because none of them stops "
+     "a merge on its own. Any low-confidence notes the review filter held back "
+     "are shown below rather than dropped."),
+    ("What I checked",
+     "The work the run actually did, in the order it happened — what was read, "
+     "which checks ran and what they returned, which review passes ran and "
+     "which did not. It is a record of acts, not of conclusions: a row marked "
+     "not-run means that work did not happen this session, and nothing else on "
+     "this page makes it happen."),
     ("Next steps",
      "The follow-ups only a person can do before this is decided — each one "
      "closable, none of them a grade."),
@@ -522,8 +545,17 @@ _HOWTO_GATE = (
     ("The safety gate",
      "Automated checks that decide whether a dependency bump is routine enough "
      "to fast-track. Clearing them is not a verdict on the change — what they "
-     "do not cover is listed under “what was not checked”."),
+     "do not cover is listed under “what was not checked”. It renders only on "
+     "dependency items, because that is the only kind of change it judges."),
 )
+
+# The finding chips (v0.7.3): severity, scope and disposition ride each finding
+# as one short word, and their glosses live HERE, once, instead of restating a
+# full sentence on every finding. The words are still glossed -- TG-03.5 is met
+# by the gloss existing in the reader's reach, not by repeating it (the chip
+# itself also carries the gloss as its tooltip).
+_CHIP_KEYS = (("disposition", ("trivial", "relayable", "structural")),
+              ("scope", ("in-scope", "follow-up", "pre-existing")))
 
 _HOWTO_ISSUE = (
     ("Findings and obstacles",
@@ -538,13 +570,36 @@ _HOWTO_ISSUE = (
 )
 
 
-def build_howto_card(profile="pr", gate=False):
+# The decision-ledger explainers (v0.7.3). The panel itself renders the
+# decisions; what a settled row means, what a residual row means, and why a
+# reserved-human row can never be closed here are said once, in the how-to
+# card, instead of a paragraph above every ledger.
+_HOWTO_SCOPING = (("scoping:residual", "A decision to make"),
+                  ("scoping:settled", "Already settled"),
+                  ("scoping:reserved", "Human-only rows"),
+                  ("artifact:draft-adr", "draft ADR"),
+                  ("artifact:de-stub", "DE stub"))
+
+
+def build_howto_card(profile="pr", gate=False, g=None, chips=False, scoping=False):
     """The closed how-to card. `gate` adds the safety-gate paragraph only when
     this deck actually shows a gate, so the card never explains furniture the
-    reader cannot see."""
+    reader cannot see; `chips` adds the finding-chip glossary on the same
+    terms, read from the glossary file so the wording stays normative."""
     entries = (_HOWTO_PR if profile == "pr" else _HOWTO_ISSUE)
     if gate:
         entries = entries + _HOWTO_GATE
+    if scoping and g is not None:
+        for key, label in _HOWTO_SCOPING:
+            cap = g.cap(key, "")
+            if cap:
+                entries = entries + ((label, cap),)
+    if chips and g is not None:
+        for prefix, words in _CHIP_KEYS:
+            for w in words:
+                cap = g.cap("%s:%s" % (prefix, w), "")
+                if cap:
+                    entries = entries + ((w, cap),)
     rows = "".join('<li><span class="h">%s</span><div class="d">%s</div></li>'
                    % (esc(k), esc(v))
                    for k, v in entries + _HOWTO_COMMON)
@@ -1020,6 +1075,66 @@ pre.receipt.paste{
 }
 .vcard h3:first-of-type{margin-top:8px}
 .vcard>.checks{margin-top:2px}
+/* findings — the scan strip and the action-first cards (v0.7.3) */
+.fstrip{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 2px; padding-bottom:14px; border-bottom:1px solid var(--line-soft)}
+.fstrip a{
+  display:inline-flex; align-items:center; gap:7px; text-decoration:none;
+  padding:4px 11px; border-radius:20px; border:1px solid var(--line);
+  background:var(--surface-2); color:var(--ink-soft); font-size:12.5px;
+}
+.fstrip .fid{font-family:var(--mono); font-size:11.5px; color:var(--ink-faint)}
+.fstrip .sv{font-weight:700; text-transform:uppercase; letter-spacing:.04em; font-size:11px}
+.fstrip .sv-hi{color:var(--bad)} .fstrip .sv-lo{color:var(--ink-faint)}
+.fstrip .loc{font-family:var(--mono); font-size:11.5px}
+.fstrip .one{color:var(--ok); font-weight:700}
+ul.find{list-style:none; margin:0; padding:0}
+ul.find>li{padding:18px 0; border-top:1px solid var(--line-soft)}
+ul.find>li:first-child{border-top:0}
+.fhead{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+.fhead .id{font-family:var(--mono); font-size:12px; color:var(--ink-faint)}
+.fhead .tag{font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px}
+.fsev{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 9px; border-radius:5px}
+.fsev.s-hi{background:var(--bad-bg); color:var(--bad); border:1px solid var(--bad-line)}
+.fsev.s-lo{background:var(--surface-2); color:var(--ink-faint); border:1px solid var(--line-soft)}
+.ftitle{font-size:16px; font-weight:600; margin:9px 0 0}
+.fslots{display:grid; grid-template-columns:auto 1fr; gap:5px 16px; margin:11px 0 0; font-size:15px}
+.fslots dt{
+  font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; padding-top:4px;
+}
+.fslots dd{margin:0; color:var(--ink)}
+.fslots dd.loc{font-family:var(--mono); font-size:13.5px; word-break:break-all}
+.fapply{margin:10px 0 0; font-size:14px; color:var(--ink-soft)}
+.fapply b{font-size:11.5px; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); margin-right:8px}
+.fnote{margin:8px 0 0; font-size:14px; color:var(--ink-soft)}
+.plabel{
+  font-size:11.5px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin:14px 0 -6px;
+}
+/* the decision ledger (D-13): the decisions themselves, not their machinery */
+.grounding h3.ledger-h{
+  font-size:11.5px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700; margin:18px 0 2px;
+}
+.grounding .ledger-note{margin:14px 0 0; font-size:13.5px}
+.grounding li .tag{margin-left:8px; font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px}
+.grounding li .open{
+  color:var(--warn); font-weight:700; font-size:11px; text-transform:uppercase;
+  letter-spacing:.04em; margin-right:8px;
+}
+/* the work log — what the run actually did, in order (v0.7.3) */
+.wl{list-style:none; margin:6px 0 0; padding:0}
+.wl li{display:flex; gap:12px; align-items:flex-start; padding:11px 0; border-top:1px solid var(--line-soft)}
+.wl li:first-child{border-top:0}
+.wl .act{
+  flex:none; width:58px; padding-top:2px; font-size:11px; font-weight:700;
+  letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint);
+}
+.wl .what{font-size:15px; font-weight:600}
+.wl .ev{font-size:14px; color:var(--ink-soft); margin-top:2px}
+.wl .rz{flex:none; margin-left:auto; font-size:11px; font-weight:600; padding:2px 9px; border-radius:20px}
+.evid table, .evid .row{width:100%}
+.evid h3+p.intro{margin:4px 0 0; font-size:14px; color:var(--ink-soft)}
 .grounding a, .dd a, .nextsteps a, .decision a, .cov a, .vcard a{color:var(--accent-ink); text-underline-offset:2px}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
@@ -1031,6 +1146,436 @@ pre.receipt.paste{
 
 STATE_WORD = {"pass": ("c-pass", "✓"), "fail": ("c-fail", "✗"), "n-a": ("c-na", "–")}
 DOT_WORD = {"pass": ("d-pass", "✓"), "fail": ("d-fail", "✗"), "n-a": ("d-na", "–")}
+
+
+# --------------------------------------------------------------------------
+# "What I checked" -- the run's own evidence, rendered instead of buried
+# --------------------------------------------------------------------------
+# Everything below already lives in the internal evidence record: the work log
+# (RP-20/RI-15), the anchor determination (RP-02), the security-vetting
+# checklist (RP-04) and the self-attestation cross-check with its evidence
+# column (RP-04a). Before v0.7.3 the deck rendered NONE of it -- the only
+# check card was the seven-point dependency gate, which is `n-a` on a code
+# change, so a maintainer reading a code PR's deck could not tell what the run
+# had actually done. These are tables in the record; here they are rows.
+
+_TABLE_ROW = re.compile(r"^\s*\|(.+)\|\s*$")
+_TABLE_RULE = re.compile(r"^:?-{2,}:?$")
+
+# Enumerated result words -> the badge they render as. Anything unrecognised
+# renders as a neutral badge carrying the word itself: an unknown result is
+# shown, never dropped and never upgraded to a pass.
+_RES_OK = frozenset({"pass", "done", "yes", "covered", "verified-pass", "clear"})
+_RES_BAD = frozenset({"fail", "no", "verified-fail", "blocked"})
+_RES_OPEN = frozenset({"not-run", "not run", "partial", "cannot-verify",
+                       "not-covered", "not yet", "unknown", "skipped"})
+
+
+def extract_table(md, header_re, level=r"#{2,4}"):
+    """(header cells, data rows) of the first markdown table under a heading
+    matching header_re, or ([], []) when the section or its table is absent.
+    Stops at the next heading, so a section's sub-heading table (the
+    self-attestation cross-check under the vetting checklist) is addressed by
+    its own header instead of leaking into its parent's."""
+    m = re.search(r"^" + level + r"\s+" + header_re + r"[^\n]*\n", md, re.MULTILINE)
+    if not m:
+        return [], []
+    rows = []
+    for line in md[m.end():].splitlines():
+        s = line.strip()
+        if s.startswith("#") or s.startswith("<!--") or s == "---":
+            break
+        mm = _TABLE_ROW.match(s)
+        if mm:
+            cells = [c.strip() for c in mm.group(1).split("|")]
+            if cells and all(_TABLE_RULE.match(c) for c in cells if c):
+                continue                      # the |---|---| rule row
+            rows.append(cells)
+        elif rows:
+            break                             # blank line after the table ends it
+    if not rows:
+        return [], []
+    return rows[0], [r for r in rows[1:] if any(c for c in r)]
+
+
+def _res_badge(word):
+    """An enumerated result word as its badge. The word itself is always the
+    label -- a `not-run` row must read as not run, at a glance, forever
+    (design v0.6 §8)."""
+    w = re.split(r"[\s—–-]", (word or "").strip().lower(), maxsplit=1)[0] if word else ""
+    full = (word or "").strip().lower()
+    if full in _RES_OPEN or w in ("not", "cannot", "partial", "unknown", "skipped"):
+        cls = "g-warn"
+    elif full in _RES_OK or w in _RES_OK:
+        cls = "g-ok"
+    elif full in _RES_BAD or w in _RES_BAD:
+        cls = "g-bad"
+    else:
+        cls = "g-mute"
+    return '<span class="tag rz %s">%s</span>' % (cls, esc((word or "—").strip()))
+
+
+def _wl_li(act, what_html, ev_html, result):
+    """One evidence row. A `Verified` / `Result` cell that is a whole sentence
+    (the anchor table writes "yes — repro steps run against the endpoint")
+    would render as a pill the width of the card: the badge keeps the verdict
+    word and the qualification drops into the evidence line, where sentences
+    belong. Nothing is dropped."""
+    res, tail = (result or "").strip(), ""
+    m = re.match(r"^([\w-]+)\s*[—–-]\s*(.+)$", res, re.DOTALL)
+    if m and len(res) > 18:
+        res, tail = m.group(1), m.group(2).strip()
+    if tail:
+        ev_html = (ev_html + " · " + esc(tail)) if ev_html else esc(tail)
+    return ('<li><span class="act">%s</span><div><div class="what">%s</div>%s</div>%s</li>'
+            % (esc(act), what_html,
+               ('<div class="ev">%s</div>' % ev_html) if ev_html else "",
+               _res_badge(res)))
+
+
+def _cells(row, n):
+    """Row padded to n cells -- a short row is a malformed record line, not a
+    reason to drop it."""
+    return list(row[:n]) + [""] * max(0, n - len(row))
+
+
+def build_evidence_card(md, g, base, checks, dep_gate, title="What I checked"):
+    """The visible evidence card: the work log first (what the run actually
+    ran, read and skipped, in order), then the anchor determination, the
+    automated checks, the vetting checklist and the self-attestation
+    cross-check. Returns '' when the record carries none of them, so a thin
+    receipt grows no empty card."""
+    blocks = []
+
+    def lnk(s):
+        h, _ = render_linked(s, base)
+        return h
+
+    hdr, rows = extract_table(md, r"Work log")
+    if rows:
+        items = []
+        for row in rows:
+            act, what, ev, res = _cells(row, 4)
+            items.append(_wl_li(act or "step", lnk(what), lnk(ev), res))
+        blocks.append(("The work log — in the order it happened", "".join(items)))
+
+    hdr, rows = extract_table(md, r"Anchor")
+    if rows:
+        items = []
+        for row in rows:
+            kind, ref, verified = _cells(row, 3)
+            items.append(_wl_li("anchor", lnk(ref) or esc(kind),
+                                ("kind: " + esc(kind)) if (ref and kind) else "",
+                                verified))
+        blocks.append(("What this change is tied to", "".join(items)))
+
+    if checks:
+        rows_html = []
+        for k in CHECK_ORDER:
+            st = checks.get(k)
+            if st not in ("pass", "fail", "n-a"):
+                continue
+            if st == "n-a":
+                continue                      # an inapplicable check is not evidence
+            label = g.cap("check:%s:label" % k, k.replace("_", " "))
+            # The per-check glosses are written for the dependency-bump case
+            # ("alongside the bump", "the lockfile"). On a code change the
+            # check still ran and still counts as evidence, but its gloss
+            # would describe a review that did not happen: label and result
+            # only there.
+            note = g.cap("check:%s:%s" % (k, st), "") if dep_gate else ""
+            rows_html.append(_wl_li("check", esc(label), esc(note), st))
+        if rows_html:
+            blocks.append((
+                "The automated checks that applied" if not dep_gate
+                else "The dependency safety gate", "".join(rows_html)))
+
+    hdr, rows = extract_table(md, r"Security-vetting checklist")
+    if rows:
+        items = []
+        for row in rows:
+            item, res = _cells(row, 2)
+            if str(res).strip().lower() == "n-a":
+                continue
+            items.append(_wl_li("vetting", lnk(item), "", res))
+        if items:
+            blocks.append(("The security-vetting checklist", "".join(items)))
+
+    hdr, rows = extract_table(md, r"Self-attestation cross-check")
+    if rows:
+        items = []
+        for row in rows:
+            item, claimed, verified, evidence = _cells(row, 4)
+            ev = evidence
+            if claimed:
+                ev = ("contributor ticked: %s%s" % (claimed, (" · " + evidence) if evidence else ""))
+            items.append(_wl_li("claim", lnk(item), lnk(ev), verified))
+        blocks.append(("What the contributor claimed, re-derived from the diff",
+                       "".join(items)))
+
+    if not blocks:
+        return ""
+    out = ['<section class="card vcard evid"><h2>%s'
+           '<span class="tag g-mute">this run</span></h2>' % esc(title)]
+    for h3, body in blocks:
+        out.append('<h3>%s</h3><ul class="wl">%s</ul>' % (esc(h3), body))
+    out.append('</section>')
+    return "".join(out)
+
+
+# --------------------------------------------------------------------------
+# Findings -- the L-33 structure, recovered from the receipt's visible text
+# --------------------------------------------------------------------------
+# `rules/lanes.md` L-33 fixes what every finding carries: file / line /
+# severity / canon citation / impact / ask / suggested comment, plus L-33a's
+# drafted `suggestion` block and its one-line apply path. The receipt writes
+# those as labelled lines. Before v0.7.3 the deck dumped the whole run into
+# one paragraph, so a maintainer could not see WHAT to change or WHERE
+# without reading prose -- and the inline-backtick pass mangled the
+# ```suggestion fence, destroying the one-click block it exists to carry.
+# Here the labels are parsed back out; each gets its own slot, and the fenced
+# blocks are rendered verbatim as paste-ready text.
+
+_F_KEY = {
+    "impact": "impact",
+    "ask": "ask",
+    "disposition hint": "disposition",
+    "scope": "scope",
+    "suggested comment": "comment",
+    "apply path": "apply",
+}
+_F_LABEL_RE = re.compile(
+    r"^\s*(Impact|Ask|Disposition hint|Scope|Suggested comment|Apply path)\s*:\s*(.*)$",
+    re.IGNORECASE)
+_F_WHERE_RE = re.compile(r"^\s*`([^`]+)`\s*(?:[—–-]\s*)?")
+# A location is a plain in-repo path plus a line (or line range). No `..`
+# segment, no leading slash: the deck builds a blob URL out of this, and a
+# traversal-shaped path would build a link to somewhere the finding is not.
+_LOC_RE = re.compile(
+    r"^(?!.*\.\.)([A-Za-z0-9_][A-Za-z0-9._/+-]*):(\d+)(?:[-–](\d+))?$")
+_SHA_RE = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def parse_finding_body(raw):
+    """One finding's L-33 free text -> its labelled slots.
+
+    Everything the parser does not recognise stays in `title` or `notes`, and
+    an unclaimed fenced block lands in `extra` -- the deck never silently
+    drops a line of the record it was rendered from. Returns a dict; a receipt
+    written before the labels existed (or a terse finding) yields `title` only,
+    which renders exactly as it did before."""
+    slots = {"where": "", "title": "", "impact": "", "ask": "", "disposition": "",
+             "scope": "", "comment": "", "apply": "", "suggestion": "",
+             "suggestion_where": "", "followup": "", "notes": "", "extra": []}
+    lines = (raw or "").splitlines()
+    cur, pending, i, n = "title", None, 0, len(lines)
+    while i < n:
+        s = lines[i].strip()
+        if _FENCE.match(s):
+            buf, i = [], i + 1
+            while i < n and not _FENCE.match(lines[i].strip()):
+                buf.append(lines[i])
+                i += 1
+            i += 1                              # step past the closing fence
+            block = "\n".join(buf).strip("\n")
+            if pending == "suggestion" and not slots["suggestion"]:
+                slots["suggestion"] = block
+            elif pending == "followup" and not slots["followup"]:
+                slots["followup"] = block
+            elif block:
+                slots["extra"].append(block)
+            pending, cur = None, "notes"
+            continue
+        low = s.lower()
+        if low.startswith("suggested change"):
+            # the marker line names the target: "... on `file:line`:"
+            ticks = re.findall(r"`([^`]+)`", s)
+            if ticks:
+                slots["suggestion_where"] = ticks[-1].strip()
+            pending, cur = "suggestion", "notes"
+            i += 1
+            continue
+        if low.startswith("drafted follow-up issue"):
+            pending, cur = "followup", "notes"
+            i += 1
+            continue
+        m = _F_LABEL_RE.match(lines[i])
+        if m:
+            cur = _F_KEY[m.group(1).strip().lower()]
+            slots[cur] = m.group(2).strip()
+            i += 1
+            continue
+        if s and cur:
+            slots[cur] = (slots[cur] + " " + s).strip() if slots[cur] else s
+        i += 1
+    m = _F_WHERE_RE.match(slots["title"])
+    if m and _LOC_RE.match(m.group(1).strip()):
+        slots["where"] = m.group(1).strip()
+        slots["title"] = slots["title"][m.end():].strip()
+    if not slots["where"] and _LOC_RE.match(slots["suggestion_where"] or ""):
+        slots["where"] = slots["suggestion_where"].strip()
+    return slots
+
+
+def where_link(where, head_sha, base):
+    """`path:line` -> a click-through blob link pinned to the REVIEWED head SHA
+    (`rules/canon-map.md`'s link rule: agent-constructable targets only, built
+    from the canon:repo base plus validated parts -- never a URL lifted from
+    contributor text). Returns '' unless the location parses as a plain repo
+    path with a line number and the pinned head SHA is a real SHA, so a
+    resumed or SHA-less record simply renders the location as text."""
+    m = _LOC_RE.match((where or "").strip())
+    if not m or not _SHA_RE.match(str(head_sha or "").strip()):
+        return ""
+    url = "%sblob/%s/%s#L%s" % (base, str(head_sha).strip(), m.group(1), m.group(2))
+    if m.group(3):
+        url += "-L%s" % m.group(3)
+    return url if _url_allowed(url, base) else ""
+
+
+def _paste_block(label, raw):
+    """A labelled, verbatim, click-to-select block (the deck is JS-free, so
+    `user-select:all` IS the copy affordance). Sanitised and escaped -- these
+    quote contributor-adjacent text, and paste fidelity beats pretty."""
+    txt, hidden = sanitize(raw)
+    flag = ('<div class="flagline">⚠ Hidden characters were found in this block '
+            'and removed before display.</div>' if hidden else "")
+    return ('<div class="plabel">%s</div>%s<pre class="receipt paste">%s</pre>'
+            % (esc(label), flag, txt))
+
+
+def _fid_anchor(fid):
+    return re.sub(r"[^A-Za-z0-9-]", "", str(fid or "F"))[:16] or "F"
+
+
+def build_finding_li(f, ftext_map, g, base, head_sha):
+    """One finding as an action-first card: what it is, WHERE, what to change,
+    why it matters, then the paste-ready blocks and the apply path (L-33a).
+    Severity / scope / disposition ride as chips -- their glosses live once in
+    'How to read this page' instead of once per finding."""
+    fid = str(f.get("id", "F"))
+    sev = str(f.get("severity", "minor"))
+    disp = str(f.get("disposition", "")).strip().lower()
+    scope = str(f.get("scope", "")).strip().lower()
+    p = parse_finding_body(ftext_map.get(fid.replace(" ", "").upper(), ""))
+    title = p["title"] or g.cap("severity:" + sev, "")
+    lo = sev.lower() in LOW_SEVERITIES
+
+    chips = ['<span class="fsev %s">%s</span>' % ("s-lo" if lo else "s-hi", esc(sev.title())),
+             '<span class="id">%s</span>' % esc(fid)]
+    # in-scope is the unremarkable default and gets no chip; follow-up /
+    # pre-existing are the cases worth flagging as not this change's problem
+    if scope and scope != "in-scope":
+        chips.append('<span class="tag g-mute" title="%s">%s</span>'
+                     % (esc(g.cap("scope:" + scope, "")), esc(scope)))
+    if disp:
+        chips.append('<span class="tag g-mute" title="%s">%s</span>'
+                     % (esc(g.cap("disposition:" + disp, "")), esc(disp)))
+    if p["suggestion"]:
+        chips.append('<span class="tag g-ok">one-click apply</span>')
+
+    out = ['<li class="f" id="%s">' % _fid_anchor(fid),
+           '<div class="fhead">%s</div>' % "".join(chips)]
+    if title:
+        t_html, _ = render_linked(title, base)
+        out.append('<p class="ftitle">%s</p>' % t_html)
+
+    rows = []
+    if p["where"]:
+        url = where_link(p["where"], head_sha, base)
+        loc = esc(p["where"])
+        rows.append(("where", '<a href="%s">%s</a>' % (html.escape(url, quote=True), loc)
+                     if url else loc, "loc"))
+    if p["ask"]:
+        h, _ = render_linked(p["ask"], base)
+        rows.append(("change", h, ""))
+    if p["impact"]:
+        h, _ = render_linked(p["impact"], base)
+        rows.append(("why", h, ""))
+    if rows:
+        out.append('<dl class="fslots">')
+        for k, v, cls in rows:
+            out.append('<dt>%s</dt><dd%s>%s</dd>'
+                       % (esc(k), (' class="%s"' % cls) if cls else "", v))
+        out.append('</dl>')
+
+    if p["suggestion"]:
+        tgt = p["suggestion_where"] or p["where"]
+        out.append(_paste_block(
+            "replacement for %s — click to select" % tgt if tgt
+            else "the replacement — click to select", p["suggestion"]))
+    if p["apply"]:
+        h, _ = render_linked(p["apply"], base)
+        out.append('<p class="fapply"><b>apply</b> %s</p>' % h)
+    if p["comment"]:
+        out.append('<details class="dd sub"><summary>The words to send'
+                   '<span class="tag g-mute">paste-ready</span></summary>'
+                   '<div class="body">%s</div></details>'
+                   % _paste_block("drafted comment for this finding — click to select",
+                                  p["comment"]))
+    if p["followup"]:
+        out.append('<details class="dd sub"><summary>Drafted follow-up issue'
+                   '<span class="tag g-mute">you file it</span></summary>'
+                   '<div class="body">%s</div></details>'
+                   % _paste_block("drafted issue — click to select", p["followup"]))
+    for blk in p["extra"]:
+        out.append(_paste_block("from the record — click to select", blk))
+    if p["notes"]:
+        h, _ = render_linked(p["notes"], base)
+        out.append('<p class="fnote">%s</p>' % h)
+    out.append('</li>')
+    return "".join(out)
+
+
+def build_finding_strip(findings, ftext_map, base):
+    """The scan strip: one chip per finding, highest severity first, each
+    linking to its card below. Every finding appears here -- including the
+    minor ones folded into the sub-card -- so the strip is the complete
+    picture at a glance, and a one-click-appliable finding is visible as one
+    without opening anything."""
+    if len(findings) < 2:
+        return ""
+    chips = []
+    for f in findings:
+        fid = str(f.get("id", "F"))
+        sev = str(f.get("severity", "minor"))
+        p = parse_finding_body(ftext_map.get(fid.replace(" ", "").upper(), ""))
+        loc = p["where"].rsplit("/", 1)[-1] if p["where"] else ""
+        chips.append(
+            '<a href="#%s"><span class="fid">%s</span>'
+            '<span class="sv %s">%s</span>%s%s</a>'
+            % (_fid_anchor(fid), esc(fid),
+               "sv-lo" if sev.lower() in LOW_SEVERITIES else "sv-hi", esc(sev),
+               ('<span class="loc">%s</span>' % esc(loc)) if loc else "",
+               '<span class="one" title="a one-click replacement is drafted">⚡</span>'
+               if p["suggestion"] else ""))
+    return '<div class="fstrip">%s</div>' % "".join(chips)
+
+
+def build_findings_body(findings, ftext_map, g, base, head_sha, filtered=0):
+    """The findings card's inner HTML: scan strip, the blocking/major cards
+    inline, the minor/nit cards in the one nested sub-card that survives
+    (`rules/lanes.md` L-33). A finding carrying an unknown severity word counts
+    as high -- an unrecognised label must never be the reason something stays
+    folded."""
+    if not findings:
+        return ('<p>No issues were raised in the lines this change touches.%s</p>'
+                % ("" if filtered <= 0 else " (%d low-signal note%s were filtered out.)"
+                   % (filtered, "" if filtered == 1 else "s")))
+    hi = [f for f in findings if str(f.get("severity", "")).lower() not in LOW_SEVERITIES]
+    lo = [f for f in findings if str(f.get("severity", "")).lower() in LOW_SEVERITIES]
+    out = [build_finding_strip(hi + lo, ftext_map, base)]
+    if hi:
+        out.append('<ul class="find">')
+        out.extend(build_finding_li(f, ftext_map, g, base, head_sha) for f in hi)
+        out.append('</ul>')
+    if lo:
+        out.append('<details class="dd sub"><summary>Minor findings'
+                   '<span class="tag g-mute">%d</span></summary><div class="body">'
+                   '<ul class="find">' % len(lo))
+        out.extend(build_finding_li(f, ftext_map, g, base, head_sha) for f in lo)
+        out.append('</ul></div></details>')
+    return "".join(out)
 
 
 def build_deck(md, g, below=None):
@@ -1250,6 +1795,16 @@ def build_deck(md, g, below=None):
     npass = sum(1 for _, v in considered if v == "pass")
     ntot = len(considered)
     failed_names = [k for k, v in considered if v == "fail"]
+    # The seven-point gate is the DEPENDENCY fast-lane gate (RP-03). On a code
+    # change four of its checks are `n-a`, and rendering the survivors as a
+    # "safety gate 3 / 3, all passed" tile claimed a clearance that was never
+    # run (v0.7.3): the gate figures render only where the gate actually
+    # applied. The checks that did run still render, as evidence, in the
+    # "What I checked" card below.
+    dep_gate = any(checks.get(k) in ("pass", "fail")
+                   for k in ("manifest_only", "semver_delta", "osv_lookup",
+                             "release_age"))
+    gate_shown = bool(ntot) and dep_gate
     if burden and burden.get("overall") and not action_first:
         # burden axes are the glance tiles
         TLEVEL = {"low": "t-ok", "medium": "t-warn", "high": "t-bad"}
@@ -1263,7 +1818,7 @@ def build_deck(md, g, below=None):
         GA('</div>')
     else:
         GA('<div class="tiles">')
-        if ntot:
+        if gate_shown:
             gate_cls = "t-ok" if not failed_names else "t-warn"
             nfail = len(failed_names)
             sub = ("all passed" if not nfail else "%d flagged for a person" % nfail)
@@ -1290,7 +1845,7 @@ def build_deck(md, g, below=None):
         else:
             GA(_tile("t-warn", "Auto-merge", "No", "a person reviews this"))
         GA('</div>')
-    if ntot:
+    if gate_shown:
         GA('<div class="meter"><span class="lab">Safety gate</span><div class="dots">')
         for k in CHECK_ORDER:
             st = checks.get(k)
@@ -1318,62 +1873,21 @@ def build_deck(md, g, below=None):
                           undo == "irreversible-class"))
 
     # ---- spine 4: findings — VISIBLE, never behind a click (v0.7.2 §4) ----
-    # Blocking/major read inline; minor/nit fold into the nested sub-card, the
-    # one severity split that survives (rules/lanes.md L-33). A finding carrying
-    # an unknown severity word counts as high — an unrecognised label must never
-    # be the reason something stays hidden.
+    # Structured per L-33 (v0.7.3): a scan strip, then one action-first card
+    # per finding — where / change / why, the drafted replacement verbatim,
+    # and the apply path. Blocking/major read inline; minor/nit fold into the
+    # nested sub-card, the one severity split that survives. A finding carrying
+    # an unknown severity word counts as high — an unrecognised label must
+    # never be the reason something stays hidden.
+    try:
+        _filt = int(r.get("findings_filtered") or 0)
+    except (TypeError, ValueError):
+        _filt = 0
     A('<section class="card vcard findings"><h2>Findings'
       '<span class="tag %s">%d</span></h2>'
       % ("g-mute" if not findings else "g-warn", len(findings)))
-    if not findings:
-        try:
-            filt = int(r.get("findings_filtered") or 0)
-        except (TypeError, ValueError):
-            filt = 0
-        A('<p>No issues were raised in the lines this change touches.%s</p>'
-          % ("" if filt <= 0 else " (%d low-signal note%s were filtered out.)"
-             % (filt, "" if filt == 1 else "s")))
-    else:
-        def _finding_li(f):
-            fid = str(f.get("id", "F"))
-            sev = str(f.get("severity", "minor"))
-            disp = str(f.get("disposition", ""))
-            scope = str(f.get("scope", "")).strip().lower()
-            real_text = ftext_map.get(fid.replace(" ", "").upper())
-            if real_text:
-                txt_html, _ = render_linked(real_text, base)
-            else:
-                txt_html = esc(g.cap("severity:" + sev, ""))
-            disp_txt = g.cap("disposition:" + disp, disp) if disp else ""
-            # in-scope is the unremarkable default and gets no tag; follow-up /
-            # pre-existing are the cases worth flagging as not this change's problem
-            scope_tag = ('<span class="tag g-mute">%s</span>'
-                         % esc(g.cap("scope:" + scope, scope))
-                         if scope and scope != "in-scope" else "")
-            return ('<li><span class="ci c-fail">!</span><div>'
-                    '<div class="name">%s <span class="id">%s%s</span>%s</div>'
-                    '<div class="txt">%s</div></div></li>'
-                    % (esc(sev.title()), esc(fid),
-                       (" · " + esc(disp_txt)) if disp_txt else "", scope_tag, txt_html))
-
-        _hi = [f for f in findings
-               if str(f.get("severity", "")).lower() not in LOW_SEVERITIES]
-        _lo = [f for f in findings
-               if str(f.get("severity", "")).lower() in LOW_SEVERITIES]
-        if _hi:
-            A('<ul class="checks">')
-            for f in _hi:
-                A(_finding_li(f))
-            A('</ul>')
-        if _lo:
-            A('<details class="dd sub"><summary>Minor findings'
-              '<span class="tag g-mute">%d</span></summary><div class="body">'
-              % len(_lo))
-            A('<ul class="checks">')
-            for f in _lo:
-                A(_finding_li(f))
-            A('</ul>')
-            A('</div></details>')
+    A(build_findings_body(findings, ftext_map, g, base,
+                          pinned.get("pr_head_sha"), _filt))
     A('</section>')
 
     # ---- spine 5: what you'd tell the contributor ----
@@ -1389,9 +1903,31 @@ def build_deck(md, g, below=None):
     A(build_triggers_card(r, g))
 
     # decisions to make (D-13) — escalated v2 receipts only
-    A(build_scoping_card(r, g))
+    scoping_html = build_scoping_card(r, g, md, base)
+    A(scoping_html)
 
-    # ---- spine 7: next steps — the concrete human follow-ups (B-14) ----
+    # ---- spine 7: what I checked — the run's own evidence, VISIBLE (v0.7.3) --
+    # The work log, the anchor, the checks that applied, the vetting checklist
+    # and the self-attestation cross-check. Field feedback: the deck showed
+    # what the run CONCLUDED and almost nothing about what it DID, so a
+    # maintainer had no way to track coverage except by reading the raw record
+    # at the foot of the page.
+    A(build_evidence_card(md, g, base, checks, dep_gate))
+
+    # ---- spine 8: what was NOT checked — badge + title visible, gloss one
+    # level down (v0.6 §8: renders always, can never read as resolved). It sits
+    # directly under what WAS checked: the two halves of coverage are one
+    # question, and reading them apart is what made the gaps easy to miss.
+    A(build_not_checked_card(
+        coverage, g,
+        (("human:contributor-trust", "Do you trust this contributor"),
+         ("human:supply-chain-hygiene", "Do you trust this dependency")),
+        "Two kinds live here: items never machine-checked by design — a human "
+        "judgment that can never be marked done — and passes not yet run this "
+        "session, which a later run can still cover.",
+        " (on purpose)"))
+
+    # ---- spine 9: next steps — the concrete human follow-ups (B-14) ----
     steps = []
     if burden and str(burden.get("overall")) == "blocked":
         for b in burden.get("blockers") or []:
@@ -1401,14 +1937,12 @@ def build_deck(md, g, below=None):
             d = g.dec("check:%s:fail" % k)
             if d:
                 steps.append(d)
-    for c in coverage:
-        # v0.7.2 §4 (change 3): a never-by-design item the top alert has already
-        # spoken for is not repeated here, so Next steps opens on a real action
-        # instead of a sentence the reader has just read.
-        if _cov_status(c) == "never-by-design" and _cov_item(c) not in alerted_coverage:
-            d = g.dec("coverage:%s" % _cov_item(c))
-            if d:
-                steps.append(d)
+    # v0.7.2 §4 (change 3) suppressed the never-by-design entry the top alert
+    # had already stated. v0.7.3 finishes the thought: a never-checked item is
+    # a standing caveat, not a step — it names nothing the maintainer can do
+    # and cross it off. Every one of them renders, unresolvable, in the "what
+    # was not checked" card directly above this one (v0.6 §8); repeating the
+    # gloss here only pushed the real actions down the list.
     if burden:
         for ax in ("scope", "review", "tests", "carry", "safety"):
             if str(burden.get(ax)) in ("medium", "high"):
@@ -1427,13 +1961,14 @@ def build_deck(md, g, below=None):
             A('<li>%s</li>' % esc(s))
         A('</ul></section>')
 
-    # ---- spine 8: the glance figures, built above ----
+    # ---- spine 10: the glance figures, built above ----
     A("".join(glance))
 
-    # ---- spine 9: how to read this page — closed, absorbs the scaffolding ----
-    A(build_howto_card("pr", gate=bool(ntot)))
+    # ---- spine 11: how to read this page — closed, absorbs the scaffolding ----
+    A(build_howto_card("pr", gate=gate_shown, g=g, chips=bool(findings),
+                       scoping=bool(scoping_html)))
 
-    # ---- spine 10: the folded detail ----
+    # ---- spine 12: the folded detail ----
     A('<p class="sec-h">The detail, on demand</p>')
 
     # why not auto-approved (only when a bump was demoted / a check failed)
@@ -1444,12 +1979,13 @@ def build_deck(md, g, below=None):
             A(_check_row(k, "fail", g, note=True))
         A('</div></details>')
 
-    # what was checked
-    if ntot:
+    # The full seven-row gate table, for a dependency item where every row --
+    # including the `n-a` ones -- is part of the record being audited.
+    if gate_shown:
         tag = "g-ok" if not failed_names else "g-warn"
-        A('<details class="dd"><summary>What was checked — the %d-point safety gate'
+        A('<details class="dd"><summary>The dependency gate, row by row'
           '<span class="tag %s">%d / %d</span></summary><div class="body">'
-          % (ntot, tag, npass, ntot))
+          % (tag, npass, ntot))
         A('<ul class="checks">')
         for k in CHECK_ORDER:
             st = checks.get(k)
@@ -1457,16 +1993,6 @@ def build_deck(md, g, below=None):
                 continue
             A(_check_row(k, st, g, note=(st == "fail")))
         A('</ul></div></details>')
-
-    # what was NOT checked — badge + title visible, gloss one level down
-    A(build_not_checked_card(
-        coverage, g,
-        (("human:contributor-trust", "Do you trust this contributor"),
-         ("human:supply-chain-hygiene", "Do you trust this dependency")),
-        "Two kinds live here: items never machine-checked by design — a human "
-        "judgment that can never be marked done — and passes not yet run this "
-        "session, which a later run can still cover.",
-        " (on purpose)"))
 
     # how this was reviewed — category, tier, and the demoted burden axes, as
     # internal evidence beneath the action outcome (design v0.7 §7, B-09).
@@ -1499,7 +2025,7 @@ def build_deck(md, g, below=None):
       'exactly as written — the auditable source behind every line above.</p>')
     A('<pre class="receipt">%s</pre></div></details>' % receipt_txt)
 
-    # ---- spine 11: provenance footer ----
+    # ---- spine 13: provenance footer ----
     # The four pinned fields plus the renderer stamp; the standing "this is a
     # reading view, the record is the source" boilerplate now lives once, in the
     # "How to read this page" card above (v0.7.2 §4, change 4).
@@ -1542,12 +2068,55 @@ def build_triggers_card(r, g):
             'itself.</p><ul>%s</ul></section>' % "".join(rows))
 
 
-def build_scoping_card(r, g):
-    """The 'Decisions to make' panel (rules/decision-scoping.md D-13),
-    rendered from the receipt:v2 decision_scoping footer block. Returns ''
-    for v1 footers (absent block == applied n-a) and for clean items
-    (D-00: no fired trigger -> no scoping output), so those decks render
-    exactly as before."""
+ARTIFACT_CHIP = {"adr-draft": "draft ADR", "de-stub": "DE stub",
+                 "none": "reserved for a human", "": ""}
+
+
+def parse_scoping_ledger(md, base):
+    """The `### Decision scoping` body ledger (RP-17 / RI-12) -> its three
+    kinds of row. The footer carries the COUNTS (enumerated, resumable); the
+    sentences live here, in the visible body, where free text belongs -- and
+    D-13 renders the panel "from the footer counts over the body ledger", so
+    dropping these was the panel losing the only content a committee reads.
+
+    Returns (residuals, settled, reserved): residuals are (id, sentence_html,
+    bracket_text); the other two are plain HTML strings. Everything not in one
+    of the three bullet shapes is scaffolding prose the counts already state,
+    and is not rendered."""
+    raw = extract_section(md, r"Decision scoping")
+    residuals, settled, reserved = [], [], []
+    if not raw:
+        return residuals, settled, reserved
+    for line in raw.splitlines():
+        s_ = line.strip()
+        if not s_.startswith("- "):
+            continue
+        body = s_[2:].strip()
+        m = re.match(r"^\*\*(R-\d+)\s*[—–-]\s*(.+?)\*\*\s*(?:\[(.*?)\])?\s*$",
+                     body, re.DOTALL)
+        if m:
+            html_, _ = render_linked(m.group(2).strip(), base)
+            residuals.append((m.group(1), html_, (m.group(3) or "").strip()))
+            continue
+        m = re.match(r"^\*{0,2}(Settled|Reserved-human)\*{0,2}\s*:\s*(.+)$",
+                     body, re.IGNORECASE | re.DOTALL)
+        if m:
+            html_, _ = render_linked(m.group(2).strip(), base)
+            (settled if m.group(1).lower() == "settled" else reserved).append(html_)
+    return residuals, settled, reserved
+
+
+def build_scoping_card(r, g, md="", base=""):
+    """The 'Decisions to make' panel (rules/decision-scoping.md D-13): the
+    footer's counts over the body's ledger. Returns '' for v1 footers (absent
+    block == applied n-a) and for clean items (D-00: no fired trigger -> no
+    scoping output), so those decks render exactly as before.
+
+    Each row is the decision itself, in the sentence the record states it in;
+    the artifact rides as a short chip whose gloss is its tooltip and the
+    how-to card, not a paragraph repeated once per row. A reserved-human row
+    renders with the same permanently-open badge the human-only judgments
+    carry (v0.6 §8): it is not a decision anyone here can take."""
     ds = r.get("decision_scoping")
     if not isinstance(ds, dict):
         return ""
@@ -1555,25 +2124,66 @@ def build_scoping_card(r, g):
         or r.get("recommendation") == "escalate"   # D-00: trigger fired, or IV-01 = escalate
     if ds.get("applied") in (None, "n-a") or not escalated:
         return ""
-    settled = ds.get("settled") or 0
-    residual = ds.get("residual") or 0
-    head = "%s decisions to make · %s found settled" % (residual, settled)
+    settled_n = ds.get("settled") or 0
+    residual_n = ds.get("residual") or 0
+    reserved_n = ds.get("reserved_human") or 0
+    head = "%s decisions to make · %s found settled" % (residual_n, settled_n)
+    if reserved_n:
+        head += " · %s reserved for a human" % reserved_n
     if ds.get("applied") == "partial":
         head += " — partial: the single-item review completes the ledger"
-    rows = []
+
+    ledger, settled_rows, reserved_rows = parse_scoping_ledger(md, base)
+    # the footer's enumerated artifact per residual id -- authoritative over the
+    # body's bracket text, which is prose
+    art_by_id = {}
     for res in (ds.get("residuals") or []):
-        if not isinstance(res, dict):
-            continue
-        art = str(res.get("artifact") or "")
-        art_key = "artifact:draft-adr" if art == "adr-draft" else "artifact:" + art
-        rows.append('<li><span class="refk">%s</span> — %s · %s</li>' % (
-            esc(str(res.get("id", ""))), esc(str(res.get("kind", ""))),
-            esc(g.cap(art_key, art))))
-    body = ('<ul>%s</ul>' % "".join(rows)) if rows else (
-        '<p class="intro">%s</p>' % esc(g.cap("scoping:none-residual")))
-    return ('<section class="card grounding g-obs"><h2>Decisions to make</h2>'
-            '<p class="intro">%s</p><p class="intro">%s</p>%s</section>'
-            % (esc(head), esc(g.cap("scoping:settled")), body))
+        if isinstance(res, dict):
+            art_by_id[str(res.get("id", ""))] = str(res.get("artifact") or "")
+
+    rows = []
+    for rid, sentence, bracket in ledger:
+        art = art_by_id.get(rid, "")
+        chip = ARTIFACT_CHIP.get(art, art) or (esc(bracket) if bracket else "")
+        gloss = g.cap("artifact:draft-adr" if art == "adr-draft" else "artifact:" + art, "")
+        rows.append('<li><span class="refk">%s</span> %s%s</li>'
+                    % (esc(rid), sentence,
+                       ('<span class="tag g-mute" title="%s">%s</span>'
+                        % (esc(gloss), esc(chip))) if chip else ""))
+    # A residual the footer counts but the body does not state still renders as
+    # a row: the count is the honest minimum, and a missing sentence is visible
+    # as a missing sentence rather than as one fewer decision.
+    for rid in [i for i in art_by_id if i not in {x[0] for x in ledger}]:
+        art = art_by_id.get(rid, "")
+        rows.append('<li><span class="refk">%s</span> <em>%s</em>%s</li>'
+                    % (esc(rid), "not stated in this record — read the ledger in "
+                       "the committee packet",
+                       ('<span class="tag g-mute">%s</span>' % esc(ARTIFACT_CHIP.get(art, art)))
+                       if art else ""))
+
+    out = ['<section class="card grounding g-obs"><h2>Decisions to make</h2>',
+           '<p class="intro">%s</p>' % esc(head)]
+    if rows:
+        out.append('<ul>%s</ul>' % "".join(rows))
+    elif not settled_rows:
+        out.append('<p class="intro">%s</p>' % esc(g.cap("scoping:none-residual")))
+    if settled_rows:
+        out.append('<h3 class="ledger-h">Already settled — verify by click</h3>')
+        out.append('<ul>%s</ul>' % "".join('<li>%s</li>' % x for x in settled_rows))
+    if reserved_rows:
+        out.append('<h3 class="ledger-h">Human-only — never resolvable here</h3>')
+        out.append('<ul>%s</ul>'
+                   % "".join('<li><span class="open">Human-only</span> %s</li>' % x
+                             for x in reserved_rows))
+    # The drafted decision text is not on this page by design (D-06/D-07 put it
+    # in the committee packet). Say where it is rather than leave a reader
+    # hunting for a draft the chip just told them exists.
+    if any(art_by_id.get(i) in ("adr-draft", "de-stub") for i in art_by_id):
+        out.append('<p class="intro ledger-note">The drafted decision text for each '
+                   'row rides in the committee packet, not on this page — '
+                   'watermarked, unnumbered, and adopted by a human or not at all.</p>')
+    out.append('</section>')
+    return "".join(out)
 
 
 def build_internal_read_card(g, category, category_raw, tier, tier_raw,
@@ -1762,29 +2372,15 @@ def build_issue_deck(r, md, g, base):
     A(build_decision_card(md, base, _issue_decision_line(reco, held, num)))
 
     # ---- spine 4: findings — VISIBLE (issues may carry them) ----
+    # Same structured rendering as the PR profile (v0.7.3). An issue receipt
+    # carries no reviewed head SHA, so a finding's location renders as text
+    # rather than a blob link — the location is still stated.
     if findings:
         A('<section class="card vcard findings"><h2>Findings'
-          '<span class="tag g-warn">%d</span></h2><ul class="checks">' % len(findings))
-        for f in findings:
-            fid = str(f.get("id", "F"))
-            sev = str(f.get("severity", "minor"))
-            disp = str(f.get("disposition", ""))
-            scope = str(f.get("scope", "")).strip().lower()
-            real_text = ftext_map.get(fid.replace(" ", "").upper())
-            if real_text:
-                txt_html, _ = render_linked(real_text, base)
-            else:
-                txt_html = esc(g.cap("severity:" + sev, ""))
-            disp_txt = g.cap("disposition:" + disp, disp) if disp else ""
-            scope_tag = ('<span class="tag g-mute">%s</span>'
-                         % esc(g.cap("scope:" + scope, scope))
-                         if scope and scope != "in-scope" else "")
-            A('<li><span class="ci c-fail">!</span><div>'
-              '<div class="name">%s <span class="id">%s%s</span>%s</div>'
-              '<div class="txt">%s</div></div></li>'
-              % (esc(sev.title()), esc(fid), (" · " + esc(disp_txt)) if disp_txt else "",
-                 scope_tag, txt_html))
-        A('</ul></section>')
+          '<span class="tag g-warn">%d</span></h2>' % len(findings))
+        A(build_findings_body(findings, ftext_map, g, base,
+                              (r.get("pinned") or {}).get("pr_head_sha")))
+        A('</section>')
 
     # ---- spine 5: what you'd tell the contributor ----
     # The drafted public comment, visible and paste-ready. An issue has no merge
@@ -1802,19 +2398,30 @@ def build_issue_deck(r, md, g, base):
     A(build_triggers_card(r, g))
 
     # decisions to make (D-13) — escalated v2 receipts only
-    A(build_scoping_card(r, g))
+    scoping_html = build_scoping_card(r, g, md, base)
+    A(scoping_html)
 
-    # ---- spine 7: next steps — recommendation + never-checked coverage gaps ----
+    # ---- spine 7: what I checked — the run's own evidence, VISIBLE (v0.7.3) --
+    # An issue has no diff and no dependency gate; what it has is the work log
+    # (RI-15) and, on a feature, an anchor. Same card, same honesty rail.
+    A(build_evidence_card(md, g, base, {}, False))
+
+    # ---- spine 8: what was NOT checked, directly under what was ----
+    A(build_not_checked_card(
+        coverage, g,
+        (("human:roadmap-worth", "Worth roadmap space"),
+         ("human:engagement-tone", "Engagement tone")),
+        "An issue is a proposal, not a change — nothing here is validated by "
+        "running it, and these stay human judgments."))
+
+    # ---- spine 9: next steps — the concrete human follow-ups ----
+    # A never-checked item is a standing caveat, not a step (v0.7.3 §2): it
+    # renders, unresolvable, in the card directly above.
     steps = []
     if reco:
         d = _num_subst(g.cap("recommendation:%s:next" % reco, ""), num)
         if d:
             steps.append(d)
-    for c in coverage:
-        if _cov_status(c) == "never-by-design":
-            d = g.dec("coverage:%s" % _cov_item(c))
-            if d:
-                steps.append(d)
     seen, uniq = set(), []
     for s in steps:
         k = s.strip()
@@ -1828,19 +2435,11 @@ def build_issue_deck(r, md, g, base):
         A('</ul></section>')
 
     # ---- spine 9: how to read this page — closed, absorbs the scaffolding ----
-    A(build_howto_card("issue"))
+    A(build_howto_card("issue", g=g, chips=bool(findings),
+                       scoping=bool(scoping_html)))
 
     # ---- spine 10: the folded detail ----
     A('<p class="sec-h">The detail, on demand</p>')
-
-    # what was NOT checked + the permanently-open human-only judgments:
-    # badge + title visible, the per-item gloss one level down (v0.7.2 §4)
-    A(build_not_checked_card(
-        coverage, g,
-        (("human:roadmap-worth", "Worth roadmap space"),
-         ("human:engagement-tone", "Engagement tone")),
-        "An issue is a proposal, not a change — nothing here is validated by "
-        "running it, and these stay human judgments."))
 
     # full technical evidence record (verbatim, escaped)
     receipt_txt, _ = sanitize(md.strip())

@@ -248,6 +248,135 @@ PR_IRREVERSIBLE_V2 = PR_TIER1_V2.replace(
 
 # A nit-severity finding with no free-text body in the receipt: the caption
 # must fall back to the glossary (severity:nit), never render empty.
+# v0.7.3 — a full-fidelity record: the L-33 finding structure (file:line,
+# impact, ask, the drafted suggestion block and its apply path) and the four
+# evidence tables the receipt already carried and the deck used to drop on the
+# floor (work log RP-21, anchor RP-02, vetting RP-04, self-attestation RP-04a).
+PR_FULL_RECORD = (
+    "## Triage Receipt — PR #912: retry the citation fetch\n"
+    "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
+    "### Work log (RP-21)\n"
+    "\n"
+    "| Act | What | Evidence | Result |\n"
+    "| --- | --- | --- | --- |\n"
+    "| read | the diff, hunk by hunk | 4 hunks in `src/fetcher/citation.py` | done |\n"
+    "| canon | [canon:prd §3.2](https://github.com/LegalQuants/lq-ai/blob/main/docs/PRD.md#32-fetching) | the fetch contract | done |\n"
+    "| canon | [not canon](https://evil.example.com/x) | a link from nowhere | done |\n"
+    "| script | `check-breaking.sh` over the diff | no textual break detected | pass |\n"
+    "| review | full-subsystem walk (L-32 check 4) | Tier-2 work; this was a quick pass | not-run |\n"
+    "\n"
+    "### Anchor\n"
+    "\n"
+    "| Kind | Reference | Verified |\n"
+    "| --- | --- | --- |\n"
+    "| issue+repro | [issue #388](https://github.com/LegalQuants/lq-ai/issues/388) | yes — repro run |\n"
+    "\n"
+    "### Security-vetting checklist\n"
+    "\n"
+    "| Checklist item | Result |\n"
+    "| --- | --- |\n"
+    "| No secrets or credentials in the diff | pass |\n"
+    "| Dependency manifest untouched | n-a |\n"
+    "\n"
+    "#### Self-attestation cross-check\n"
+    "\n"
+    "| Template item | Claimed | Verified | Evidence |\n"
+    "| --- | --- | --- | --- |\n"
+    "| I added tests for my change | checked | verified-fail | no regression test — see F-1 |\n"
+    "\n"
+    "### Findings\n"
+    "**F-1 — major** — `src/fetcher/citation.py:118` — the retry loop has no "
+    "ceiling. Canon: [canon:prd §3.2](https://github.com/LegalQuants/lq-ai/blob/main/docs/PRD.md#32-fetching).\n"
+    "Impact: a dead host pins a worker and the nightly ingest never finishes.\n"
+    "Ask: could you cap the loop with the existing `MAX_RETRIES` constant?\n"
+    "Disposition hint: relayable\n"
+    "Scope: in-scope\n"
+    "Suggested comment: Could we cap this with `MAX_RETRIES`? See [here](https://evil.example.com/pwn).\n"
+    "Suggested change — paste as a review comment on `src/fetcher/citation.py:118`:\n"
+    "```suggestion\n"
+    "        for attempt in range(MAX_RETRIES):\n"
+    "```\n"
+    "Apply path: post the drafted comment on `src/fetcher/citation.py:118`.\n"
+    "**F-2 — minor** — `src/fetcher/citation.py:131` — bare sleep constant.\n"
+    "Impact: a backoff-policy change misses this call site.\n"
+    "Ask: would you mind routing this through `backoff_seconds(attempt)`?\n"
+    "Disposition hint: trivial\n"
+    "Scope: follow-up\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#912\nlane: standard\n"
+    "assigning_rule: L-30\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "9f2c1ab7de44"}) +
+    "deterministic_checks:\n"
+    "  author_identity: n-a\n  manifest_only: n-a\n  semver_delta: n-a\n"
+    "  no_new_packages: pass\n  osv_lookup: n-a\n  release_age: n-a\n  ci_green: pass\n"
+    "findings:\n"
+    "  - {id: F-1, severity: major, disposition: relayable, scope: in-scope}\n"
+    "  - {id: F-2, severity: minor, disposition: trivial, scope: follow-up}\n"
+    "findings_filtered: 0\n"
+    "coverage:\n"
+    "  - {item: code-quality, status: covered}\n"
+    "  - {item: test-adequacy, status: not-covered}\n"
+    "  - {item: runtime-behavior, status: never-by-design}\n"
+    "  - {item: semantic-breaking-change, status: never-by-design}\n"
+    "category: 3\ntier: 1\noutcome: merge-after\nundo: revert-clean\n"
+    "-->\n"
+)
+
+# The same record on a DEPENDENCY item: the seven-point gate actually applied,
+# so its figures are real and render.
+PR_DEP_GATE = (
+    "## Triage Receipt — PR #913: bump requests 2.31.0 -> 2.32.0\n"
+    "**Recommended lane:** fast (confidence: high; assigning rule: L-10)\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#913\nlane: fast\n"
+    "assigning_rule: L-10\nconfidence: high\ntriggers: []\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "abc123def456"}) +
+    "deterministic_checks:\n"
+    "  author_identity: pass\n  manifest_only: pass\n  semver_delta: pass\n"
+    "  no_new_packages: pass\n  osv_lookup: pass\n  release_age: pass\n  ci_green: pass\n"
+    "findings: []\nfindings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "-->\n"
+)
+
+# v0.7.3 — an escalated record whose ledger is stated in the BODY (RP-17):
+# residual sentences, a settled entry with its citation, a reserved-human row.
+# The footer carries the counts; D-13 renders the panel over this ledger.
+PR_LEDGER = (
+    "## Triage Receipt — PR #931: add a tenant_id column\n"
+    "**Recommended lane:** escalate (confidence: high; assigning rule: E-11)\n"
+    "### Decision scoping (escalated items only — omitted otherwise)\n"
+    "\n"
+    "Escalation narrowed per rules/decision-scoping.md, at canon `3c1de99`:\n"
+    "1 sub-question found settled · 2 residual decisions · 1 reserved-human.\n"
+    "\n"
+    "- Settled: whether row-level security exists in the storage engine — settled by "
+    "[ADR-0014 §3](https://github.com/LegalQuants/lq-ai/blob/main/docs/adr/0014-storage.md).\n"
+    "- **R-1 — lq-ai stores data for more than one tenant in one deployment.** "
+    "[drafted: ADR-XXXX (DRAFT)]\n"
+    "- **R-2 — tenant isolation is enforced at the query layer.** [drafted: ADR-XXXX (DRAFT)]\n"
+    "- Reserved-human: whether the roadmap has room in M2 — reserving citation: RI-08.\n"
+    "<!-- lq-maintainer-agent:receipt:v2\n"
+    "profile: pr\nitem: legalquants/lq-ai#931\nlane: escalate\n"
+    "assigning_rule: E-11\nconfidence: high\ntriggers: [E-11]\nheld: false\n"
+    + (FOOTER_PINNED % {"sha": "7a1bb0c9de31"}) +
+    "findings: []\nfindings_filtered: 0\n"
+    "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
+    "decision_scoping:\n  applied: full\n  questions: 4\n  settled: 1\n"
+    "  residual: 2\n  reserved_human: 1\n  residuals:\n"
+    "    - {id: R-1, kind: structural, artifact: adr-draft}\n"
+    "    - {id: R-2, kind: structural, artifact: adr-draft}\n"
+    "-->\n"
+)
+
+# The footer counts a residual the body never states — the count is the honest
+# minimum, so the row renders as a row with its sentence missing.
+PR_LEDGER_GAP = PR_LEDGER.replace(
+    "    - {id: R-2, kind: structural, artifact: adr-draft}\n",
+    "    - {id: R-2, kind: structural, artifact: adr-draft}\n"
+    "    - {id: R-3, kind: forward-looking, artifact: de-stub}\n"
+)
+
 PR_NIT_ONLY = (
     "## Triage Receipt — PR #906: rename a local variable\n"
     "**Recommended lane:** standard (confidence: high; assigning rule: L-30)\n"
@@ -503,6 +632,39 @@ def main():
     check("issue v2 escalate: panel present", "Decisions to make" in out)
     check("issue v2 escalate: partial surfaced", "partial" in out)
 
+    # --- e2e (v0.7.3): the decision ledger, not just its counts (D-13) ------
+    # D-13 renders the panel "from the footer counts over the body ledger".
+    # Before v0.7.3 only the counts and the enumerated artifact reached the
+    # page, so an escalated deck named no decision to be made.
+    rc, out = run(PR_LEDGER)
+    vis = visible(out)
+    check("ledger: exit 0", rc == 0, "rc=%d" % rc)
+    check("ledger: each residual renders as its own sentence",
+          "more than one tenant in one deployment" in vis
+          and "enforced at the query layer" in vis, vis)
+    check("ledger: the settled entry renders with its click-through citation",
+          "row-level security exists in the storage engine" in vis
+          and 'href="https://github.com/LegalQuants/lq-ai/blob/main/docs/adr/0014-storage.md"'
+          in vis, vis)
+    check("ledger: the reserved-human row renders, badged as never resolvable",
+          "roadmap has room in M2" in vis and "Human-only" in vis, vis)
+    check("ledger: the footer's reserved count reaches the headline",
+          "1 reserved for a human" in vis, vis)
+    _panel = out.split("Decisions to make", 1)[1].split("</section>", 1)[0]
+    check("ledger: the artifact is a chip, not a paragraph per row",
+          _panel.count(">draft ADR<") == 2
+          and ">An agent-drafted, watermarked" not in _panel, _panel)
+    check("ledger: the artifact gloss rides as a tooltip, and once in the how-to",
+          'title="An agent-drafted, watermarked' in _panel
+          and "watermarked, unadopted decision record"
+          in out.split("How to read this page", 1)[1].split("</details>", 1)[0], out)
+    check("ledger: the deck says where the drafted text actually is",
+          "rides in the committee packet" in vis, vis)
+    rc, out = run(PR_LEDGER_GAP)
+    check("ledger: a counted-but-unstated residual still renders as a row",
+          "R-3" in visible(out) and "not stated in this record" in visible(out),
+          visible(out))
+
     # --- e2e: v0.7 action-first hero (footer carries `outcome`) ---
     rc, out = run(PR_TIER1_V2)
     check("PR v0.7: exit 0", rc == 0, "rc=%d" % rc)
@@ -574,16 +736,135 @@ def main():
           "A nitpick" in out, out)
     rc, out = run(PR_SCOPED_FINDING)
     check("findings: exit 0", rc == 0, "rc=%d" % rc)
-    check("findings: scope: follow-up renders its glossed tag",
-          'class="tag g-mute"' in out
-          and "need to hold this change up" in out, out)
-    check("findings: disposition is glossed, not the raw word",
-          "Recommends closing this and opening an issue instead" in out
-          and ">structural<" not in out, out)
-    check("findings: Impact:/Ask: body lines flow through to the deck",
-          "Impact:" in out and "Ask:" in out
+    # v0.7.3: severity / scope / disposition ride the finding as one-word
+    # chips; the gloss is the chip's tooltip and renders once in the how-to
+    # card, instead of a full sentence restated on every finding.
+    check("findings: scope: follow-up rides as its own chip",
+          '>follow-up<' in out, out)
+    check("findings: disposition rides as its own chip",
+          '>structural<' in out, out)
+    _fsec = out.split('class="card vcard findings"', 1)[1].split("</section>", 1)[0]
+    _howto = out.split("How to read this page", 1)[1].split("</details>", 1)[0]
+    check("findings: the chip words are glossed in the how-to card",
+          "need to hold this change up" in _howto
+          and "Recommends closing this and opening an issue instead" in _howto, out)
+    check("findings: the gloss is not restated as prose on every finding",
+          ">Worth doing" not in _fsec and ">Recommends closing" not in _fsec, _fsec)
+    check("findings: Impact/Ask reach the deck in their own slots, not as prose",
+          "<dt>change</dt>" in out and "<dt>why</dt>" in out
           and "Could evict hot cache entries" in out
-          and "Confirm whether this policy change belongs" in out, out)
+          and "Confirm whether this policy change belongs" in out
+          and "Impact:" not in visible(out) and "Ask:" not in visible(out), out)
+
+    # --- e2e (v0.7.3): the L-33 structure survives into the deck ---------
+    # Field feedback: "findings appear as a glob of text ... I can't tell what
+    # the finding wants me to change and where." Every labelled slot the
+    # receipt writes gets its own slot on the page, and the drafted
+    # replacement stays a verbatim, click-to-select block.
+    rc, out = run(PR_FULL_RECORD)
+    vis = visible(out)
+    check("L-33: exit 0", rc == 0, "rc=%d" % rc)
+    check("L-33: where / change / why render as their own slots",
+          "<dt>where</dt>" in vis and "<dt>change</dt>" in vis
+          and "<dt>why</dt>" in vis, vis)
+    check("L-33: the label words themselves never render as prose",
+          "Impact:" not in vis and "Ask:" not in vis
+          and "Disposition hint:" not in vis and "Apply path:" not in vis, vis)
+    check("L-33: the location links to the reviewed head SHA, line-anchored",
+          'href="https://github.com/LegalQuants/lq-ai/blob/9f2c1ab7de44/'
+          'src/fetcher/citation.py#L118"' in vis, vis)
+    check("L-33a: the suggestion block survives VERBATIM and click-to-select",
+          '<pre class="receipt paste">        for attempt in range(MAX_RETRIES):'
+          '</pre>' in vis, vis)
+    _fsec = out.split('class="card vcard findings"', 1)[1].split("</section>", 1)[0]
+    check("L-33a: the fence is never chewed into an inline code span",
+          "<code>suggestion" not in out and "``suggestion" not in _fsec, _fsec)
+    check("L-33a: the apply path renders with the finding, not as prose",
+          'class="fapply"' in vis, vis)
+    check("L-33: a finding with a drafted replacement is marked as one",
+          "one-click apply" in vis, vis)
+    check("L-33: the drafted per-finding comment is paste-ready",
+          "Could we cap this with" in out, out)
+    # The drafted comment is a paste-ready block: it carries the URL as
+    # escaped, inert text on purpose (paste fidelity). What must never happen
+    # is a live href — including from the verbatim record at the foot of the
+    # page, which is rendered as <pre>, not as markup.
+    check("L-33: injection — a contributor URL inside a finding stays inert",
+          'href="https://evil.example.com' not in out
+          and "<a href" not in _fsec.split("paste\">", 1)[-1].split("</pre>", 1)[0],
+          _fsec)
+
+    # the scan strip: every finding, highest severity first, one click away
+    check("strip: renders with two or more findings", 'class="fstrip"' in vis, vis)
+    check("strip: links to each finding's card",
+          'href="#F-1"' in vis and 'href="#F-2"' in vis, vis)
+    check("strip: lists the folded minor finding too",
+          "citation.py:131" in vis, vis)
+    check("strip: marks which findings carry a one-click replacement",
+          vis.count("⚡") == 1, vis)
+    check("findings: cards carry their anchor ids", 'id="F-1"' in out, out)
+    rc, out2 = run(PR_SCOPED_FINDING)          # exactly one finding
+    check("strip: absent on a single-finding deck",
+          'class="fstrip"' not in out2, out2)
+
+    # --- e2e (v0.7.3): "What I checked" — the run's own evidence, VISIBLE ---
+    # Field feedback: the deck "hardly shows what you actually do when you run
+    # the skill so that I can track what you checked". These four tables were
+    # already in the record; only the raw dump at the foot of the page carried
+    # them.
+    rc, out = run(PR_FULL_RECORD)
+    vis = visible(out)
+    check("evidence: the card is visible, never behind a click",
+          'class="card vcard evid"' in vis and "<summary>What I checked" not in out,
+          vis)
+    check("evidence: work-log acts and their evidence render",
+          "the diff, hunk by hunk" in vis and "4 hunks in" in vis
+          and "no textual break detected" in vis, vis)
+    check("evidence: a skipped pass renders as not-run, never as silence",
+          "full-subsystem walk" in vis and "not-run" in vis, vis)
+    check("evidence: work-log canon citations stay click-through",
+          'href="https://github.com/LegalQuants/lq-ai/blob/main/docs/PRD.md' in vis,
+          vis)
+    check("evidence: injection — an off-host work-log link stays inert",
+          'href="https://evil.example.com' not in out, out)
+    check("evidence: the anchor determination renders", "issue #388" in vis, vis)
+    check("evidence: the vetting checklist renders",
+          "No secrets or credentials in the diff" in vis, vis)
+    check("evidence: an n-a vetting row is not dressed up as a check that ran",
+          "Dependency manifest untouched" not in vis, vis)
+    check("evidence: the self-attestation cross-check renders with its evidence",
+          "I added tests for my change" in vis and "verified-fail" in vis
+          and "no regression test" in vis, vis)
+    rc, out = run(PR_CLEAN_V2)
+    check("evidence: no card when the record carries no evidence to show",
+          'class="card vcard evid"' not in out, out)
+
+    # --- e2e (v0.7.3): the seven-point gate is the DEPENDENCY gate ----------
+    rc, out = run(PR_FULL_RECORD)
+    check("gate: no safety-gate tile on a non-dependency item",
+          "Safety gate" not in out, out)
+    check("gate: the checks that DID run still render as evidence",
+          "No new packages slipped in" in visible(out)
+          or "Automated tests" in visible(out), visible(out))
+    rc, out = run(PR_DEP_GATE)
+    check("gate: the tile and meter render on a real dependency item",
+          "Safety gate" in out and 'class="meter"' in out, out)
+    check("gate: the row-by-row gate stays folded, for auditors",
+          "The dependency gate, row by row" in out, out)
+
+    # --- e2e (v0.7.3): standing caveats are not "next steps" ---------------
+    rc, out = run(PR_FULL_RECORD)
+    vis = visible(out)
+    check("next steps: a never-checked item is not restated as an action",
+          "Next steps to check" not in vis
+          or "A PASS is the absence of one signal" not in
+          vis.split("Next steps to check", 1)[1].split("</section>", 1)[0], vis)
+    check("honesty rail: every never-checked item still renders, unresolvable",
+          "Breaking changes the diff text cannot show" in out
+          and "Never checked" in out, out)
+    check("honesty rail: the runtime caveat is still stated exactly once visibly",
+          vis.count("does not confirm this actually works at runtime")
+          + vis.count("did not confirm this actually works at runtime") == 1, vis)
 
     # --- e2e: renderer version stamp (a stale installed plugin is visible on
     # the artifact itself, not just via the receipt's pinned agent_version) ---

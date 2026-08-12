@@ -9,10 +9,25 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| **v0.7.2** | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | **Current** (Adopted 2026-08-06; delta over v0.7.1 — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) and [../proposals/deck-leanness.md](../proposals/deck-leanness.md)) |
+| **v0.7.3** | [lq-maintainer-agent-design-v0.7.3.md](lq-maintainer-agent-design-v0.7.3.md) | **Current** (Adopted 2026-08-12; delta over v0.7.2 — measurement and implementation spec in [../proposals/deck-findings-and-work-log.md](../proposals/deck-findings-and-work-log.md)) |
+| v0.7.2 | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | Base document — normative where v0.7.3 is silent (Adopted 2026-08-06; delta over v0.7.1 — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) and [../proposals/deck-leanness.md](../proposals/deck-leanness.md)) |
 | v0.7.1 | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | Base document — normative where v0.7.2 is silent (Adopted 2026-07-30; delta over v0.7) |
 | v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
+
+Headline of v0.7.3 — two changes from maintainer field
+feedback on v0.5.0 decks, both answering the same defect from opposite
+ends: the deck rendered what a run *concluded* and dropped how it got
+there. Every internal evidence record now carries a **work log** — one
+row per act the run actually performed, in order, with a `not-run` row
+for every pass that did not run and never a silence; and the deck now
+renders the **structure** inside two cards it previously flattened —
+each finding as its L-33 slots (where / what to change / why, with the
+drafted replacement verbatim and paste-ready, and its location a
+click-through link at the reviewed head SHA) and the run's own evidence
+as a visible "What I checked" card sitting directly above what was not
+checked. The seven-point deterministic gate stops displaying a
+clearance on items it never judged. The footer schema is unchanged.
 
 Headline of v0.7.2 — three features that compose, plus a leaner deck:
 the agent's classification now **projects onto the target repo's own

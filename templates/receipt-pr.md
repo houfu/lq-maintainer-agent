@@ -278,6 +278,44 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   never a footer value and never a created label (`LB-05`). Labels
   remain outputs only: nothing in a resume, lane, category, tier, or
   queue-group call may read this field (`LB-01`).
+- **RP-21 — The work log (v0.7.3).** One row per act the run actually
+  performed, in the order it happened: what was read, which scripts
+  ran, which named review passes ran — and which did **not**. Written
+  as the work happens, never reconstructed afterwards from what the
+  record concluded. `Act` and `Result` are **enumerated**; `What` and
+  `Evidence` are short factual free text and, like every free-text
+  field, live in the visible body only — never the footer (§8.4).
+  - **`Act`** — exactly one of `read` (a diff, hunk, or file at the
+    pinned SHA), `canon` (a canon doc consulted, cited with its
+    click-through link at the canon SHA per `rules/canon-map.md`),
+    `script` (a deterministic check script), `query` (a read-only
+    `gh` / `git` call), `review` (a named pass — anchor, the L-32
+    failure-mode scan, the self-attestation cross-check, test
+    adequacy, the full-subsystem walk), `draft` (an artifact this run
+    produced).
+  - **`Result`** — exactly one of `done`, `pass`, `fail`, `not-run`,
+    `partial`, `n-a`.
+  - **`Evidence`** — what actually came back, in one clause: the line
+    range read, the script's verdict line, the finding IDs the pass
+    produced, the reason a pass did not run. Not an adjective, not a
+    restatement of `What`.
+  - **A skipped pass gets a row, not a silence** — `not-run`, with the
+    reason and, where there is one, the check that would close it
+    (`RV-06`). This is the same honesty rail as the coverage statement
+    (design v0.6 §8) at act granularity: on an in-place update or a
+    resumed session a `not-run` row is **updated to its result when
+    the pass actually runs**, and is never deleted to make the record
+    look complete.
+  - Every act is one this run performed against the clone at the
+    pinned canon SHA and the diff at the pinned head SHA (`B-00a` —
+    read this run, never recalled). An act that did not happen has no
+    row.
+  The deck renders this table as its visible "What I checked" card
+  (design v0.7.3), which makes it the maintainer's only trace of
+  *what the run did* rather than what it concluded: a claim anywhere
+  else in this record with no work-log row behind it is a defect in
+  the record.
+
 
 ## Template
 
@@ -297,6 +335,15 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
 > **Held at contributor request.** "<verbatim quoted request>"
 > This item is marked human-only; the agent drafts nothing further for
 > it except at explicit maintainer request. A maintainer will respond.
+
+### Work log (RP-21)
+
+Every act this run performed, in order — including the passes that did
+not run. Enumerated `Act` and `Result`; one line each.
+
+| Act | What | Evidence | Result |
+| --- | --- | --- | --- |
+| <read / canon / script / query / review / draft> | <the specific target — path @ pinned SHA, script name, or the named pass with its rule ID> | <what came back, in one clause> | <done / pass / fail / not-run / partial / n-a> |
 
 ### Anchor
 
