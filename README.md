@@ -1,7 +1,7 @@
 # LQ Maintainer Agent
 
-**Status: v0.5.1 — early (M0/M1).** Built against design doc v0.7.3
-(a delta over v0.7.2): tiered review with a quick-pass default, four
+**Status: v0.6.0 — early (M0/M1).** Built against design doc v0.7.4
+(a delta over v0.7.3): tiered review with a quick-pass default, four
 change categories with a design path for greenfield work, and a
 public-deck / internal-receipt deliverable split. As of v0.5.0 the
 agent also detects breaking changes mechanically from the diff,
@@ -15,9 +15,14 @@ away) and, as of this release, **checkable**: every finding names
 where it is, what to change and why, with its drafted replacement
 ready to apply in one click, and a work log records what the run
 actually did — what it read, which checks ran, and which passes did
-**not** run. The eval harness and canon-drift check are wired and
-green in CI; batch digests and the community repo land in later
-milestones. See [docs/design/](docs/design/) for the full design and
+**not** run. New in this release, the **milestone is a scan unit**:
+the queue router takes a milestone scope, and a dedicated scan answers
+what is left in a milestone and what is blocking it — over open items
+only, reading recorded evidence rather than re-reviewing it, reporting
+counts and never a forecast. A milestone selects what gets looked at;
+it never changes how anything is judged. The eval harness and
+canon-drift check are wired and green in CI; batch digests and the
+community repo land in later milestones. See [docs/design/](docs/design/) for the full design and
 milestone plan.
 
 ## What this is
@@ -115,7 +120,7 @@ local read access to the canon and to `main`.
    are `/lq-maintainer:triage` and `/lq-maintainer:review-pr`, not a bare
    `/triage`.
 
-The plugin declares the six skills and the **PreToolUse safety hooks**
+The plugin declares the seven skills and the **PreToolUse safety hooks**
 ([hooks/hooks.json](hooks/hooks.json)) that block merge, approve, close,
 push, and PR-ref checkout in the session. A reference copy of the same
 block for lq-ai's own `.claude/`
@@ -129,15 +134,16 @@ canon SHA it was judged against, the agent version, and the served model
 ID for the session — so any triage decision is reproducible and any
 dispute auditable.
 
-## The six skills
+## The seven skills
 
 All are explicit-invocation-only (`disable-model-invocation: true`) —
 nothing fires unprompted. One **router** sorts the queue; two **reviewers**
 handle a single item at the right tier; one **designer** turns greenfield
 feature work into a ratifiable plan; one **labeler** gives an arriving
-item a cheap, provisional first touch; and one **release drafter** turns
+item a cheap, provisional first touch; one **release drafter** turns
 the accumulated review evidence into the target repo's release
-narrative.
+narrative; and one **milestone scanner** answers what is left in a
+milestone and what is blocking it.
 
 - **`/lq-maintainer:triage`** ([skills/triage/](skills/triage/)) — the
   breadth pass / queue router, for PRs and issues in batch. Produces a
@@ -145,6 +151,11 @@ narrative.
   deterministic-check results, standard-lane triage cards, committee
   packets for escalations, and issue classifications with drafted
   responses. Use it to start a maintainer session and clear the queue.
+  *(v0.7.4)* `/lq-maintainer:triage milestone "<name>"` runs the same
+  digest scoped to the open items carrying a milestone — with the
+  omission counts stated, and merge-order groups still computed across
+  the **whole** queue so a lockfile collision one milestone over stays
+  visible.
 - **`/lq-maintainer:review-pr N`** ([skills/review-pr/](skills/review-pr/))
   — the single-PR reviewer. Default is the **Tier-1 quick pass**: one
   time-boxed read of the diff against canon that ends in a concrete
@@ -187,10 +198,24 @@ narrative.
   semver bump is suggested with evidence — drafted, never decided. The
   human tags and publishes, always.
 
+- **`/lq-maintainer:milestone "<name>"`**
+  ([skills/milestone/](skills/milestone/)) *(v0.7.4)* — the milestone
+  readiness scan: what is **left** in a milestone and what is blocking
+  it, in four buckets (blocking / ready to close out / needs work / not
+  yet assessed) over the **open** items only. It reads the evidence the
+  fuller passes recorded rather than re-reviewing — every line names its
+  source, and a receipt written at a head SHA that has since moved is
+  flagged stale instead of counted as ready. It reports counts and
+  days-to-due, never a forecast, and it never closes a milestone or
+  moves an item into or out of one. A milestone **selects** items; it
+  never changes how one is judged
+  ([rules/milestones.md](rules/milestones.md)).
+
 Rule of thumb: `/lq-maintainer:label` for a cheap first touch when
 something arrives; `/lq-maintainer:triage` to decide what deserves
 attention; `review-pr` / `review-issue` for one item; `design-plan` when
-the item is really a feature proposal wearing a PR; `release-notes` when
+the item is really a feature proposal wearing a PR; `milestone` when the
+question is "what is left before this ships"; `release-notes` when
 cutting a release.
 
 ## Categories and tiers
