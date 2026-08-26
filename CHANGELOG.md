@@ -8,6 +8,88 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
+## [0.6.0] — 2026-08-17
+
+Design doc: [v0.7.4](docs/design/lq-maintainer-agent-design-v0.7.4.md)
+(delta over v0.7.3, adopted 2026-08-17). Request, rulings and spec in
+[docs/proposals/milestone-scanning.md](docs/proposals/milestone-scanning.md).
+From a maintainer field request: "im wishing i can scan PRs and issues
+by milestone."
+
+- **The milestone becomes a scan unit** (new
+  [rules/milestones.md](rules/milestones.md), `MS-NN`). GitHub already
+  carries the grouping on every PR and issue; the agent never read it.
+  It now does — as a **selector and never a signal**. `MS-02`: no lane,
+  category, tier, issue class, anchor, escalation trigger, burden
+  verdict, or merge-order group may read the field, so a scoped run
+  produces exactly the per-item calls an unscoped run would. A due date
+  is not an argument for a lighter touch, and an item's absence from
+  the milestone is not evidence against it either. The agent never
+  writes the field: creating, closing, re-dating a milestone or moving
+  an item into or out of one is a handed-over command, one at a time
+  (`MS-10`).
+- **`/lq-maintainer:triage milestone "<name>"`** — the same batch
+  digest, scoped. New scope line
+  ([templates/digest.md](templates/digest.md) `DG-15`) carrying the
+  resolved milestone (title, number, state, due date), the open-only
+  bound in words, and the two **omission counts** — how many open items
+  carry no milestone, how many were excluded for carrying a different
+  one. A filter's failure mode is a silent omission that reads like a
+  complete answer, so the counts are mandatory and the excluded items
+  are never enumerated (`MS-04`). Milestone resolution is exact: zero or
+  two matches **stop the run** and ask, and the whole queue is never
+  scanned as a fallback (`MS-01`).
+- **Merge-order groups are computed queue-wide, then filtered for
+  display** (`MS-05`). The `rules/queue.md` Q-01 collision is a property
+  of the shared manifest, not of anyone's milestone: grouping inside the
+  scope would report a two-PR group as clean while a third PR one
+  milestone over moves the same lockfile out from under both. Every
+  out-of-scope member of a rendered group is named, with its own
+  milestone, and marked — and Q-02's security-first ordering still
+  names it first when it is the advisory-backed one.
+- **`/lq-maintainer:milestone "<name>"`** — new skill
+  ([skills/milestone/](skills/milestone/), rendering
+  [templates/milestone-scan.md](templates/milestone-scan.md) `MI-NN`).
+  What is **left** in a milestone and what is blocking it, in four
+  buckets: blocking / ready to close out / needs work / not yet
+  assessed, each line citing the rule that placed it. **Open items
+  only** (`MS-03`) — the closed side is never fetched, so the scan
+  reports what is left and never a completion figure, and an empty
+  milestone reports emptiness rather than "done". Bare
+  `/lq-maintainer:milestone` lists the open milestones and asks which.
+- **It reads evidence; it does not re-review** (`MS-11`). The scan is in
+  `/lq-maintainer:label`'s weight class, not triage's. Every line names
+  its source — `receipt @<sha>` or `provisional` — and the asymmetry is
+  one-directional: "blocking" and "needs work" may rest on a mechanical
+  fact the fetch established (a dirty merge state, failing CI), while
+  **"ready to close out" is a clearance and always needs a non-stale
+  receipt**. A cheap pass may add work; it may never clear it.
+- **Stale evidence never counts as ready** (`MS-12`). A receipt written
+  at a head SHA that is no longer the item's head renders
+  `receipt (stale — evidence at <sha>, head is now <sha>)` and moves the
+  item to *not yet assessed*. A merge candidate from three commits ago
+  is not a merge candidate; the ratchet holds its usual direction.
+- **Counts, never a forecast** (`MS-08`). "4 blocking, due in 6 days" is
+  the report. "On track", "at risk", "will slip", a velocity, a
+  burn-down, and a completion percentage are banned outright — a tool
+  that has never seen the closed side of a milestone would be inventing
+  one. Carve-outs survive scoping unchanged (`MS-06`): the C-40
+  one-liner, an E-21 suspension and a §7.1 hold each render inside a
+  scope exactly as outside it, never folded into a bucket count.
+- **Evals:** two new fixtures and goldens — `mil-01-milestone-scope-filter`
+  (the advisory-backed member of a shared-lockfile group sits one
+  milestone over; both omission counts stated; a "keep the review light"
+  milestone description that must move nothing) and
+  `mil-02-milestone-readiness-stale-evidence` (a clean, green,
+  never-assessed PR that must not be called ready, and a recorded
+  `merge` two commits stale that must lose its clearance). Both carry
+  `kind: milestone-scan`, a new cross-item golden kind that
+  `ci/scripts/grade-evals.sh` exempts from lane grading exactly as it
+  exempts `kind: release-range` — a milestone is not routed. Grading
+  contract in [evals/run-checks.md](evals/run-checks.md); the corpus
+  index and counts in [evals/README.md](evals/README.md) are corrected
+  to the real 28 fixtures (the v0.7.2 additions had never been listed).
+
 ## [0.5.1] — 2026-08-12
 
 Design doc: [v0.7.3](docs/design/lq-maintainer-agent-design-v0.7.3.md)
