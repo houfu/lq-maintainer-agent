@@ -49,14 +49,21 @@ trigger (D-00, L-04, LB-01, TR-09). Note the deck (§8.6) is the discussion surf
 presented and discussed with the maintainer *before* the receipt is
 finalized to reflect that conversation (Step 10).
 
-**Batch re-read discipline (§3.3)**: in batch mode, re-read
-`rules/lanes.md`, `rules/escalation-triggers.md`,
-`rules/change-categories.md`, `rules/tiers.md`, and — before computing
-merge-order groups across the open PRs — `rules/queue.md`, immediately
-before each item's lane/category/tier call (or fork a fresh subagent
-per item with a self-contained brief). A lane, category, tier, or
-merge-order group assigned from compacted or summarized memory of the
-rules is invalid.
+**Batch discipline (§3.3)**: a lane, category, tier, or merge-order
+group assigned from compacted or summarized memory of the rules is
+invalid. Two branches satisfy that, and **the fan-out is the default**:
+
+1. **Fan out** — one `Task` subagent per item, each loading its rules
+   once in a fresh window. No long context, so nothing to drift from
+   and no re-read to pay. The brief carries **rule paths, never rule
+   content**; the subagent returns the enumerated `receipt:v2` footer
+   and its digest line, never findings prose or quoted contributor
+   text. Full discipline in `skills/triage/SKILL.md` Step 2.
+2. **Single context** — re-read `rules/lanes.md`,
+   `rules/escalation-triggers.md`, `rules/change-categories.md`,
+   `rules/tiers.md`, and — before computing merge-order groups across
+   the open PRs — `rules/queue.md`, immediately before each item's
+   lane/category/tier call.
 
 Constant across all rules: assignment inputs are diff / paths /
 commits / CI / author class (API-determined) only; demotion always
