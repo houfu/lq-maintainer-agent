@@ -9,11 +9,29 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| **v0.7.3** | [lq-maintainer-agent-design-v0.7.3.md](lq-maintainer-agent-design-v0.7.3.md) | **Current** (Adopted 2026-08-12; delta over v0.7.2 — measurement and implementation spec in [../proposals/deck-findings-and-work-log.md](../proposals/deck-findings-and-work-log.md)) |
+| **v0.7.4** | [lq-maintainer-agent-design-v0.7.4.md](lq-maintainer-agent-design-v0.7.4.md) | **Current** (Adopted 2026-08-17; delta over v0.7.3 — request, rulings and implementation spec in [../proposals/milestone-scanning.md](../proposals/milestone-scanning.md)) |
+| v0.7.3 | [lq-maintainer-agent-design-v0.7.3.md](lq-maintainer-agent-design-v0.7.3.md) | Base document — normative where v0.7.4 is silent (Adopted 2026-08-12; delta over v0.7.2 — measurement and implementation spec in [../proposals/deck-findings-and-work-log.md](../proposals/deck-findings-and-work-log.md)) |
 | v0.7.2 | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | Base document — normative where v0.7.3 is silent (Adopted 2026-08-06; delta over v0.7.1 — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) and [../proposals/deck-leanness.md](../proposals/deck-leanness.md)) |
 | v0.7.1 | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | Base document — normative where v0.7.2 is silent (Adopted 2026-07-30; delta over v0.7) |
 | v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
+
+Headline of v0.7.4 — **the milestone becomes a scan unit**, on two
+surfaces: `/lq-maintainer:triage milestone "<name>"` scopes the batch
+digest to the items carrying a milestone, and a new
+`/lq-maintainer:milestone "<name>"` answers "what is left, and what is
+blocking it" in four buckets (blocking / ready to close out / needs
+work / not yet assessed). A new rule file (`rules/milestones.md`,
+`MS-NN`) keeps the field a **selector and never a signal** — nothing
+routes on a milestone, a due date is never an argument for a lighter
+touch, and the scan is open-items-only, so it reports what is left and
+never a completion figure. Two rules do the real work: the omission
+counts (a filter that hides what it dropped is a liability), and
+merge-order groups computed queue-wide then filtered for display, so a
+lockfile collision one milestone over is still visible. The readiness
+scan reads recorded evidence rather than re-reviewing, names each
+line's source, and flags a receipt written at a stale head SHA instead
+of counting it as ready.
 
 Headline of v0.7.3 — two changes from maintainer field
 feedback on v0.5.0 decks, both answering the same defect from opposite
