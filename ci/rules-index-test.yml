@@ -1,0 +1,65 @@
+# rules-index-test.yml — tests for the progressive rules reader
+# (skills/triage/scripts/rules-index.sh; rules/loading.md LD-NN).
+#
+# BLOCKING. Deterministic and cheap: pure python3 stdlib, no API tokens, no
+# canon clone, no network. Guards the property the whole LD-NN discipline
+# rests on:
+#
+#   A spine and a section are EXTRACTED, never authored (LD-04/LD-05).
+#   Every line a `section` prints must appear verbatim in the source rule
+#   file, and a `spine` must list exactly the IDs that file defines — no
+#   more, no fewer. If that ever regresses, the agent would be routing and
+#   citing from text no human wrote and no file contains, which is the
+#   paraphrase failure design §3.3 and B-00a exist to prevent.
+#
+# Also guards fail-closed behaviour (LD-06): an unknown ID, a file with no
+# rule IDs, and an unreadable path each exit non-zero and print no content,
+# so a fetch that cannot be satisfied never degrades into a silent omission.
+#
+# NOTE — file location (§3.1): GitHub Actions only discovers workflows under
+# .github/workflows/. ci/ is the reviewed source of truth; a byte-identical
+# copy ships at .github/workflows/rules-index-test.yml. The first step fails
+# if the two diverge — edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): third-party actions pinned by full commit SHA.
+
+name: rules-index-test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "skills/triage/scripts/rules-index.sh"
+      - "rules/**"
+      - "ci/scripts/test-rules-index.sh"
+      - "ci/rules-index-test.yml"
+      - ".github/workflows/rules-index-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rules-index-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rules-index-test:
+    name: rules-index tests (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/rules-index-test.yml .github/workflows/rules-index-test.yml; then
+            echo "::error file=ci/rules-index-test.yml::ci/rules-index-test.yml and .github/workflows/rules-index-test.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Run rules-index extraction + fail-closed tests
+        run: |
+          set -euo pipefail
+          python3 ci/scripts/test-rules-index.sh

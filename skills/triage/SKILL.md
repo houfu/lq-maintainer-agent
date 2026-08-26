@@ -18,7 +18,7 @@ description: >
   /lq-maintainer:review-issue N — triage sorts the queue; the review skills
   go deep on one item.
 disable-model-invocation: true
-allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Task, Read, Grep, Glob
+allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Task, Read, Grep, Glob
 ---
 
 # /lq-maintainer:triage — lane assignment, receipts, and drafts for inbound work
@@ -102,6 +102,19 @@ version + served model ID**.
 Anything else: ask the maintainer to pick one of these forms.
 
 ## Step 2 — Load the rules
+
+**Read `rules/loading.md` (`LD-NN`) first** — it governs *when* each
+file below is read and nothing about what any of them says. Its
+register (`LD-02`) splits them: files whose every entry must be
+evaluated load **whole**, up front; files whose entries are conditional
+load as a **spine** —
+`${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh spine <file>`,
+which extracts each rule's own ID and title verbatim — and the sections
+that bear are then fetched in full with `rules-index.sh section <file>
+<ID>...` **before** any rule is applied or cited (`LD-05`). A spine
+routes; it never decides. When in doubt, read the file whole
+(`LD-06`), and `injection-posture` and `escalation-triggers` are never
+deferred by any mechanism (`LD-09`).
 
 Read the twelve lane/category/tier-affecting rule files before judging
 anything; five more — `rules/burden.md` (rolls up their results),

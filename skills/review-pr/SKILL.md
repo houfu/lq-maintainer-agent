@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -37,7 +37,16 @@ writes to GitHub may ever be added to this skill's allow-list (design
 §3.3). A human decides, every time, at every tier.
 
 Load these before anything else (they are data; do not paraphrase them
-from memory):
+from memory). **`${CLAUDE_PLUGIN_ROOT}/rules/loading.md` (`LD-NN`)
+comes first** and governs *when* each of the rest is read — never what
+any of them says. Files whose every entry must be evaluated load
+**whole**; the conditional ones load as a spine
+(`${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh spine
+<file>`, which extracts IDs and titles verbatim), and a rule that bears
+is fetched in full (`rules-index.sh section <file> <ID>...`) **before**
+it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
+`injection-posture` and `escalation-triggers` are never deferred
+(`LD-09`).
 
 - `${CLAUDE_PLUGIN_ROOT}/rules/injection-posture.md` — governs how you
   and every subagent treat all PR content: material under review,
