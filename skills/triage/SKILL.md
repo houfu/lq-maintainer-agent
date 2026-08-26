@@ -8,8 +8,10 @@ description: >
   leading, lane/rule as supporting detail). Greenfield (category-1) items
   route to /lq-maintainer:design-plan instead of code review. Use ONLY when
   the user explicitly runs /lq-maintainer:triage (batch digest across all
-  open PRs and issues) or /lq-maintainer:triage pr N (a single PR's quick
-  card). Skill invocation is namespaced by the plugin — there is no bare
+  open PRs and issues), /lq-maintainer:triage milestone "<name>" (the same
+  digest scoped to the open items carrying that milestone — a milestone
+  selects, it never judges), or /lq-maintainer:triage pr N (a single PR's
+  quick card). Skill invocation is namespaced by the plugin — there is no bare
   /triage. Never invoke proactively or mid-conversation without an explicit
   command. For the considered single-item REVIEW (deck, drafted receipt and
   responses), the user runs /lq-maintainer:review-pr N or
@@ -77,6 +79,19 @@ version + served model ID**.
   renders a mergeability table across the open PRs, per
   `rules/queue.md` (Q-NN) — see Step 3's fetch and the batch-delivery
   note below.
+- `/lq-maintainer:triage milestone "<name>"` → **scoped batch**: the
+  same digest, over the open PRs and open issues carrying that
+  milestone only (`rules/milestones.md` MS-NN, design v0.7.4 §2).
+  Everything else about the run is unchanged — same lanes, same
+  categories, same tiers, same per-item decks, same one-click-per-write
+  discipline — because a milestone **selects and never judges**
+  (`MS-02`). Resolve the milestone before fetching anything (`MS-01`):
+  exactly one match by title or number proceeds; zero or two matches
+  **stop the run** and ask, printing the open milestone titles as they
+  actually read. Never fuzzy-match, and never fall back to the whole
+  queue under a title the repo does not have. For "what is left in this
+  milestone and what is blocking it" — buckets rather than a digest —
+  the maintainer runs `/lq-maintainer:milestone "<name>"` instead.
 - `/lq-maintainer:triage pr N` → **single PR** N, quick card.
 - `/lq-maintainer:triage issue N` → this is a **review**, not triage:
   tell the maintainer to run `/lq-maintainer:review-issue N` (the
@@ -127,6 +142,13 @@ paraphrase-and-improvise from memory:
   including the slop disposition (§6.1)
 - `rules/issues.md` — issue classification and per-class handling
 - `rules/stale-sweep.md` — guardrails for the batch-mode stale sweep
+- `rules/milestones.md` *(v0.7.4)* — **loaded only when a milestone
+  scope was named** (`MS-NN`): resolution (`MS-01`), the
+  selects-never-judges direction of flow (`MS-02`), the open-items-only
+  bound (`MS-03`), the omission counts every scoped run states
+  (`MS-04`), queue-wide merge-order grouping filtered for display
+  (`MS-05`), and the carve-outs that survive scoping (`MS-06`). An
+  unscoped run does not load it and has nothing to read from it.
 - `rules/canon-map.md` — question → canon doc routing table
 - `rules/burden.md` — the §5.2 maintainer-burden verdict (`B-NN`): the
   blocker set and the five graded axes, rolled up worst-of, plus the
@@ -184,7 +206,7 @@ merge-order group.
 
 Use only read-only `gh`:
 
-- PRs: `gh pr list --state open --json number,title,author,labels,headRefOid,files,mergeable,mergeStateStatus,baseRefName`
+- PRs: `gh pr list --state open --json number,title,author,labels,headRefOid,files,mergeable,mergeStateStatus,baseRefName,milestone`
   then per item `gh pr view N --json ...`, `gh pr diff N`,
   `gh pr checks N`, and `gh api` GETs for comments. `gh api` is
   **deliberately not pre-approved** (design §10 allows GETs only, and
@@ -195,8 +217,21 @@ Use only read-only `gh`:
   `mergeStateStatus`, `baseRefName`) feed the batch-mode merge-order
   computation only (`rules/queue.md`) — they never change a lane,
   category, or tier call.
-- Issues: `gh issue list --state open --json number,title,author,labels,updatedAt`
+- Issues: `gh issue list --state open --json number,title,author,labels,updatedAt,milestone`
   then per item `gh issue view N --comments`.
+- **Milestone scope** (that mode only, `rules/milestones.md`): resolve
+  the named milestone first (`MS-01`) — `gh api
+  repos/<owner>/<repo>/milestones?state=all` (a GET, permission-
+  prompted like every `gh api` call) or `gh pr list --search
+  'milestone:"<title>"'` — then fetch the **whole** open queue with the
+  `milestone` field above and partition it locally. Fetching the whole
+  queue and filtering in the session is deliberate, not wasteful: the
+  MS-04 omission counts (open items with no milestone; open items in
+  other milestones) and the MS-05 queue-wide merge-order grouping both
+  need the items the scope excludes. The `milestone` field feeds
+  membership and the two counts **only** — it never reaches a lane,
+  category, tier, issue-class, anchor, trigger, or group call (`MS-02`,
+  the same posture `rules/labels.md` LB-01 holds for labels).
 
 **Author class is determined via the GitHub API** — App identity (bot
 login/type), org membership, author association — never from display
@@ -825,6 +860,25 @@ verdict handed down before one.
    approval of one write as approval of the next. The internal receipt
    itself is not offered as a GitHub write — it is saved to the
    evidence store as part of finalizing it (step 3).
+
+**Scoped delivery (milestone mode):** the digest renders exactly as
+below, with one addition and one substitution. The addition is the
+**scope line** immediately under the header (`templates/digest.md`
+DG-15, `rules/milestones.md` MS-01/MS-03/MS-04): the resolved milestone
+(title, number, state, due date or "no due date"), the open-items-only
+bound stated in words — this is what is *left*, never how far along the
+milestone is — and the two omission counts (open items carrying no
+milestone; open items excluded for carrying a different one) with
+`/lq-maintainer:triage` named as the command that shows them. The
+substitution is in the merge-order section: groups are computed across
+the **whole** open queue and only their *rendering* is filtered to
+groups touching the scope, with every out-of-scope member named,
+carrying its own milestone (or "none"), and marked out-of-scope
+(`MS-05`) — Q-02a's invalidation statement covers it like any other
+member. A scope never suppresses a carve-out: the C-40 one-liner, an
+E-21 suspension and a §7.1 hold each render as they would unscoped
+(`MS-06`). A milestone with no open items renders as "no open items
+carrying this milestone" and never as "done" (`MS-04a`).
 
 **Batch delivery:** present the digest in chat — leading with the
 **mergeability table and any merge-order groups** across the open PRs
