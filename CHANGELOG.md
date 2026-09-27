@@ -8,7 +8,14 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
-## [0.6.0] — 2026-08-17
+## [0.6.0] — 2026-09-27
+
+Two strands: milestone scanning (a design delta), and context-budget
+work that changes only *when* rule and skill bytes are read, never what
+is decided. The latter has been in field use on `legalquants/lq-ai`
+since 2026-08-27.
+
+### Milestone scanning
 
 Design doc: [v0.7.4](docs/design/lq-maintainer-agent-design-v0.7.4.md)
 (delta over v0.7.3, adopted 2026-08-17). Request, rulings and spec in
@@ -89,6 +96,60 @@ by milestone."
   contract in [evals/run-checks.md](evals/run-checks.md); the corpus
   index and counts in [evals/README.md](evals/README.md) are corrected
   to the real 28 fixtures (the v0.7.2 additions had never been listed).
+
+### Context budget — read the same rules, later, and only the ones that bear
+
+From the maintainer sessions of 2026-08-20/26 on `legalquants/lq-ai`: a
+single `/lq-maintainer:review-pr` on #535 loaded fifteen rule files
+(38,958 tokens) before reading a line of diff and cited 36 of the 245
+rule IDs they define; batch triage re-read five files per item (~14,000
+tokens each time); peak context ran 248k–504k, and one session
+compacted — the failure design §3.3 names, since a call made from a
+compacted summary is invalid (B-00a). **No output changes** in any of
+the items below: same lanes, categories, tiers, decks and receipts.
+
+- **Progressive rule loading** (new [rules/loading.md](rules/loading.md),
+  `LD-NN`). Each rule file is classified by one question: does
+  correctness require evaluating every entry, or only those that apply?
+  Every-entry files (injection-posture, escalation-triggers,
+  change-categories, tiers, reversibility, breaking-changes, conduct,
+  tone-gate, self-attestation, anchoring, stale-sweep, queue, canon-map)
+  still load whole — a trigger you did not read is a trigger you did not
+  clear. Conditional files (lanes, salvage, burden, labels, issues,
+  decision-scoping, milestones) load as a spine first; anything under
+  ~2,000 tokens loads whole regardless (`LD-03`). **`LD-05`: a spine
+  routes, it never decides** — a rule is fetched in full before it is
+  applied, cited or rendered. `LD-06` fails toward loading on any doubt,
+  `LD-09` never defers injection-posture or escalation-triggers, and
+  `LD-08` records each deferral as a work-log row. Standard-lane review:
+  ~52,500 → ~35,600 tokens before any diff.
+- **`skills/triage/scripts/rules-index.sh`** extracts spines and
+  sections rather than authoring them (`LD-04`): IDs, titles and full
+  rule text verbatim from the file, so a spine cannot drift from what it
+  indexes and a section cannot be a paraphrase. Fails closed.
+  `ci/scripts/test-rules-index.sh` — 128 checks over all 21 rule files
+  (every emitted line verbatim in its source, every spine exactly the
+  IDs its file defines, all fail-closed paths exit non-zero with no
+  content) — wired blocking in `rules-index-test`.
+- **Batch triage's per-item fan-out is executable** (design §3.3).
+  `skills/triage/SKILL.md` offered "fork a fresh subagent per item" while
+  its own allow-list omitted `Task`, so every batch run took the
+  re-read branch (sidechain count across four sessions: 0). `Task` joins
+  the allow-list, read-only, and new
+  [agents/triage-item.md](agents/triage-item.md) pins what gets forked —
+  no Write/Edit/Bash, no further fan-out, the C-40 / E-21 / §7.1
+  carve-outs verbatim. The brief carries **rule paths, never rule
+  content**; the hand-back is enumerated — the `receipt:v2` footer and
+  one digest line, never findings prose or quoted contributor text
+  (I-09/I-12). The four-pass deep-dive team still lives only in
+  `/lq-maintainer:review-pr`.
+- **`review-pr`'s Tier-2 deep dive moves to a reference file**
+  ([skills/review-pr/references/tier-2-deep-dive.md](skills/review-pr/references/tier-2-deep-dive.md)),
+  loaded only when a TR-07 condition fires. The Tier-1 quick pass — the
+  default and most runs — no longer carries it (~2,300 tokens per
+  invocation; one measured session injected `SKILL.md` four times and
+  entered Tier 2 zero times). Procedure unchanged phrase for phrase; the
+  stub fails toward loading, and the load is an `RP-21` work-log row.
 
 ## [0.5.1] — 2026-08-12
 
