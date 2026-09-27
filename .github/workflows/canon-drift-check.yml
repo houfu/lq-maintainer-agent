@@ -183,9 +183,19 @@ jobs:
         run: |
           set -euo pipefail
           BRANCH="canon-pin/advance-${NEW_SHA:0:12}"
-          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
-            echo "::notice::pin-advance branch ${BRANCH} already exists — a PR for this canon SHA is already open or awaiting review; not opening another."
+          # Decide on the PR, not the branch: a run that pushed the branch
+          # and then failed at `gh pr create` leaves an orphan branch with
+          # no PR, and treating that as "already open" stalls the advance
+          # until lq-ai main moves again. Any PR ever opened from this
+          # branch — open (awaiting review), merged, or closed (declined) —
+          # means there is nothing to do.
+          EXISTING_PR="$(gh pr list --head "$BRANCH" --state all --json number,state --jq '.[0] | select(.) | "#\(.number) (\(.state))"')"
+          if [ -n "$EXISTING_PR" ]; then
+            echo "::notice::pin-advance PR ${EXISTING_PR} already exists for ${BRANCH}; not opening another."
             exit 0
+          fi
+          if git ls-remote --exit-code origin "refs/heads/${BRANCH}" >/dev/null 2>&1; then
+            echo "::notice::branch ${BRANCH} exists with no PR (an earlier run failed before opening one) — rebuilding it from current main."
           fi
           {
             echo "# lq-ai canon pin — the CI canon reference (design doc §3.4)."
@@ -208,7 +218,8 @@ jobs:
           git commit -s \
             -m "Advance canon pin to lq-ai@${NEW_SHA:0:12}" \
             -m "Scheduled canon-pin advance (design doc §3.4). Drift check against the candidate canon: ${DRIFT_RESULT}."
-          git push origin "$BRANCH"
+          # --force only ever replaces an orphan: a branch with any PR exited above.
+          git push --force origin "$BRANCH"
           BODY="$(mktemp)"
           cat > "$BODY" <<EOF
           Scheduled canon-pin advance (design doc §3.4): \`legalquants/lq-ai\` main has moved.
