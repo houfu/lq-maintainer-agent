@@ -85,6 +85,24 @@ Pagination / `--since` thresholds are deferred until scale hurts
   CI-green go stale once the first member merges and must be rebased
   and re-checked. Report-only (Q-03): the digest never merges, rebases,
   or re-triggers CI for any member.
+- **DG-15 — The scope line** *(new, v0.7.4, `rules/milestones.md`)*.
+  A milestone-scoped run (`/lq-maintainer:triage milestone "<name>"`)
+  renders one scope line directly under the header, carrying three
+  things and never fewer: (1) the **resolved milestone** — title,
+  number, state, and due date or "no due date" (`MS-01`), so the reader
+  can see what was actually scanned; (2) the **open-items-only bound**
+  in words (`MS-03`) — this digest is what is *left* in the milestone,
+  not how far along it is, because the closed side was never fetched;
+  and (3) the **omission counts** (`MS-04`) — how many open items carry
+  no milestone at all, and how many were excluded for carrying a
+  different one, with `/lq-maintainer:triage` named as the command that
+  shows them. Counts, never an enumeration: enumerating the excluded
+  items would undo the scoping the maintainer asked for. An unscoped
+  run renders no scope line at all. A scope with no open items renders
+  "no open items carrying this milestone" — never "done" (`MS-04a`).
+  Scoping changes **which** items appear and nothing about how any one
+  of them was judged (`MS-02`): every lane, category, tier, and outcome
+  on the lines below is the call an unscoped run would have made.
 - **DG-14 — Every item's line carries its deck path** *(new)*. Each
   section's item line ends with the path to that item's rendered deck
   (Step 10). The digest is the batch's deck index — no separate index
@@ -99,12 +117,23 @@ Pagination / `--since` thresholds are deferred until scale hurts
 Canon `<sha>` · agent `<x.y.z>` · model `<served model ID>`
 Open PRs: <n> · open issues: <n>
 
+<milestone-scoped runs only — DG-15, rules/milestones.md:>
+Scope: milestone **<title>** (#<number>, <open|closed>, due <date | no
+due date>) — **open items only**: this is what is left in the
+milestone, not how far along it is (MS-03). Excluded: <n> open item(s)
+in other milestones, <n> open item(s) with no milestone — run
+`/lq-maintainer:triage` for the whole queue (MS-04). Scoping selects
+items; it changed no lane, category, tier, or outcome below (MS-02).
+
 ### Mergeability & merge order (`rules/queue.md`; DG-12/DG-13)
 | # | lane | outcome | mergeStateStatus | merge-order group | deck |
 |---|---|---|---|---|---|
 | #<n> | <lane> | <outcome \| merge candidate> | clean\|behind\|dirty\|blocked\|unknown | <group-id \| —> | `<deck path>` |
 
-<for each merge-order group (>=2 members sharing a manifest/lockfile):>
+<for each merge-order group (>=2 members sharing a manifest/lockfile);
+in a scoped run, groups are computed queue-wide and only their
+rendering is filtered, with out-of-scope members marked
+`— out of scope (milestone: <title | none>)`, MS-05:>
 **Group `<group-id>`** (`<manifest/lockfile path>`, Q-01) — recommended
 order: #<n> first (security-relevant/advisory-backed, Q-02)[, then
 #<n>, #<n> in either order]. Merging #<n> invalidates the

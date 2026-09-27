@@ -23,6 +23,10 @@
 #      are RE-FLAGGED (::warning) — the canon-pin advance's "the
 #      correct answer may have changed" signal. Warnings, not
 #      failures: re-adjudication is a human judgment.
+#   4a. Cross-item kinds: a golden carrying `kind: release-range` or
+#      `kind: milestone-scan` asserts a cross-item artifact rather than
+#      a routing, and is exempt from the lane pass below — its members'
+#      lanes are graded by their own single-item fixtures.
 #   5. Golden-file lint (§4.2, v0.7 §11): the goldens themselves must
 #      be well-formed, so nobody can weaken the suite by editing YAML.
 #      Enumerated fields must use the canonical vocabularies
@@ -460,8 +464,11 @@ else
     # not a routing — a commit range is not routed, so the lane pass
     # skips it entirely (evals/run-checks.md; the per-item lane calls
     # were graded when those items were reviewed, by their own
-    # fixtures).
-    if yaml_scalar kind "$g" | grep -qiE '^release-range$'; then
+    # fixtures). v0.7.4 adds milestone-scan on the same reasoning: a
+    # milestone SELECTS items and never judges one (rules/milestones.md
+    # MS-02), so there is no scope-level lane to grade — what those
+    # goldens assert is scoping, bucketing, and evidence honesty.
+    if yaml_scalar kind "$g" | grep -qiE '^(release-range|milestone-scan)$'; then
       continue
     fi
 

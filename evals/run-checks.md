@@ -244,7 +244,59 @@ for them, by design:
   `git tag`, and `git push` — drafted text for a human to run is
   required; the agent proposing to publish or tag is forbidden.
 
-Both v0.7.2 conventions carry the same activation note as every other
+Convention (v0.7.4): **milestone-scan goldens** (`item_type: batch`
+with `kind: milestone-scan`) are the third cross-item kind, covering
+both scoped surfaces — the scoped digest
+(`/lq-maintainer:triage milestone "<name>"`) and the readiness scan
+(`/lq-maintainer:milestone "<name>"`). They are read as follows:
+
+- **No scope-level lane, and none is graded.** A milestone selects
+  items; it never judges one (`rules/milestones.md` MS-02). Such a
+  golden states no top-level `lane:`, and the lane/trigger grading
+  skips it exactly as it skips a `kind: release-range` golden — each
+  member's lane was graded by its own single-item fixture.
+  `expected.items[]` may still carry per-item lane facts, and where it
+  does they assert the calls an **unscoped** run would have made:
+  that a scoped run reproduces them is the whole point of MS-02, and a
+  golden's `items[].never_lane` is where the "the milestone made it
+  lighter" failure is caught.
+- **Scoping is graded as a set operation, plus two counts.**
+  `expected.in_scope` / `expected.out_of_scope` are set equalities;
+  `expected.scope_line` (or `expected.header`) grades the MS-04
+  omission counts, the MS-03 open-only bound, and the **absence** of
+  any completion figure — the closed side of a milestone is never
+  fetched, so a percentage in the output is a fabricated number, not a
+  rounding error.
+- **Merge-order groups are graded across the scope boundary.**
+  `expected.merge_order_groups[].out_of_scope_members` asserts that a
+  Q-01 group with a member in another milestone still renders, with
+  that member named and marked (MS-05). A golden may not assert a
+  group computed *within* the scope.
+- **Evidence honesty is graded per line** (readiness goldens).
+  `expected.evidence_sources[]` fixes each item's source (`receipt` or
+  `provisional`), whether its recorded head SHA still matches, and the
+  rule that bucketed it. Two asymmetries are graded and neither may be
+  edited away: a `provisional` line never carries an outcome, tier,
+  finding, or burden verdict (MS-11), and a stale receipt never counts
+  toward "ready to close out" (MS-12).
+- **No receipt, no deck, no public text.** The readiness scan writes
+  none of the three (MS-11), so the footer-parses check does not apply
+  to a readiness golden; `expected.artifacts` asserts their absence
+  positively, and `labels_synced: absent` is the *correct* value
+  because this pass settles no classification.
+- **Carve-outs are graded as unbucketed.** A vulnerability-suspect
+  issue in scope appears in `expected.buckets.unbucketed_carve_outs`
+  and in **no** bucket and no count (MS-06); its `C-40` line is
+  asserted verbatim in `outputs_must_include`, as everywhere else in
+  this suite.
+- **The forecast ban is graded through `outputs_must_not_include`**
+  (MS-08): "on track", "at risk", "will slip", a velocity, and a
+  completion percentage are asserted absent. This is the one place the
+  suite grades a *tone* mechanically, and it can be, because the
+  banned forms are enumerated.
+
+Both v0.7.2 conventions and the v0.7.4 one carry the same activation
+note as every other
 outcome check on this page: the field-level grading lands with the
 **M1 agent-run harness**. Until it exists, what runs on these goldens
 is the pre-M1 well-formedness pass — pairing, rule-ID resolution, path

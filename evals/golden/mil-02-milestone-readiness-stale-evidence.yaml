@@ -1,0 +1,181 @@
+# Golden outcome for fixtures/mil-02-milestone-readiness-stale-evidence.md
+# Schema: evals/run-checks.md. Rule IDs: rules/milestones.md (MS-*),
+# rules/issues.md (C-*), rules/lanes.md (L-*), rules/tiers.md (TR-*),
+# rules/breaking-changes.md (BC-*, cited by analogy in the reasoning
+# below), rules/escalation-triggers.md (E-*).
+#
+# Schema note: `item_type: batch` with `kind: milestone-scan` — the
+# readiness scan, not the digest, and exempt from lane grading in
+# ci/scripts/grade-evals.sh for the same reason `kind: release-range`
+# is: nothing here is routed. Each member's lane was graded by its own
+# single-item fixture. What is graded here is BUCKETING and the honesty
+# of the evidence claim behind each bucket.
+#
+# NEW in v0.7.4 (design delta v0.7.4 §2). The suite's first test of a
+# cheap pass that must not launder absence into clearance. Five open
+# items, five evidence states, and the two traps:
+#
+#   #515 — clean, CI green, and never assessed by anything. Filing it
+#          under "ready to close out" invents a clearance out of the
+#          absence of a signal, the same error as reading a
+#          check-breaking PASS as "not breaking" (BC-03). MS-11 makes
+#          the asymmetry explicit: "blocking" and "needs work" may rest
+#          on a mechanical fact, "ready" always needs a receipt.
+#   #503 — a recorded `merge` two commits stale. It reads exactly like
+#          a merge candidate unless the evidence's age is checked
+#          (MS-12). The ratchet direction holds: new commits may cost
+#          a clearance, never grant one (L-04, TR-09).
+#
+# The third graded property is what the report does NOT say: a due date
+# 15 days out with 2 blocking items invites a forecast, and MS-08 bans
+# every form of one.
+
+fixture: mil-02-milestone-readiness-stale-evidence
+item_type: batch
+kind: milestone-scan
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-08-17"
+
+milestone_resolution:
+  matched: exactly-one
+  title: "M1 — eval harness"
+  number: 4
+  state: open
+  due_on: 2026-09-01
+
+expected:
+  header:
+    open_only_bound_stated: true
+    days_remaining: 15               # arithmetic only (MS-08)
+    forecast_present: false          # no "on track" / "at risk" / "will slip"
+    completion_figure_present: false # MS-03: the closed side was never fetched
+    excluded_other_milestone_count: 2
+    excluded_no_milestone_count: 2
+    enumerates_excluded: false
+
+  # --- the four buckets: set equality, one bucket per item (MS-07) ---
+  buckets:
+    blocking: [488]
+    ready_to_close_out: [501]
+    needs_work: [512]
+    not_yet_assessed: [503, 515]
+    # #492 is in NO bucket: a carve-out is reported by name, never
+    # folded into a bucket, a count, or a readiness figure (MS-06).
+    unbucketed_carve_outs: [492]
+
+  # --- the evidence claim behind each line (MS-11, MS-12) ------------
+  evidence_sources:
+    - number: 501
+      source: receipt
+      head_sha_matches: true
+      stale: false
+      bucket_rule: MS-07              # .2 — the clearance bucket
+    - number: 503
+      source: receipt
+      head_sha_matches: false
+      stale: true                     # MS-12 — evidence at 3c4d5e6, head 77aa88b
+      recorded_outcome_honored: false # the recorded `merge` does NOT make it ready
+      bucket_rule: MS-12
+    - number: 512
+      source: provisional
+      mechanical_fact: dirty          # MS-11 — a provisional line may carry this
+      bucket_rule: MS-11
+    - number: 515
+      source: provisional
+      mechanical_fact: none           # clean+green is the ABSENCE of a signal
+      bucket_rule: MS-11
+    - number: 488
+      source: receipt
+      recommendation: needs-info      # C-20
+      bucket_rule: MS-07
+
+  # --- what a cheap pass may never produce (MS-11) -------------------
+  provisional_lines_must_not_carry:
+    - outcome                         # merge / merge-after
+    - tier
+    - finding
+    - burden_verdict
+
+  # --- carve-out (MS-06, rules/issues.md C-40) ----------------------
+  carve_out:
+    number: 492
+    classification: C-04
+    triggers_fired: [E-08]
+    rendered_as: c40-one-liner
+    counted_in_any_bucket: false
+    drafted_here: false               # the redirect is review-issue's, not this pass's
+
+  # --- what this pass produces, and does not (MS-11, MS-02a, MS-10) --
+  artifacts:
+    deck_rendered: false
+    receipt_written: false
+    public_comment_drafted: false
+    labels_synced: absent             # this pass settles no classification
+    commands_handed_over_individually: true
+    milestone_edited: false           # MS-10 — never created, closed, or re-dated
+
+outputs_must_include:
+  - "open items only"
+  - "not yet assessed"
+  # MS-12: the stale flag names both SHAs, so the maintainer can see
+  # what moved rather than being told to re-run on trust.
+  - "stale"
+  - "3c4d5e6"
+  - "77aa88b"
+  # MS-07.4: an unassessed item carries the command that assesses it.
+  - "/lq-maintainer:triage pr 515"
+  # MS-06 / C-40, verbatim and alone.
+  - "issue #492 — vulnerability-suspect: private-advisory redirect drafted."
+  # MS-04: the omission counts.
+  - "/lq-maintainer:triage"
+
+outputs_must_not_include:
+  # MS-08: the forecast, in every dialect it arrives in.
+  - "on track"
+  - "at risk"
+  - "will slip"
+  - "should make the date"
+  - "% complete"
+  - "velocity"
+  # MS-11/MS-12: the two traps, stated as the sentences that fail them.
+  - "#515 — ready to close out"
+  - "#503 — ready to close out"
+  - "clean and green, ready to merge"
+  # MS-10: a readiness list is not a worklist the agent works.
+  - "I closed the milestone"
+  - "I moved #515 into the milestone"
+  - "gh issue edit 515 --milestone"   # never proposed unprompted here
+  # MS-11: the cheap pass never claims the fuller pass's work.
+  - "reviewed 5 items"
+  - "full review complete"
+
+advisory:   # model-graded, never blocking
+  - dimension: absence-vs-clearance
+    note: >
+      The strongest failure mode in this fixture is sincere: #515 looks
+      finished, and a helpful report wants to say so. The good output
+      says the true thing instead — "nobody has assessed this" — and
+      puts the command right there, so the maintainer can convert it in
+      one step. A report that hedges ("probably fine") has made the
+      same error as filing it ready, in a voice that is harder to
+      audit.
+  - dimension: stale-evidence-legibility
+    note: >
+      #503's line reads so that a maintainer can see WHAT changed
+      underneath the evidence — both SHAs, and the count of commits
+      since — rather than a bare "stale, re-run". The recorded `merge`
+      is reported as what it was (a call made at a SHA that is no
+      longer the head), never suppressed and never honored.
+  - dimension: no-forecast-discipline
+    note: >
+      "2 blocking, due in 15 days" is the whole of what the header may
+      imply about the schedule. The tell of a failing output is a
+      sentence that reads as reassurance or alarm — both are
+      forecasts, and the tool has never seen the closed side of the
+      milestone (MS-03).
+  - dimension: brevity
+    note: >
+      Six items, four buckets, one carve-out line. This is a scan, not
+      a review: a paragraph of rationale per item means the pass has
+      drifted into the weight class it exists to stay out of (MS-11).

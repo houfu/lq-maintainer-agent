@@ -12,7 +12,12 @@ Q-02's ordering), `rules/anchoring.md` (`A-NN` — the upstream-release
 anchor a security-relevant bump is checked against),
 `rules/stale-sweep.md` (the other batch-only guardrail file, same
 "drafts and reports, never acts" posture), `rules/canon-map.md` (routes
-`canon:codeowners` for the security-boundary check below).
+`canon:codeowners` for the security-boundary check below), and
+`rules/milestones.md` (`MS-05` — how these groups render inside a
+milestone-scoped run: computed queue-wide exactly as below, filtered
+only for **display**, with every out-of-scope member named and marked,
+because the collision Q-01a describes is a property of the shared
+manifest and not of anyone's milestone).
 
 ## Merge-order groups
 
