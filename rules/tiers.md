@@ -73,7 +73,11 @@ depth is entered by a named condition, never by habit.
   "Wait", "monitor", "needs more review", and bare "escalate" are
   **not outcomes** — an uncertainty must be converted into the named
   check or question that resolves it (RV-06). Every outcome carries
-  its undo-path line (RV-05).
+  its undo-path line (RV-05). A **required UAT** (`rules/uat.md`
+  UA-02) is not a fifth outcome and changes none of these: it holds a
+  `merge` until the change has been seen running at the reviewed head
+  SHA — rendered "merge — after UAT" (UA-03) — and a failed UAT is a
+  finding like any other.
 
 - **TR-06 — More than one blocking fix means discuss.** If the pass
   finds two or more blocking-severity fixes, the outcome is

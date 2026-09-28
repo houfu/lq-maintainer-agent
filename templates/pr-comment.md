@@ -107,12 +107,36 @@ unchanged); this template is what the agent drafts going forward.
   included. If the outcome needs more than that to state honestly,
   the extra belongs in the internal receipt or the deck, not here —
   this comment points at where the depth lives; it does not carry it.
+- **PC-11 — Seeing it running (v0.7.6, `rules/uat.md` UA-03/UA-10).**
+  Driven by the receipt's `uat:` block (`templates/receipt-pr.md`
+  RP-22), never by the contributor's own account of their change:
+  - **Required, not yet passed at the current head** (`pending`,
+    `not-reached`, or a pass at an older head): **at most one** plain
+    sentence saying the maintainers want to see the change running
+    before it merges — e.g. "Before this merges, we'd like to see it
+    running ourselves." It qualifies the PC-01 sentence rather than
+    contradicting it: a `merge` outcome never reads as "ready to merge"
+    unqualified while this holds. It is ours, not a second ask — the
+    PC-03 next step stays the only one, and it is the contributor's
+    only if the maintainers genuinely need something from them to run
+    it.
+  - **Failed:** the divergence is described like any other ask — what
+    a person sees on that screen against what was expected, in plain
+    words, as the PC-01 / PC-03 named change. No screenshot is attached
+    or linked by the agent (whether one is shared is the maintainer's
+    call, UA-10).
+  - **Recommended or n-a:** nothing — no sentence, no mention.
+  Never the "UAT" acronym, never a rule ID, gate or status word, never
+  "sandbox" or "runner" — PC-06's bans apply to this sentence exactly
+  as to every other, and it passes the tone gate (PC-07) with the rest
+  of the draft.
 
 ## Template
 
 ```markdown
 Hi @<contributor> — <PC-01 outcome sentence, plain language, specific
-to this item>.
+to this item>.<if PC-11 applies: <one plain sentence — we'd like to see
+it running before it merges>.>
 
 <PC-02: one to two sentences of genuine, specific thanks — the actual
 thing done, named.>

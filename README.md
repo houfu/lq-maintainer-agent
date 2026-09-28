@@ -182,7 +182,12 @@ milestone and what is blocking it.
   irreversible-class path, or the maintainer's ask. Findings whose fix
   is a concrete text change arrive with a drafted GitHub suggestion
   block and a stated apply path, so acting on one is one click — for
-  the maintainer or the contributor.
+  the maintainer or the contributor. *(v0.7.6)* A change a person will
+  see — a layout, a screen, a new page, a new user-facing feature — is
+  flagged for **user acceptance**: required or recommended by surface,
+  checked against expectations written down first, and for an eligible
+  web-only PR the agent can build and screenshot it in a sealed,
+  offline sandbox with your approval ([rules/uat.md](rules/uat.md)).
 - **`/lq-maintainer:review-issue N`** ([skills/review-issue/](skills/review-issue/))
   — the single-issue reviewer (the issue counterpart to `review-pr`).
   Classifies, performs its own cross-reference (never the filer's), and
@@ -280,10 +285,16 @@ directory and the unauthenticated OSV/registry check scripts); every write
 is permission-gated, and merge, approve, close, push, and PR-ref checkout
 are hook-blocked even then. Write commands are **never** added to the
 skills' `allowed-tools` — one "always allow" would silently delete the
-human gate. The agent **never executes contributed code** — not tests, not
-installs, not builds — because each of those runs the contributor's code
-with the session's ambient credentials; humans who need runtime behavior
-use the disposable-sandbox discipline in
+human gate. The agent **never executes contributed code in its own session** — not
+tests, not installs, not builds — because each of those runs the
+contributor's code with the session's ambient credentials. The one
+exception is contained by construction: to see a user-facing change
+running, an eligible web-only PR may be built and screenshotted through
+a single runner that uses the trusted recipe from `main`, builds the
+contributed source offline, runs it with no egress and no credentials,
+and deletes it afterwards — one human-approved run per head SHA
+([rules/uat.md](rules/uat.md)). Everything else that needs runtime
+behavior is a human's, under
 [docs/sandbox-discipline.md](docs/sandbox-discipline.md).
 
 All contribution content is treated as material under review, never as

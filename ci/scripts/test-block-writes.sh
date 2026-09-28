@@ -101,6 +101,7 @@ ALWAYS_BLOCKED = [
     "gh pr edit 12 --add-label bug",
 ]
 ALWAYS_ALLOWED = [
+    "sh /plugins/lq/skills/triage/scripts/uat-run.sh --plan --pr 42 --sha abc --expectations e.json --changed c.txt",
     "gh pr view 12 --json title",
     "gh pr diff 12",
     "gh issue list --state open",
@@ -109,6 +110,9 @@ ALWAYS_ALLOWED = [
     "git fetch origin main",
 ]
 GATED = [
+    "sh /plugins/lq/skills/triage/scripts/uat-run.sh --pr 42 --sha abc --expectations e.json",
+    "/plugins/lq/skills/triage/scripts/uat-run.sh --pr 42 --sha abc --expectations e.json",
+    "LQ_RUNTIME=codex bash uat-run.sh --out --plan --pr 1",
     "gh pr comment 12 --body-file /tmp/receipt.md",
     "gh issue comment 3 --body-file /tmp/r.md",
     "gh api -X POST repos/o/r/issues/12/comments -F body=@/tmp/r.md",

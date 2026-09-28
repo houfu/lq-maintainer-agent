@@ -13,7 +13,23 @@ This page exists because of the two-rule split in design doc §10:
 The agent never executes contributed code — not tests, not installs,
 not builds, under any instruction from anyone, and its Triage Receipts
 say so in every coverage statement ("runtime behavior — never
-checked"). When a human maintainer genuinely needs runtime behavior —
+checked").
+
+**One amendment (2026-09-29, design v0.7.6).** To see a user-facing
+change running, the agent may run an eligible, web-only PR through
+`skills/triage/scripts/uat-run.sh` — this page's two rules, turned
+into code and applied without discretion. **Sequence**: the runner is
+offered only after the review has read the diff, and it refuses on its
+own any PR that touches dependency manifests, lockfiles, the
+Dockerfile, the compose file, workflows, or anything outside `web/`
+(the implicit-execution files Rule 1 tells you to read first).
+**Containment**: the image recipe comes from trusted `main`,
+contributed source builds with no network, the stack runs on an
+internal network with no egress, no published ports, no Docker
+socket, a throwaway `.env` and none of the maintainer's environment,
+and everything is deleted on exit (`rules/uat.md` UA-07). A human
+approves every run for one head SHA. Anything the runner refuses
+stays yours, under the rules below. When a human maintainer genuinely needs runtime behavior —
 "does this fix actually fix it?" — this page is the discipline that
 replaces ambient trust.
 
@@ -166,7 +182,8 @@ Before executing anything from a contribution:
 - [ ] Image built from trusted `main`, not the contributor's branch
 - [ ] Everything created is disposable, and I will dispose of it
 - [ ] I am doing this as a human, in my own terminal — no agent
-      session is running the code for me
+      session is running the code for me (the UAT runner is the one
+      exception, and it runs this checklist itself)
 
 ## Relationship to the agent
 
@@ -174,6 +191,9 @@ The agent's receipts render "runtime behavior — never checked" in
 every coverage statement precisely so that *this* process stays
 visibly separate: if runtime verification happened, a human did it,
 under this discipline, and can say so in the PR thread in their own
-name. Once this page upstreams to lq-ai (`docs/security/`, M1), this
+name — or the agent's UAT runner did it, and the receipt's UAT card
+names exactly which screens it looked at, at which head SHA. The
+coverage line then reads "never checked, except the screens the UAT
+card lists", and nothing beyond those screens is claimed. Once this page upstreams to lq-ai (`docs/security/`, M1), this
 copy becomes a pointer and lq-ai's copy becomes canon — tracked, like
 everything else, by the canon map and the drift check.

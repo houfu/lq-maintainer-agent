@@ -34,7 +34,13 @@ auditable.
   triggers with the waiving anchor, invisible-Unicode or
   normalization findings, agent-instruction/tool-config files in the
   diff (escalation trigger, `rules/injection-posture.md`), CI status
-  anomalies.
+  anomalies. **The UAT flag (v0.7.6, `rules/uat.md` UA-01/UA-02)** —
+  from `check-ui-surface.sh`'s `surface:` / `new-surface:` lines plus
+  the category call (TC-10), never from the PR's words: "UAT required
+  (rendered surface | new surface | new user-facing feature)", naming
+  the reason that set it, or "UAT recommended (indirect surface)". A
+  surface the model raised says so, with its reason. Nothing at all
+  when the gate is `n-a` — no "UAT: n-a" line.
 - **TC-06 — Findings** in the L-33 structured form — impact, ask,
   disposition hint, and scope (in-scope / follow-up / pre-existing),
   each finding passing the L-33b actionability test (see
@@ -84,6 +90,9 @@ medium | low>)
 
 **Flags:**
 - <flag, one line each; "none" if none>
+- <if the UAT gate is not n-a (TC-05): UAT required (<rendered surface
+  | new surface | new user-facing feature>) | UAT recommended (indirect
+  surface)>
 
 **Findings:** <count>
 - F-<i> [<blocking | major | minor>] `<file>:<line>` — <one line>

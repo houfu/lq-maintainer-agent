@@ -38,6 +38,7 @@ on:
       - ".codex-plugin/**"
       - ".agents/**"
       - "ci/scripts/test-block-writes.sh"
+      - "skills/triage/scripts/uat-run.sh"
       - "ci/scripts/test-runtime-compat.sh"
       - "ci/runtime-compat-test.yml"
       - ".github/workflows/runtime-compat-test.yml"

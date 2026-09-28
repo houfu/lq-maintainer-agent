@@ -80,6 +80,17 @@ Design contract honoured (see docs/design v0.6, v0.7 §7/§8, and rules/):
     directly above what was NOT checked. The seven-point deterministic gate is
     the DEPENDENCY gate: its tile, meter and explainer render only on items it
     judged, never as a clearance figure on a code change.
+  - v0.7.6, additive (rules/uat.md, templates/receipt-pr.md RP-22): a
+    footer carrying the optional `uat:` block with a gate other than `n-a`
+    grows a "Seen running?" card under the decision card. While a REQUIRED
+    UAT is not `passed` at the reviewed head SHA (a pass at any other SHA is
+    stale, UA-03) the decision card carries one hold line, a `merge` outcome
+    reads "merge -- after it has been seen running", and the drafted merge
+    message is labelled not ready to paste and loses its one-click select. A
+    UAT that looked at named screens at this head qualifies the runtime line
+    ("except the screens the UAT card lists") -- the item keeps its "Never
+    checked" badge and can never render as resolved. An absent block, or
+    `gate: n-a`, renders exactly as before.
   - All contributor-derived free text (PR title, findings) is NFKC-normalised,
     stripped of invisible/bidi/tag characters (visibly flagged if any were
     present -- rules/injection-posture.md I-10), then HTML-escaped. It is
@@ -113,6 +124,22 @@ OUTCOMES = ("merge", "merge-after", "discuss",          # rules/tiers.md TR-05
             "route-to-design", "hold", "security-escalate")
 UNDOS = ("revert-clean", "residue", "irreversible-class")   # RV-04/RV-05
 ISSUE_RECOS = ("proceed", "design", "needs-info", "decompose", "escalate")  # IV-01
+
+# --------------------------------------------------------------------------
+# The v0.7.6 optional `uat:` footer block (templates/receipt-pr.md RP-22,
+# rules/uat.md UA-10). Enumerated only; absent on every earlier footer, and an
+# absent block renders the deck exactly as before. Every read of it ratchets:
+# an unrecognised gate counts as `required`, an unrecognised status as not
+# passed, and a pass satisfies the gate only at the reviewed head SHA (UA-03).
+# --------------------------------------------------------------------------
+UAT_GATES = ("required", "recommended", "n-a")
+UAT_STATUSES = ("pending", "passed", "failed", "not-reached", "n-a")
+UAT_BY = ("agent", "maintainer")
+_SHA40 = re.compile(r"^[0-9a-f]{40}$")
+# The never-checked rail's runtime line when a UAT looked at named screens at
+# the reviewed head (RP-07, UA-10). A qualifier, never a resolution: the item
+# keeps its "Never checked" badge.
+UAT_RUNTIME_QUALIFIER = " — except the screens the UAT card lists"
 
 # Findings severity split (rules/lanes.md L-33): blocking/major read inline
 # and auto-open the disclosure; minor/nit fold into a nested sub-disclosure.
@@ -362,7 +389,7 @@ def extract_draft_block(md, header_re):
     return "\n".join(buf).strip("\n") if in_fence else ""
 
 
-def build_drafts_card(md, merge_message=True):
+def build_drafts_card(md, merge_message=True, merge_hold=""):
     """'What you'd tell the contributor' -- ONE visible card carrying both
     paste-ready blocks (v0.7.2 §4, deck-leanness change 2): the drafted public
     comment and, for merge candidates, the drafted merge message. They are one
@@ -376,25 +403,33 @@ def build_drafts_card(md, merge_message=True):
 
     Each draft is agent-authored but quotes contributor content, so it is
     sanitised and shown verbatim as escaped text inside a `user-select:all`
-    block -- paste fidelity over pretty rendering, unchanged."""
-    blocks = [("The drafted comment", extract_draft_block(md, r"Drafted public comment"))]
+    block -- paste fidelity over pretty rendering, unchanged.
+
+    `merge_hold` (v0.7.6, UA-03): the one-line reason the merge message is
+    NOT ready to paste -- a required UAT not passed at the reviewed head. The
+    draft still renders (it is evidence, and it will be needed), but labelled
+    not ready and without the one-click select affordance, so it cannot be
+    lifted into the squash box by reflex."""
+    blocks = [("The drafted comment", extract_draft_block(md, r"Drafted public comment"), "")]
     if merge_message:
         blocks.append(("The drafted merge message",
-                       extract_draft_block(md, r"Drafted merge message")))
-    if not any(raw for _, raw in blocks):
+                       extract_draft_block(md, r"Drafted merge message"), merge_hold))
+    if not any(raw for _, raw, _ in blocks):
         return ""
     out = ['<section class="card vcard drafts"><h2>What you’d tell the contributor'
            '<span class="tag g-mute">paste-ready</span></h2>']
-    for label, raw in blocks:
+    for label, raw, hold in blocks:
         if not raw:
             continue
         txt, hidden = sanitize(raw)
-        out.append('<h3>%s</h3>' % esc(label))
+        out.append('<h3>%s%s</h3>' % (esc(label), " — not ready to paste" if hold else ""))
+        if hold:
+            out.append('<p class="decnote">%s</p>' % esc(hold))
         if hidden:
             out.append('<div class="flagline">⚠ Hidden characters were found in this '
                        'draft and removed before display. Treat the receipt copy '
                        'with suspicion.</div>')
-        out.append('<pre class="receipt paste">%s</pre>' % txt)
+        out.append('<pre class="receipt%s">%s</pre>' % ("" if hold else " paste", txt))
     out.append('</section>')
     return "".join(out)
 
@@ -428,12 +463,19 @@ def maintainer_ruling_html(md, base):
             % (flag, "".join(paras)))
 
 
-def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False):
+def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False,
+                        uat_note="", uat_bad=False):
     """The decision card -- ONE card, never two (v0.7.2 §4): the maintainer's
     recorded ruling (RP-18) leads where it exists, and the agent's
     recommendation-shaped line rides under it, labelled, so the two can never
     be read as each other. With no ruling recorded the recommendation line is
     the card, exactly as before.
+
+    `uat_note` (v0.7.6, UA-03): the one line saying a required UAT has not
+    passed at the reviewed head, so the merge waits. It rides in this card
+    whatever the ruling says -- a recorded `merge` does not make an unseen
+    change seen -- and it is absent whenever the footer carries no `uat:`
+    block or the gate is satisfied.
 
     The standing 'a human decides, every time' disclaimer moves into the
     'How to read this page' card -- consolidated, not deleted (change 4)."""
@@ -445,6 +487,9 @@ def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False):
                    % esc(agent_line))
     else:
         out.append('<p>%s</p>' % esc(agent_line))
+    if uat_note:
+        out.append('<p class="decnote uathold%s">%s</p>'
+                   % (" d-bad" if uat_bad else "", esc(uat_note)))
     if undo_note:
         out.append('<p class="decnote%s">%s</p>'
                    % (" d-bad" if undo_bad else "", esc(undo_note)))
@@ -452,7 +497,8 @@ def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False):
     return "".join(out)
 
 
-def build_not_checked_card(coverage, g, human_rows, why_intro, title_suffix=""):
+def build_not_checked_card(coverage, g, human_rows, why_intro, title_suffix="",
+                           uat_seen=False):
     """'What was not checked' -- badge + item title VISIBLE, the per-item gloss
     folded one level into a nested sub-disclosure (v0.7.2 §4, change 5).
 
@@ -461,7 +507,13 @@ def build_not_checked_card(coverage, g, human_rows, why_intro, title_suffix=""):
     non-resolvable badge, and can never read as done. Only its explanation
     moves -- one disclosure level, never out of the page (nothing is deleted).
     The card itself stays `open`: the honesty rail is not something a reader
-    has to find."""
+    has to find.
+
+    `uat_seen` (v0.7.6, RP-07/UA-10): a UAT looked at named screens at the
+    reviewed head, so the runtime line gains the "except the screens the UAT
+    card lists" qualifier and its qualified gloss. The badge is untouched --
+    still "Never checked" -- because the UAT narrows the caveat and never
+    resolves it (UA-11)."""
     rows, glosses = [], []
     for c in coverage:
         st = _cov_status(c)
@@ -471,8 +523,13 @@ def build_not_checked_card(coverage, g, human_rows, why_intro, title_suffix=""):
         badge = ('<span class="never">Never checked</span>' if st == "never-by-design"
                  else '<span class="open">Not yet — resumable</span>')
         title = _cov_title(it)
+        gkey = "coverage:" + it
+        if uat_seen and it == "runtime-behavior":
+            title += UAT_RUNTIME_QUALIFIER
+            gkey = "coverage:runtime-behavior:uat"
         rows.append('<li>%s <span class="h">%s</span></li>' % (badge, esc(title)))
-        d = g.dec("coverage:" + it) or g.cap("coverage:" + it, "")
+        d = g.dec(gkey) or g.cap(gkey, "") or g.dec("coverage:" + it) \
+            or g.cap("coverage:" + it, "")
         if d:
             glosses.append('<li><span class="h">%s</span><div class="d">%s</div></li>'
                            % (esc(title), esc(d)))
@@ -558,6 +615,16 @@ _HOWTO_GATE = (
      "dependency items, because that is the only kind of change it judges."),
 )
 
+_HOWTO_UAT = (
+    ("Seen running?",
+     "A user acceptance test (UAT): the running app is compared, screen by "
+     "screen, against expectations written down before anyone looked. It only "
+     "counts at the exact version being merged. Where it is required, the "
+     "merge waits for it; where it is only recommended, it is a suggested next "
+     "step. A pass answers that one question — it is not a code review, and it "
+     "says nothing about screens it did not look at."),
+)
+
 # The finding chips (v0.7.3): severity, scope and disposition ride each finding
 # as one short word, and their glosses live HERE, once, instead of restating a
 # full sentence on every finding. The words are still glossed -- TG-03.5 is met
@@ -590,14 +657,19 @@ _HOWTO_SCOPING = (("scoping:residual", "A decision to make"),
                   ("artifact:de-stub", "DE stub"))
 
 
-def build_howto_card(profile="pr", gate=False, g=None, chips=False, scoping=False):
+def build_howto_card(profile="pr", gate=False, g=None, chips=False, scoping=False,
+                     uat=False):
     """The closed how-to card. `gate` adds the safety-gate paragraph only when
     this deck actually shows a gate, so the card never explains furniture the
     reader cannot see; `chips` adds the finding-chip glossary on the same
-    terms, read from the glossary file so the wording stays normative."""
+    terms, read from the glossary file so the wording stays normative; `uat`
+    adds the "Seen running?" paragraph -- and with it the one gloss of the
+    UAT acronym -- only when that card renders."""
     entries = (_HOWTO_PR if profile == "pr" else _HOWTO_ISSUE)
     if gate:
         entries = entries + _HOWTO_GATE
+    if uat:
+        entries = entries + _HOWTO_UAT
     if scoping and g is not None:
         for key, label in _HOWTO_SCOPING:
             cap = g.cap(key, "")
@@ -1032,6 +1104,15 @@ details.dd.sub .body{padding:2px 14px 14px}
   border-left:3px solid var(--warn); padding:6px 12px; border-radius:0 6px 6px 0;
 }
 .decnote.d-bad{background:var(--bad-bg); border-left-color:var(--bad)}
+/* the user acceptance card (v0.7.6, rules/uat.md) */
+.uat>p{margin:6px 0 0; font-size:15.5px}
+.uat .uatk{
+  margin:0 0 6px; font-size:12px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--ink-faint); font-weight:700;
+}
+.uat .uatd{color:var(--ink-soft); font-size:14.5px}
+.uat .uatmeta{font-size:13.5px; color:var(--ink-faint)}
+.uat .uatmeta code{font-family:var(--mono); font-size:12px; color:var(--ink-soft)}
 /* coverage / human-only lists */
 .cov{list-style:none; margin:6px 0 0; padding:0}
 .cov li{padding:11px 0; border-top:1px solid var(--line-soft); font-size:15px}
@@ -1174,8 +1255,9 @@ _TABLE_RULE = re.compile(r"^:?-{2,}:?$")
 # Enumerated result words -> the badge they render as. Anything unrecognised
 # renders as a neutral badge carrying the word itself: an unknown result is
 # shown, never dropped and never upgraded to a pass.
-_RES_OK = frozenset({"pass", "done", "yes", "covered", "verified-pass", "clear"})
-_RES_BAD = frozenset({"fail", "no", "verified-fail", "blocked"})
+_RES_OK = frozenset({"pass", "done", "yes", "covered", "verified-pass", "clear",
+                     "matches"})
+_RES_BAD = frozenset({"fail", "no", "verified-fail", "blocked", "differs"})
 _RES_OPEN = frozenset({"not-run", "not run", "partial", "cannot-verify",
                        "not-covered", "not yet", "unknown", "skipped"})
 
@@ -1328,6 +1410,147 @@ def build_evidence_card(md, g, base, checks, dep_gate, title="What I checked"):
            '<span class="tag g-mute">this run</span></h2>' % esc(title)]
     for h3, body in blocks:
         out.append('<h3>%s</h3><ul class="wl">%s</ul>' % (esc(h3), body))
+    out.append('</section>')
+    return "".join(out)
+
+
+# --------------------------------------------------------------------------
+# "Seen running?" -- the user acceptance card (v0.7.6, rules/uat.md)
+# --------------------------------------------------------------------------
+# Rendered from the footer's optional `uat:` block (RP-22) only; the visible
+# `### User acceptance` table supplies the expectation rows the card lists
+# (UA-10). Absent block, or `gate: n-a`: no card, no hold line, no qualifier --
+# the deck renders exactly as it did before v0.7.6.
+
+def uat_state(r, head_sha):
+    """The `uat:` block read into what the deck needs, or None when the block
+    is absent or its gate is `n-a`. Ratchets only (UA-11, TR-09): a gate
+    outside the enum reads as `required`, a status outside it as not passed,
+    and `passed` satisfies the gate only when `at_sha` is a full SHA equal to
+    the reviewed head (UA-03) -- a pass anywhere else is stale."""
+    u = r.get("uat")
+    if not isinstance(u, dict):
+        return None
+    gate_raw = str(u.get("gate") or "").strip().lower()
+    if gate_raw == "n-a":
+        return None
+    gate = gate_raw if gate_raw in UAT_GATES else "required"
+    status_raw = str(u.get("status") or "").strip().lower()
+    status = status_raw if status_raw in UAT_STATUSES else ""
+    by = str(u.get("by") or "").strip().lower()
+    by = by if by in UAT_BY else ""
+    at = str(u.get("at_sha") or "").strip().lower()
+    at = at if _SHA40.match(at) else ""
+    head = str(head_sha or "").strip().lower()
+    at_head = bool(at) and at == head
+    ran = status in ("passed", "failed", "not-reached") and bool(by)
+
+    def _count(k):
+        try:
+            return max(0, int(str(u.get(k))))
+        except (TypeError, ValueError):
+            return None
+    satisfied = gate == "required" and status == "passed" and at_head
+    return {
+        "gate": gate, "gate_raw": gate_raw or "missing",
+        "status": status, "status_raw": status_raw or "missing",
+        "by": by, "at": at, "at_head": at_head, "ran": ran,
+        "stale": ran and bool(at) and not at_head,
+        # The runtime qualifier narrows the caveat only on current evidence: a
+        # UAT that looked at the screens at THIS head and reported what it saw.
+        "seen": status in ("passed", "failed") and bool(by) and at_head,
+        "hold": gate == "required" and not satisfied,
+        "failed": status == "failed" and at_head,
+        "expectations": _count("expectations"), "differs": _count("differs"),
+    }
+
+
+def uat_hold_line(u, g):
+    """The decision card's one line while a required UAT is unmet (UA-03)."""
+    if not u or not u["hold"]:
+        return ""
+    if u["failed"]:
+        return ("Seen running at this version, and something differed from what "
+                "was expected — the merge waits until that is resolved.")
+    return g.cap("uat:hold", "") or ("Not yet seen running at this version — the "
+                                     "merge should wait until it has been.")
+
+
+def build_uat_card(u, md, g, base):
+    """'Seen running?' -- the gate in plain words, the status, who ran it and
+    at which head, the counts, and the screens it looked at. Every figure
+    comes from the enumerated footer block; the expectation rows come from the
+    visible RP-22 table and are contributor-adjacent (sources may quote the PR
+    body, verdict lines describe contribution output, UA-08), so each cell is
+    sanitised and link-rendered like every body section."""
+    if not u:
+        return ""
+    gate, status = u["gate"], u["status"]
+    if u["hold"]:
+        tag = ("g-bad", "merge waits") if u["failed"] else ("g-warn", "merge waits")
+    elif gate == "required":
+        tag = ("g-ok", "seen at this version")
+    else:
+        tag = ("g-mute", "suggested")
+    out = ['<section class="card vcard uat"><h2>Seen running?'
+           '<span class="tag %s">%s</span></h2>' % tag]
+    out.append('<p class="uatk">user acceptance (UAT)</p>')
+    gcap = g.cap("uat:gate:%s" % gate, "") or ("Gate recorded as “%s”" % u["gate_raw"][:40])
+    if u["gate_raw"] not in UAT_GATES:
+        gcap += (" (recorded as “%s”, which this view does not recognise — read as "
+                 "required)" % u["gate_raw"][:40])
+    out.append('<p><b>%s</b></p>' % esc(gcap))
+    gdec = g.dec("uat:gate:%s" % gate)
+    if gdec:
+        out.append('<p class="uatd">%s</p>' % esc(gdec))
+    if gate == "required" or status not in ("", "n-a"):
+        scap = (g.cap("uat:status:%s" % status, "") if status else "") or \
+            ("Status recorded as “%s” — not a pass" % u["status_raw"][:40])
+        out.append('<p><b>Status:</b> %s</p>' % esc(scap))
+        if u["stale"]:
+            sdec = g.dec("uat:stale") or ("The change has moved on since it was looked "
+                                          "at, so that result no longer counts.")
+            out.append('<p class="decnote">%s</p>' % esc(sdec))
+        else:
+            sdec = g.dec("uat:status:%s" % status) if status else ""
+            if sdec:
+                out.append('<p class="uatd">%s</p>' % esc(sdec))
+        if u["ran"] and not u["at"]:
+            out.append('<p class="decnote">No commit was recorded for this run, so it '
+                       'cannot count for the version being merged.</p>')
+    if u["by"]:
+        out.append('<p class="uatd">%s</p>'
+                   % esc(g.cap("uat:by:%s" % u["by"], "Run by the %s." % u["by"])))
+    elif gate == "required":
+        out.append('<p class="uatd">Nobody has run it yet.</p>')
+    meta = []
+    if u["at"]:
+        meta.append("at commit <code>%s</code>%s"
+                    % (_short(u["at"]), "" if u["at_head"] else " — not the reviewed commit"))
+    if u["expectations"] is not None:
+        meta.append("%d expectation%s" % (u["expectations"],
+                                          "" if u["expectations"] == 1 else "s"))
+    if u["differs"] is not None and (u["differs"] or status in ("passed", "failed")):
+        meta.append("%d differed" % u["differs"])
+    if meta:
+        out.append('<p class="uatmeta">%s</p>' % " · ".join(meta))
+
+    hdr, rows = extract_table(md, r"User acceptance")
+    if rows:
+        items = []
+        for row in rows:
+            uid, screen, state, expected, source, verdict, evidence = _cells(row, 7)
+            what, _ = render_linked(screen or uid, base)
+            bits = []
+            for label, val in (("state", state), ("expected", expected),
+                               ("source", source), ("evidence", evidence)):
+                if val:
+                    h, _ = render_linked(val, base)
+                    bits.append("%s: %s" % (label, h))
+            items.append(_wl_li(uid or "screen", what, " · ".join(bits), verdict))
+        out.append('<h3>%s</h3><ul class="wl">%s</ul>'
+                   % ("The screens it looked at" if u["ran"]
+                      else "What should be seen, screen by screen", "".join(items)))
     out.append('</section>')
     return "".join(out)
 
@@ -1627,6 +1850,11 @@ def build_deck(md, g, below=None):
     # Action-first rendering is entered by the presence of `outcome` alone
     # (design v0.7 §7). Without it the v0.6 burden-led hero renders unchanged.
     action_first = bool(outcome_raw)
+    # v0.7.6 optional `uat:` block (RP-22). None when absent or `gate: n-a`,
+    # and every UAT-shaped branch below keys off it -- so a footer without the
+    # block renders byte-for-byte as before.
+    uat = uat_state(r, pinned.get("pr_head_sha"))
+    uat_hold = uat_hold_line(uat, g)
 
     # --- verdict state + copy ---
     BSTATE = {"blocked": "s-bad", "high": "s-bad", "medium": "s-warn", "low": "s-ok"}
@@ -1641,6 +1869,15 @@ def build_deck(md, g, below=None):
             state = OSTATE.get(outcome, "s-warn")
             headline = (g.cap("outcome:%s" % outcome, "") if outcome else "") \
                 or ("Outcome: %s" % outcome_raw)
+            if outcome == "merge" and uat_hold:
+                # UA-03: while a required UAT is unmet, `merge` reads as
+                # "merge — after UAT"; a failed one takes merge off the table
+                # (the ratchet, TR-09). The recorded outcome is not rewritten --
+                # only how the deck states it.
+                state = "s-warn"
+                headline = (g.cap("uat:status:failed", "Seen running — something differed")
+                            if uat["failed"]
+                            else headline + " — after it has been seen running")
         if burden_overall == "blocked":
             # A blocker still gates above everything (B-02): the outcome leads
             # the words, the blocking state still leads the colour.
@@ -1787,7 +2024,12 @@ def build_deck(md, g, below=None):
     # it there would delete a fact rather than de-duplicate one.
     never = [c for c in coverage if _cov_status(c) == "never-by-design"]
     alerted_coverage = set()
-    runtime_dec = g.dec("coverage:runtime-behavior")
+    # v0.7.6 (RP-07, UA-10): when a UAT looked at named screens at this head,
+    # the caveat is stated in its qualified form -- still a "Not checked" alert,
+    # never a clearance.
+    uat_seen = bool(uat and uat["seen"])
+    runtime_dec = ((g.dec("coverage:runtime-behavior:uat") if uat_seen else "")
+                   or g.dec("coverage:runtime-behavior"))
     if any(_cov_item(c) == "runtime-behavior" for c in never) and runtime_dec:
         A('<div class="alert"><span class="mark">⚠</span><p>'
           '<strong>Not checked:</strong> %s</p></div>' % esc(runtime_dec))
@@ -1879,7 +2121,13 @@ def build_deck(md, g, below=None):
         agent_line = _decision_line(lane, demoted, held)
         undo_note = ""
     A(build_decision_card(md, base, agent_line, undo_note,
-                          undo == "irreversible-class"))
+                          undo == "irreversible-class",
+                          uat_hold, bool(uat and uat["failed"])))
+
+    # ---- spine 3a: seen running? (v0.7.6, RP-22) — directly under the
+    # decision it can hold. Absent block or `gate: n-a`: no card at all.
+    uat_html = build_uat_card(uat, md, g, base)
+    A(uat_html)
 
     # ---- spine 4: findings — VISIBLE, never behind a click (v0.7.2 §4) ----
     # Structured per L-33 (v0.7.3): a scan strip, then one action-first card
@@ -1903,7 +2151,9 @@ def build_deck(md, g, below=None):
     # The drafted comment and the drafted merge message in ONE visible card,
     # two paste-ready blocks (v0.7.2 §4, change 2) — they are one act, and the
     # maintainer reads them together, against the findings above.
-    A(build_drafts_card(md, merge_message=True))
+    # A required UAT not passed at this head marks the merge message not
+    # ready to paste (UA-03); the comment is unaffected.
+    A(build_drafts_card(md, merge_message=True, merge_hold=uat_hold))
 
     # ---- spine 6: references (RP-15) — agent-performed cross-reference ----
     A(render_grounding_card(md, base, r"References", "g-ref", "References"))
@@ -1934,13 +2184,27 @@ def build_deck(md, g, below=None):
         "Two kinds live here: items never machine-checked by design — a human "
         "judgment that can never be marked done — and passes not yet run this "
         "session, which a later run can still cover.",
-        " (on purpose)"))
+        " (on purpose)", uat_seen=uat_seen))
 
     # ---- spine 9: next steps — the concrete human follow-ups (B-14) ----
     steps = []
     if burden and str(burden.get("overall")) == "blocked":
         for b in burden.get("blockers") or []:
             steps.append("Resolve: " + g.cap("blocker:%s" % b, str(b)))
+    # v0.7.6 (RP-16): a required UAT unmet at this head is a step above any
+    # merge step; a recommended one is a suggested step, never a gate (UA-03).
+    if uat:
+        if uat["hold"] and not uat["failed"]:
+            key = ("uat:stale" if uat["stale"] else
+                   "uat:status:not-reached" if uat["status"] == "not-reached"
+                   else "uat:status:pending")
+            d = g.dec(key)
+            if d:
+                steps.append(d)
+        elif uat["gate"] == "recommended":
+            d = g.dec("uat:gate:recommended")
+            if d:
+                steps.append(d)
     for k in CHECK_ORDER:
         if checks.get(k) == "fail":
             d = g.dec("check:%s:fail" % k)
@@ -1975,7 +2239,7 @@ def build_deck(md, g, below=None):
 
     # ---- spine 11: how to read this page — closed, absorbs the scaffolding ----
     A(build_howto_card("pr", gate=gate_shown, g=g, chips=bool(findings),
-                       scoping=bool(scoping_html)))
+                       scoping=bool(scoping_html), uat=bool(uat_html)))
 
     # ---- spine 12: the folded detail ----
     A('<p class="sec-h">The detail, on demand</p>')

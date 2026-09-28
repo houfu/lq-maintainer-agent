@@ -31,6 +31,14 @@ rules/injection-posture.md):
      merge-message block is PR-profile-only; and the v0.6 §8 honesty rail is
      unmoved — every never-checked item and human-only judgment still renders
      with its badge, only its gloss folds one level.
+  6. The v0.7.6 `uat:` footer block (rules/uat.md, templates/receipt-pr.md
+     RP-22) is additive and only ever holds: absent (or `gate: n-a`) renders
+     exactly as before; a REQUIRED UAT not passed at the reviewed head SHA —
+     pending, failed, or passed at a stale SHA — puts one hold line on the
+     decision card and marks the drafted merge message not ready to paste; a
+     pass at the head lifts both; `recommended` never holds; and the runtime
+     line's "except the screens the UAT card lists" qualifier never renders
+     the item as resolved.
 
 Pure stdlib, no tokens, no canon clone, no network — safe as a blocking CI
 check. Run from anywhere: `sh ci/scripts/test-render-deck.sh` or directly.
@@ -538,6 +546,55 @@ HIDDEN_TITLE = (
     "coverage:\n  - {item: runtime-behavior, status: never-by-design}\n"
     "-->\n"
 )
+
+# v0.7.6 — user acceptance (rules/uat.md, templates/receipt-pr.md RP-22). A
+# `merge` outcome with both drafts, pinned to a full 40-hex head SHA so the
+# UA-03 "passed at THIS head" comparison is exercised exactly. The RP-22 table
+# carries an off-host link in a pr-body-sourced expectation: the UAT card
+# renders body cells, so the allow-list must hold there too.
+UAT_HEAD = "d" * 8 + "0123456789abcdef0123456789abcdef"
+UAT_OLD = "e" * 8 + "0123456789abcdef0123456789abcdef"
+UAT_SECTION = (
+    "### User acceptance (RP-22)\n\n"
+    "**Gate:** required — surface: rendered\n\n"
+    "| id | screen | state | expected | source | verdict | evidence |\n"
+    "| --- | --- | --- | --- | --- | --- | --- |\n"
+    "| U-1 | /lq-ai/settings | desktop · light · signed-in | the timeout field "
+    "shows 30s | [issue #21](https://github.com/LegalQuants/lq-ai/issues/21) | "
+    "matches | u1-desktop-light.png |\n"
+    "| U-2 | /lq-ai/settings | phone · dark | nothing clipped; see "
+    "[x](https://evil.example.com/y) | pr-body | differs — the label overlaps "
+    "the input | u2-phone-dark.png |\n\n"
+)
+UAT_BASE = PR_WITH_DRAFTS.replace(
+    "pr_head_sha: abc123def456", "pr_head_sha: " + UAT_HEAD
+).replace("outcome: merge-after", "outcome: merge").replace(
+    "### Maintainer decision", UAT_SECTION + "### Maintainer decision")
+# The same record with no Maintainer decision section, so the decision card is
+# the agent's recommendation line alone.
+UAT_BASE_NORULING = UAT_BASE.replace(
+    "### Maintainer decision\n\n"
+    "Decided by @maintainer (2026-07-26): merge after the named fix lands.\n"
+    "- Agent recommendation accepted; feedback: none.\n\n", "")
+
+
+def uat_receipt(gate, status, by="null", at="null", n=2, d=0, base=UAT_BASE):
+    """UAT_BASE with an RP-22 `uat:` footer block (enumerated fields only)."""
+    block = ("uat:\n  gate: %s\n  surface: rendered\n  new_surface: false\n"
+             "  status: %s\n  by: %s\n  at_sha: %s\n  expectations: %d\n"
+             "  differs: %d\n" % (gate, status, by, at, n, d))
+    return base.replace("decision:\n  final_outcome", block + "decision:\n  final_outcome")
+
+
+UAT_PENDING = uat_receipt("required", "pending")
+UAT_PASSED = uat_receipt("required", "passed", "agent", UAT_HEAD, 2, 0)
+UAT_STALE = uat_receipt("required", "passed", "agent", UAT_OLD, 2, 0)
+UAT_FAILED = uat_receipt("required", "failed", "agent", UAT_HEAD, 2, 1)
+UAT_RECOMMENDED = uat_receipt("recommended", "n-a")
+UAT_NA = uat_receipt("n-a", "n-a")
+UAT_UNKNOWN_GATE = uat_receipt("maybe-later", "passed", "agent", UAT_HEAD)
+UAT_SHORT_SHA = uat_receipt("required", "passed", "maintainer", UAT_HEAD[:12])
+UAT_PENDING_NORULING = uat_receipt("required", "pending", base=UAT_BASE_NORULING)
 
 
 # --------------------------------------------------------------------------
@@ -1086,6 +1143,192 @@ def main():
     rc, out = run(HIDDEN_TITLE)
     check("hidden-title: zero-width char removed from output", "​" not in out)
     check("hidden-title: flagged to reviewer", "Hidden characters were found" in out)
+
+    # ---------------------------------------------------------------------
+    # v0.7.6 — user acceptance: the optional `uat:` footer block (RP-22).
+    # ---------------------------------------------------------------------
+    HOLD = "Not yet seen running at this version"
+    QUAL = "except the screens the UAT card lists"
+
+    def decision_card(html):
+        return html.split('class="card decision"', 1)[1].split("</section>", 1)[0]
+
+    def drafts_card(html):
+        return html.split('class="card vcard drafts"', 1)[1].split("</section>", 1)[0]
+
+    def merge_block(html):
+        return drafts_card(html).split("The drafted merge message", 1)[1]
+
+    def runtime_row(html):
+        """The never-checked rail's runtime line (badge + title), or ''."""
+        nc = html.split("What was <em>not</em> checked", 1)[1]
+        nc = nc.split('<details class="dd sub">', 1)[0]
+        for li in re.findall(r"<li>.*?</li>", nc):
+            if "Whether the code actually runs correctly" in li:
+                return li
+        return ""
+
+    # (a) absent block — every pre-v0.7.6 fixture renders no UAT furniture,
+    # and a record whose BODY carries an RP-22 section but whose footer does
+    # not still renders nothing new: the card is footer-driven only.
+    for name, md in (("PR_BLOCKED", PR_BLOCKED), ("PR_TIER1_V2", PR_TIER1_V2),
+                     ("PR_WITH_DRAFTS", PR_WITH_DRAFTS), ("PR_FULL_RECORD", PR_FULL_RECORD),
+                     ("PLAN_V2", PLAN_V2), ("ISSUE_ESCALATE", ISSUE_ESCALATE),
+                     ("UAT_BASE (body section, no footer block)", UAT_BASE)):
+        rc, out = run(md)
+        check("uat absent: %s renders no UAT furniture" % name,
+              rc == 0 and "Seen running?" not in out and "uathold" not in out
+              and "not ready to paste" not in out and QUAL not in out
+              and 'class="card vcard uat"' not in out, "rc=%d" % rc)
+    rc, out = run(UAT_BASE)
+    check("uat absent: the merge message stays paste-ready",
+          '<pre class="receipt paste">Pin the request timeout default (#904)'
+          in merge_block(out), merge_block(out))
+    check("uat absent: a `merge` headline is unchanged",
+          "<h1>Ready to merge</h1>" in out, out)
+    rc, out = run(UAT_NA)
+    check("uat gate n-a: no card, no hold, no qualifier (renders as absent)",
+          rc == 0 and "Seen running?" not in out and "uathold" not in out
+          and "not ready to paste" not in out and QUAL not in out
+          and "<h1>Ready to merge</h1>" in out, "rc=%d" % rc)
+
+    # (b) required + pending: one hold line, merge message not ready to paste
+    rc, out = run(UAT_PENDING)
+    vis = visible(out)
+    check("uat pending: exit 0", rc == 0, "rc=%d" % rc)
+    check("uat pending: the decision card carries exactly one hold line",
+          decision_card(out).count(HOLD) == 1 and "uathold" in decision_card(out),
+          decision_card(out))
+    check("uat pending: the hold line rides under a recorded ruling too",
+          "What the maintainer decided" in decision_card(out), decision_card(out))
+    rc2, out2 = run(UAT_PENDING_NORULING)
+    check("uat pending: the hold line is there with no ruling recorded",
+          rc2 == 0 and decision_card(out2).count(HOLD) == 1, decision_card(out2))
+    check("uat pending: the merge message is marked not ready to paste",
+          "not ready to paste" in merge_block(out)
+          and "Pin the request timeout default (#904)" in merge_block(out), merge_block(out))
+    check("uat pending: the not-ready merge message loses its one-click select",
+          '<pre class="receipt paste">Pin the request' not in out
+          and '<pre class="receipt">Pin the request' in out, merge_block(out))
+    check("uat pending: the drafted comment is untouched (still paste-ready)",
+          "not ready" not in drafts_card(out).split("The drafted merge message", 1)[0]
+          and '<pre class="receipt paste">Hi @someone' in drafts_card(out), drafts_card(out))
+    check("uat pending: a `merge` outcome reads as merge — after it is seen running",
+          "<h1>Ready to merge — after it has been seen running</h1>" in out
+          and "verdict s-warn" in out, out)
+    check("uat pending: the card is visible, directly under the decision",
+          in_order(vis, 'class="card decision"', 'class="card vcard uat"',
+                   'class="card vcard findings"'), vis)
+    _card = out.split('class="card vcard uat"', 1)[1].split("</section>", 1)[0]
+    check("uat pending: the card states gate, status and who, in plain words",
+          "Seen running?" in _card and "Must be seen running before it merges" in _card
+          and "Not yet seen running" in _card and "Nobody has run it yet" in _card
+          and "2 expectations" in _card, _card)
+    check("uat pending: the card lists the screens, before any verdict is claimed",
+          "What should be seen, screen by screen" in _card and "/lq-ai/settings" in _card,
+          _card)
+    check("uat pending: injection — an off-host link in an expectation stays inert",
+          'href="https://evil' not in out
+          and 'href="https://github.com/LegalQuants/lq-ai/issues/21"' in _card, _card)
+    check("uat pending: next steps name the hold",
+          "Hold the merge until it has been looked at" in
+          vis.split('class="card nextsteps"', 1)[-1], vis)
+    check("uat pending: the runtime line is NOT qualified — nothing was seen",
+          QUAL not in out and "Never checked" in runtime_row(out), runtime_row(out))
+    check("uat pending: the UAT acronym is glossed in the how-to card",
+          "A user acceptance test (UAT)" in
+          out.split("How to read this page", 1)[1].split("</details>", 1)[0], out)
+
+    # (c) required + passed at the reviewed head: the gate is met
+    rc, out = run(UAT_PASSED)
+    check("uat passed at head: exit 0", rc == 0, "rc=%d" % rc)
+    check("uat passed at head: no hold line anywhere",
+          HOLD not in out and "uathold" not in out, decision_card(out))
+    check("uat passed at head: the merge message is paste-ready again",
+          "not ready to paste" not in out
+          and '<pre class="receipt paste">Pin the request timeout default (#904)' in out,
+          merge_block(out))
+    check("uat passed at head: the `merge` headline is unqualified",
+          "<h1>Ready to merge</h1>" in out, out)
+    _card = out.split('class="card vcard uat"', 1)[1].split("</section>", 1)[0]
+    check("uat passed at head: card shows status, who, and the short head SHA",
+          "Seen running — everything matched" in _card
+          and "Run by the agent" in _card and UAT_HEAD[:10] in _card
+          and "not the reviewed commit" not in _card, _card)
+
+    # (d) passed at a STALE SHA: counts for nothing (UA-03, MS-12)
+    rc, out = run(UAT_STALE)
+    _card = out.split('class="card vcard uat"', 1)[1].split("</section>", 1)[0]
+    check("uat stale: exit 0", rc == 0, "rc=%d" % rc)
+    check("uat stale: the hold line is back",
+          decision_card(out).count(HOLD) == 1, decision_card(out))
+    check("uat stale: the merge message is not ready to paste",
+          "not ready to paste" in merge_block(out), merge_block(out))
+    check("uat stale: the card says the result no longer counts, and at which commit",
+          "no longer counts" in _card and UAT_OLD[:10] in _card
+          and "not the reviewed commit" in _card, _card)
+    check("uat stale: a stale look never qualifies the runtime line",
+          QUAL not in out, runtime_row(out))
+    rc, out = run(UAT_SHORT_SHA)
+    check("uat short at_sha: a non-40-hex SHA never satisfies the gate",
+          rc == 0 and decision_card(out).count(HOLD) == 1
+          and "not ready to paste" in merge_block(out), decision_card(out))
+
+    # (e) failed at the head: merge is off the table until resolved
+    rc, out = run(UAT_FAILED)
+    _card = out.split('class="card vcard uat"', 1)[1].split("</section>", 1)[0]
+    check("uat failed: exit 0", rc == 0, "rc=%d" % rc)
+    check("uat failed: the decision card holds, on the bad accent",
+          "something differed" in decision_card(out)
+          and 'class="decnote uathold d-bad"' in decision_card(out), decision_card(out))
+    check("uat failed: the merge message is not ready to paste",
+          "not ready to paste" in merge_block(out), merge_block(out))
+    check("uat failed: a `merge` outcome never reads as ready",
+          "<h1>Ready to merge" not in out
+          and "<h1>Seen running — something differed</h1>" in out, out)
+    check("uat failed: the card shows the counts and each verdict as its badge",
+          "1 differed" in _card and "The screens it looked at" in _card
+          and 'g-bad">differs<' in _card and 'g-ok">matches<' in _card
+          and "the label overlaps the input" in _card, _card)
+
+    # (f) recommended: a suggested step, never a gate
+    rc, out = run(UAT_RECOMMENDED)
+    _card = out.split('class="card vcard uat"', 1)[1].split("</section>", 1)[0]
+    check("uat recommended: exit 0", rc == 0, "rc=%d" % rc)
+    check("uat recommended: no hold line, merge message paste-ready",
+          "uathold" not in out and HOLD not in out and "not ready to paste" not in out
+          and '<pre class="receipt paste">Pin the request' in out, decision_card(out))
+    check("uat recommended: the card says it is not required",
+          "Worth seeing running — not required" in _card and "suggested" in _card, _card)
+    check("uat recommended: it is a next step, not a hold",
+          "suggested next step, not a condition for merging" in
+          visible(out).split('class="card nextsteps"', 1)[-1], visible(out))
+    check("uat recommended: the `merge` headline is unchanged",
+          "<h1>Ready to merge</h1>" in out, out)
+
+    # an unrecognised gate ratchets to required — never lighter (UA-11)
+    rc, out = run(UAT_UNKNOWN_GATE)
+    check("uat unknown gate: read as required, shown raw, and held unless met",
+          rc == 0 and "maybe-later" in out and "read as required" in out
+          and "uathold" not in out, out)   # passed at head -> met even as required
+
+    # (g) the runtime qualifier NEVER renders the item as resolved
+    for name, md in (("passed", UAT_PASSED), ("failed", UAT_FAILED)):
+        rc, out = run(md)
+        vis = visible(out)
+        row = runtime_row(out)
+        check("uat qualifier (%s): the runtime line carries the qualifier" % name,
+              QUAL in row, row)
+        check("uat qualifier (%s): …and keeps its Never-checked badge" % name,
+              '<span class="never">Never checked</span>' in row
+              and "Not yet" not in row and "covered" not in row.lower(), row)
+        check("uat qualifier (%s): the alert still reads Not checked, once" % name,
+              vis.count("<strong>Not checked:</strong>") == 1
+              and "was run or watched" in vis
+              and "exercise the rest of the affected feature yourself" in vis, vis)
+        check("uat qualifier (%s): the qualified gloss folds with the rest" % name,
+              "Why each of these is not checked" in out
+              and "seeing a screen look right is still not a check" in out, out)
 
     # --- e2e: fail-closed ---
     rc, out = run("")

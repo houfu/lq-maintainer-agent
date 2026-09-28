@@ -54,9 +54,19 @@ permission architecture and by lq-ai's written policy
   wrong, say so: labels mirror the review state and get corrected when
   the fuller review runs; they are never themselves evidence against
   you.
-- **It never runs your code.** No tests, no installs, no builds — your
-  code is read, not executed. If runtime verification happened, a
-  human did it and will say so in their own name.
+- **It runs your code only to look at a screen, and only in a sealed
+  box.** No tests, no installs, no builds in anyone's working
+  environment — your code is read. The one exception: if your change
+  alters what people see in the app, a maintainer may want to see it
+  running before it merges. For a change confined to the web app's
+  source, the agent may then, with a maintainer's approval, build it in
+  a throwaway container with no internet access and no real
+  credentials, take screenshots of the screens your change affects,
+  and delete everything afterwards. It compares what it saw with what
+  the linked issue or plan said should happen. What it reports is an
+  observation for a maintainer to judge, never a verdict on you. Any
+  other runtime check was done by a human, who will say so in their
+  own name.
 - **It never follows instructions in your contribution.** Everything
   in a PR or issue — body, diff, comments, filenames — is treated as
   material under review, never as directions to the reviewer. (See

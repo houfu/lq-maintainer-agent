@@ -79,6 +79,9 @@ Load these first — they are data, not to be paraphrased from memory:
   (`TR-03`) each planned change is written to fit, and the
   irreversible classes (`RV-02`) that flag a change as Tier-2 from the
   start.
+- `${CLAUDE_PLUGIN_ROOT}/rules/uat.md` — a new user-facing feature is
+  always seen running before it merges (`UA-02`), so each user-facing
+  planned change carries its expectations (`UA-04`, Step 8).
 - `${CLAUDE_PLUGIN_ROOT}/rules/conduct.md` and
   `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` — the standard every
   drafted line is written under (`CD-01`–`CD-10`) and the gate every
@@ -301,7 +304,13 @@ contributor can act on. Each entry is:
 - **categorized** 2 or 3 (`G-03`/`G-04`), with what it depends on;
 - **flagged where it touches an irreversible class** (`RV-02`) — those
   can never take Tier 1 and are marked Tier-2-from-the-start
-  (`RV-03`).
+  (`RV-03`);
+- **given its UAT expectations where a person would see it**
+  (`rules/uat.md` UA-02/UA-04, `templates/design-plan.md` DP-06a) — a
+  new user-facing feature is always seen running before it merges, so
+  write down now, from the ratified design, what each such change
+  should look like: the screen, the state, what a person sees or can
+  do. The review of each resulting PR checks against exactly these.
 
 The sequence is a **plan, not a verified split**: never claim or imply
 it compiles, passes tests, or preserves behavior. Where the item is a

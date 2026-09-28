@@ -10,6 +10,45 @@ record.
 
 ## [Unreleased]
 
+### Seen running before it merges — user acceptance (UAT)
+
+Design doc: [v0.7.6](docs/design/lq-maintainer-agent-design-v0.7.6.md)
+(proposed; delta over v0.7.5). Request, rulings and honest status in
+[docs/proposals/uat-for-user-facing-changes.md](docs/proposals/uat-for-user-facing-changes.md).
+From the maintainer: "check whether a PR affects the layout or frontend
+or user facing situation, and if yes, recommend or require a UAT
+check", and "the agent should also require it for new user facing
+features."
+
+- **Detection** ([rules/uat.md](rules/uat.md) `UA-01`): new
+  `check-ui-surface.sh` classifies changed paths against
+  `canon:ui-surface` — rendered / indirect / none, plus an added-page
+  flag. Triage puts the result on the card; the PR's own words never
+  change it.
+- **The gate** (`UA-02`/`UA-03`): **required** for rendered surfaces,
+  added pages/components, and new user-facing features (category 1);
+  **recommended** for copy, translations and API shapes the UI shows.
+  A required UAT holds `merge` ("merge — after UAT") until it passes at
+  the reviewed head SHA.
+- **Expectations first** (`UA-04`), confirmed by the maintainer; the
+  design path now writes them into each user-facing step (`DP-06a`).
+- **The agent may run it — I-05 amended.** New `uat-run.sh` builds an
+  eligible, web-only PR from `main`'s recipe with the contributed source
+  compiled offline, runs it on an internal network with throwaway
+  secrets and no credentials, screenshots each expectation with a
+  digest-pinned headless browser, and tears everything down. It refuses
+  on its own any PR touching manifests, lockfiles, Docker/compose,
+  workflows or anything outside `web/`. Each run is a **gated action**
+  (approved per head SHA, or handed over); `--plan` shows the exact
+  sequence and runs nothing.
+- **Verdicts** (`UA-09`): matches / differs / not-reached per
+  expectation; a `differs` is a normal finding. Optional additive
+  `uat:` footer block (`RP-22`), a UAT card on the deck, and the
+  coverage line "never checked, except the screens the UAT card lists".
+- **Status: the runner has not yet completed a real run on lq-ai.** The
+  first run is the field spike — Docker required, ~25 GB / 20–30 min
+  cold build, cached afterwards.
+
 ### One agent, two hosts — Claude Code and Codex
 
 Design doc: [v0.7.5](docs/design/lq-maintainer-agent-design-v0.7.5.md)

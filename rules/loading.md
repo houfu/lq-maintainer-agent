@@ -41,7 +41,8 @@ bytes, later, and only the ones that bear.
   **Whole, always:**
   `runtime` (read at Step 0, right after the canary, before this file
   — it binds the paths every other read uses, `RT-01`),
-  `injection-posture` (governs how every span is read, before any
+  `uat` (small; every standard-lane PR is checked against `UA-01`/
+  `UA-02`), `injection-posture` (governs how every span is read, before any
   content), `escalation-triggers` (every `E-NN` must be checked and
   cleared), `change-categories` (you choose one of four, so you need
   four), `tiers`, `reversibility` (`RV-02` is an enumerated class list
