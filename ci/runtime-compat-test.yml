@@ -1,0 +1,77 @@
+# runtime-compat-test.yml — the two-host safety floor (design delta
+# v0.7.5; rules/runtime.md RT-NN).
+#
+# BLOCKING. Deterministic and cheap: pure python3 stdlib, no API tokens,
+# no canon clone, no network. Two suites:
+#
+#   test-block-writes.sh — the PreToolUse hook under BOTH hosts' payload
+#   shapes and every permission mode: the §2.1 classes block everywhere,
+#   the read surface passes everywhere, the gated writes pass only where
+#   a human prompt is guaranteed and are handed over everywhere else
+#   (RT-04), and the canary always answers with its marker (RT-03).
+#
+#   test-runtime-compat.sh — every skill carries both explicit-invocation
+#   switches (RT-05) and the Step-0 canary, no allowed-tools grants a
+#   write, Codex agents are read-only (RT-06), and the two manifests
+#   agree. (The execpolicy decision checks skip here: no codex binary on
+#   the runner. They run on any maintainer machine that has one.)
+#
+# NOTE — file location (§3.1): GitHub Actions only discovers workflows under
+# .github/workflows/. ci/ is the reviewed source of truth; a byte-identical
+# copy ships at .github/workflows/runtime-compat-test.yml. The first step
+# fails if the two diverge — edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): third-party actions pinned by full commit SHA.
+
+name: runtime-compat-test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "settings/**"
+      - "hooks/**"
+      - "skills/**"
+      - "agents/**"
+      - "rules/runtime.md"
+      - ".claude-plugin/**"
+      - ".codex-plugin/**"
+      - ".agents/**"
+      - "ci/scripts/test-block-writes.sh"
+      - "ci/scripts/test-runtime-compat.sh"
+      - "ci/runtime-compat-test.yml"
+      - ".github/workflows/runtime-compat-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runtime-compat-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  runtime-compat-test:
+    name: two-host safety floor (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/runtime-compat-test.yml .github/workflows/runtime-compat-test.yml; then
+            echo "::error file=ci/runtime-compat-test.yml::ci/runtime-compat-test.yml and .github/workflows/runtime-compat-test.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Safety hook under both hosts
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-block-writes.sh
+
+      - name: Two-host packaging lint
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-runtime-compat.sh

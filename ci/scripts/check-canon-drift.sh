@@ -37,7 +37,7 @@
 # NOT citations, and skipped everywhere EXCEPT rules/canon-map.md
 # (where every path-shaped token is normative and must resolve):
 #   - generic mechanism filenames the rules must name as diff PATTERNS
-#     (§10.2: CLAUDE.md, AGENTS.md, `.claude/**`, `.github/**` — these
+#     (§10.2: CLAUDE.md, AGENTS.md, `.claude/**`, `.codex/**`, `.agents/**`, `.github/**` — these
 #     mean "any repo's agent-instruction/workflow files", not lq-ai's);
 #   - git refs (`origin/main`) and angle-bracket placeholders
 #     (`${CLAUDE_PLUGIN_ROOT}/<path>`);
@@ -109,7 +109,7 @@ find rules templates skills -type f -name '*.md' 2>/dev/null | sort | while IFS=
     # Inside canon-map.md every token is normative and stays checked.
     if [ "$f" != "rules/canon-map.md" ]; then
       case "$tok" in
-        CLAUDE.md|AGENTS.md|.claude|.claude/*|.github|.github/*) continue ;;
+        CLAUDE.md|AGENTS.md|AGENTS.override.md|.claude|.claude/*|.codex|.codex/*|.agents|.agents/*|.github|.github/*) continue ;;
       esac
     fi
 

@@ -1,0 +1,11 @@
+# Codex skill metadata (rules/runtime.md RT-05). Claude Code ignores this
+# file; Codex ignores SKILL.md's `disable-model-invocation`. Both switches
+# must say the same thing: this skill runs only when a maintainer names it.
+# ci/scripts/test-runtime-compat.sh fails the build if either is missing.
+# Permission-bearing (design §3.6): two maintainer reviews.
+interface:
+  display_name: "LQ Maintainer: release notes"
+  short_description: "Draft the release narrative from merge trailers and review evidence"
+  default_prompt: "Run $lq-maintainer:release-notes [<ref>..<ref>] from inside my lq-ai clone."
+policy:
+  allow_implicit_invocation: false

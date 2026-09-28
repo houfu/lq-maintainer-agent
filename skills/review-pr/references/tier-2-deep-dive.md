@@ -39,6 +39,14 @@ statement is legitimate. Digest-level triage stays single-session, and
 the Tier-1 quick pass rides no budget gate at all (`TR-04`); the team
 is for depth, not breadth.
 
+**On Codex (`rules/runtime.md` RT-06)** the member is the installed
+custom agent `lq-maintainer-review-pass`
+(`agents/codex/lq-maintainer-review-pass.toml`, `sandbox_mode =
+"read-only"`) — never a built-in one. If it is not installed, run the
+four passes **in sequence in this context**, each against the same
+member brief, and record the fan-out as `not-run` in the work log with
+that reason. The calls owed are the same either way.
+
 Launch **four parallel subagents via the Task tool**, one per pass,
 each with a fresh context and a fully self-contained prompt. **Every
 member is dispatched as the plugin's `review-pass` agent**

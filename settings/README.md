@@ -1,8 +1,8 @@
 # settings/ — the §2.1 safety floor (reference copy)
 
 This directory is the plugin's **permission-bearing surface**: the
-hard-block layer that keeps any Claude Code session with the plugin
-active from performing repository actions reserved for humans.
+hard-block layer that keeps any Claude Code or Codex session with the
+plugin active from performing repository actions reserved for humans.
 
 The policy it enforces is lq-ai's own
 (`docs/security/external-contribution-vetting.md`, restated as design
@@ -35,8 +35,8 @@ denies the rest by default:
 | `gh issue list / view / status` | |
 | `gh repo view`, `gh release list/view`, `gh run list/view`, `gh workflow list/view`, `gh label list`, `gh search *`, `gh auth status`, `gh status`, `gh help` | read-only |
 | `gh api` with method GET or HEAD | the default method; `-f`/`-F` fields imply POST and are screened as POST |
-| `gh api` POST/PATCH on `…/comments` endpoints only | the **permission-gated** receipt post and update-in-place flow (design §8.4) |
-| `gh pr comment`, `gh issue comment` | same gated flow |
+| `gh api` POST/PATCH on `…/comments` endpoints only | the **permission-gated** receipt post and update-in-place flow (design §8.4) — only in Claude Code's prompting modes; handed over elsewhere (see [Codex](#codex-v075--rulesruntimemd)) |
+| `gh pr comment`, `gh issue comment` | same gated flow, same condition |
 | local `git` (log, diff, show, status, fetch of branch refs, …) | except the blocked classes below |
 
 Everything `gh` outside that table is **blocked**: merge, review (all
@@ -190,6 +190,67 @@ independent layer, but this project does not require it.
 This is a floor, not the ceiling: everything not blocked still goes
 through normal permission prompting, and the agent's skills request
 only read tools, the §5.1 check scripts, and the gated comment flow.
+
+## Codex *(v0.7.5 — `rules/runtime.md`)*
+
+The same hook is the primary layer under Codex, unchanged in shape:
+Codex loads `hooks/hooks.json` from the plugin, sends the same
+`tool_name` / `tool_input.command` payload, sets `CLAUDE_PLUGIN_ROOT`
+for compatibility (and its own `PLUGIN_ROOT`), and honors exit `2`.
+Three Codex facts change what the hook must do:
+
+- **A plugin hook runs only once a human trusts it** in `/hooks`, and
+  every change to its definition re-arms that review. An untrusted
+  hook is skipped **silently**. Hence the **canary**: the exact command
+  `lq-maintainer-safety-canary` is always blocked with a status line
+  (`LQ-MAINTAINER SAFETY FLOOR ACTIVE runtime=… writes=… model=… root=…
+  data=…`), every skill runs it first, and a run that does not see the
+  marker stops (RT-03). The same check catches Claude Code's
+  `--dangerously-skip-permissions`, under which no hook runs at all.
+- **A Codex hook cannot ask for approval** (`permissionDecision:
+  "ask"` is parsed but unsupported), and Codex does not enforce a
+  skill's `allowed-tools`. So "the gated comment flow still prompts" is
+  not true on Codex. The hook therefore detects the host (a Codex
+  payload carries `turn_id`; Codex sets `PLUGIN_ROOT`) and the
+  permission mode, and passes the gated writes **only** in Claude
+  Code's `default` / `acceptEdits` / `plan` modes. Everywhere else —
+  Codex, Claude Code `auto` / `dontAsk` / `bypassPermissions`, anything
+  unrecognized — they are blocked with a **hand-over** message, and the
+  skill prints the command for the maintainer to run (RT-04).
+  Fail-closed: an unrecognized host is treated as one without a prompt.
+- **A Bash call whose command cannot be read is now blocked**, not
+  waved through, and an argv-shaped command is joined and screened —
+  the previous `exit 0` on a missing command assumed Claude Code's
+  payload would always carry a string.
+
+**The second layer on Codex** is `settings/codex/lq-maintainer.rules`,
+Codex's execpolicy counterpart of the `permissions.deny` list:
+`forbidden` for the §2.1 classes, `prompt` for the gated writes and
+every `gh api` call. Like the deny list it is prefix-matched (it
+cannot see `git -C x push`; the hook can), so it is the coarse
+first-chance layer and nothing more. A plugin cannot ship command
+rules: copy the file to `~/.codex/rules/` (or `<lq-ai>/.codex/rules/`
+in a trusted project) — `docs/onboarding.md` walks through it. Check a
+decision with:
+
+```sh
+codex execpolicy check --rules settings/codex/lq-maintainer.rules git push origin main
+# {"matchedRules":[…],"decision":"forbidden"}
+```
+
+**Codex's own limits, stated as plainly as §10.1's:** hooks do not
+cover hosted tools; `[features] hooks = false` and
+`--dangerously-bypass-approvals-and-sandbox` remove the floor exactly
+as `--dangerously-skip-permissions` does in Claude Code (onboarding
+forbids both); and Codex's docs themselves call tool hooks "a useful
+guardrail, not a complete enforcement boundary." The canary makes the
+first two visible; it cannot make them impossible.
+
+Test the hook under both payload shapes with
+`sh ci/scripts/test-block-writes.sh`, and the two-host packaging with
+`sh ci/scripts/test-runtime-compat.sh` (which also checks the rules
+file's decisions when a `codex` binary is on PATH). Both run in CI as
+`runtime-compat-test`.
 
 ## Changing these files
 

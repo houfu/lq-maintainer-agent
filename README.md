@@ -96,7 +96,7 @@ knowledge lives in one file, [rules/canon-map.md](rules/canon-map.md);
 another project adopting the agent replaces that file (and the templates'
 prose), nothing else.
 
-## Install (Claude Code plugin)
+## Install (Claude Code or Codex plugin)
 
 Maintainers install the agent once as a Claude Code plugin, then run its
 skills **from inside their own lq-ai clone** — that is what gives the agent
@@ -133,6 +133,21 @@ receipt records **four pinned fields** — the PR head SHA reviewed, the
 canon SHA it was judged against, the agent version, and the served model
 ID for the session — so any triage decision is reproducible and any
 dispute auditable.
+
+**Codex.** The same repo installs as a Codex plugin:
+
+```
+codex plugin marketplace add houfu/lq-maintainer-agent
+codex plugin add lq-maintainer@lq-maintainer-agent
+```
+
+Then trust the plugin's hook in `/hooks` (Codex skips a plugin hook
+until you do, and after every update), install the command rules from
+`settings/codex/`, and invoke skills as `$lq-maintainer:triage`. Every
+guarantee holds on both hosts, some by a stricter mechanism — on Codex
+posts are always handed over for you to run
+([rules/runtime.md](rules/runtime.md); walkthrough in
+[docs/onboarding.md](docs/onboarding.md#running-under-codex)).
 
 ## The seven skills
 

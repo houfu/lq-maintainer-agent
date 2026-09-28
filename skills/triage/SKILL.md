@@ -11,14 +11,14 @@ description: >
   open PRs and issues), /lq-maintainer:triage milestone "<name>" (the same
   digest scoped to the open items carrying that milestone — a milestone
   selects, it never judges), or /lq-maintainer:triage pr N (a single PR's
-  quick card). Skill invocation is namespaced by the plugin — there is no bare
+  quick card). Skill invocation is namespaced by the plugin (on Codex it is spelled $lq-maintainer:<skill>) — there is no bare
   /triage. Never invoke proactively or mid-conversation without an explicit
   command. For the considered single-item REVIEW (deck, drafted receipt and
   responses), the user runs /lq-maintainer:review-pr N or
   /lq-maintainer:review-issue N — triage sorts the queue; the review skills
   go deep on one item.
 disable-model-invocation: true
-allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Task, Read, Grep, Glob
+allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Task, Read, Grep, Glob, Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:triage — lane assignment, receipts, and drafts for inbound work
@@ -47,6 +47,22 @@ which file live in `skills/triage/references/rules-loading.md` and
 `skills/triage/references/output-templates.md`.
 
 ## Step 0 — Preconditions and the four pinned fields
+
+**Before anything else, bind the runtime** (`rules/runtime.md`,
+`RT-01`–`RT-07`). Run exactly `lq-maintainer-safety-canary` as the
+first command of the run. The safety hook answers with one line
+beginning `LQ-MAINTAINER SAFETY FLOOR ACTIVE`; **any other answer stops
+the run here** with the one-line fix RT-03 names, and nothing is read
+or drafted. From that line, bind the plugin root and data directory
+(RT-01/RT-02 — every `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}`
+below means the bound absolute path; never put the literal token in a
+shell command), the write mode (RT-04 — on `writes=hand-over` every
+gated write in this skill is handed over as an exact command, never
+attempted), the served model ID where reported (RT-07), and the host
+spelling for any command you render (RT-05; pass it to
+`render-deck.sh` as `LQ_RUNTIME=<runtime>`). Then read
+`${CLAUDE_PLUGIN_ROOT}/rules/runtime.md` whole, and — where this skill
+keeps a work log — record the canary line as its first row.
 
 1. **Verify you are inside a clone of the target repo.**
    `git remote -v` must show a remote matching the repository-identity
@@ -247,7 +263,9 @@ satisfy that, and **the fan-out is the batch default**:
      forking does not create an exception to that (§3.3).
    Record each fork and each return as a work-log row.
 2. **Single context — then re-read.** Where the fan-out is unavailable
-   or the maintainer asks for one continuous session, **re-read
+   — always the case on Codex, which has no read-only counterpart of
+   `triage-item` (`rules/runtime.md` RT-06) — or the maintainer asks
+   for one continuous session, **re-read
    `rules/lanes.md`, `rules/escalation-triggers.md`,
    `rules/change-categories.md`, `rules/tiers.md`, and — before
    computing merge-order groups across the open PRs — `rules/queue.md`,

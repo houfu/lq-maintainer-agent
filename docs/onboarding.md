@@ -16,7 +16,9 @@ path.
 
 ## Prerequisites
 
-- **Claude Code** installed and signed in.
+- **Claude Code** or **Codex** (CLI, IDE extension, or app) installed and
+  signed in. Both run the same plugin from the same repo; the Codex
+  steps are in [Running under Codex](#running-under-codex).
 - **`gh` CLI** authenticated (`gh auth status`) with read access to
   `legalquants/lq-ai`. The agent uses your `gh` session read-only; you
   will use it yourself for the actual merges and posts.
@@ -94,6 +96,22 @@ hooks requires the agent to *actively evade* — which is itself
 detectable behavior in a human-supervised session. If you ever see
 evasive behavior, end the session and file it here.
 
+### The safety canary
+
+Every skill's first command is `lq-maintainer-safety-canary`
+(`rules/runtime.md` RT-03). It is not a real program: the safety hook
+intercepts it and answers with one line —
+`LQ-MAINTAINER SAFETY FLOOR ACTIVE runtime=… writes=… …` — which
+proves the hook is loaded before anything is read. If you are ever
+**asked to approve** it, or see "command not found", decline and fix
+the install: the hook is not running, and the skill will refuse to
+continue. The `writes=` field tells you how posts will reach GitHub
+this session: `prompt` (you approve each post as it runs) or
+`hand-over` (the agent prints each command and you run it yourself).
+You get `hand-over` on Codex and in Claude Code's `auto` or
+`bypassPermissions` modes, because no approval prompt is guaranteed
+there (RT-04).
+
 ### Version-update discipline
 
 Releases are tagged and carry a changelog. Third-party marketplaces do
@@ -109,7 +127,8 @@ push**:
   which model judged it is not reproducible even in principle). That
   tuple is what makes a triage decision reproducible and a dispute
   auditable — which only works if you know what version you are
-  running. Check with `/plugin` before a session if unsure.
+  running. Check with `/plugin` (Codex: `codex plugin list`) before a
+  session if unsure.
 - Rules changes in this repo take two maintainer reviews before they
   reach a release (see [CONTRIBUTING.md](../CONTRIBUTING.md)), so a
   version bump is a reviewed policy change, not a moving target.
@@ -118,6 +137,59 @@ push**:
   render time (v0.4.1) — so a stale install is visible on the
   artifact itself, not just inferred from the receipt's pinned
   `agent_version`.
+
+## Running under Codex
+
+The same plugin runs under OpenAI Codex, from the same repo. Codex
+reads the skills and the safety hook as they stand; what differs is
+which mechanism carries each guarantee (`rules/runtime.md` has the
+table). Install once:
+
+```
+codex plugin marketplace add houfu/lq-maintainer-agent
+codex plugin add lq-maintainer@lq-maintainer-agent
+```
+
+Then, before the first session **and after every update**:
+
+1. **Trust the hook.** Open `/hooks` in Codex and trust the
+   `lq-maintainer` PreToolUse hook. Codex skips a plugin hook until a
+   human trusts its exact definition, and an update changes it. The
+   canary refuses the run until you do.
+2. **Install the command rules** (the second layer, for the day the
+   hook is not running):
+   `cp <plugin>/settings/codex/lq-maintainer.rules ~/.codex/rules/`.
+   `<plugin>` is the install directory the canary reports as `root=`.
+3. **Optionally install the read-only review agent**:
+   `cp <plugin>/agents/codex/lq-maintainer-review-pass.toml ~/.codex/agents/`.
+   Without it, a Tier-2 deep dive runs its four passes in sequence
+   instead of in parallel — slower, same calls (RT-06).
+
+Start sessions from your lq-ai clone with network access, since the
+agent reads GitHub through `gh`:
+
+```
+codex --sandbox workspace-write -c sandbox_workspace_write.network_access=true
+```
+
+Invoke skills with `$` instead of `/`: `$lq-maintainer:triage`,
+`$lq-maintainer:review-pr 123`, and so on. Rendered decks spell next
+steps the Codex way when the run was on Codex.
+
+What is different on Codex, plainly:
+
+- **Posts are always handed over.** Codex hooks cannot ask you to
+  approve a command, so the hook blocks every post and the agent
+  prints the exact `gh` command instead; you run it. This is the
+  stricter of the two ways the guarantee can hold, not a workaround.
+- **Batch triage runs in one context.** Codex has no read-only
+  counterpart of the per-item `triage-item` worker (it needs `gh`,
+  and so network), so batch triage re-reads its rules before each
+  item, as the design's single-context path requires.
+- **The one absolute rule has a Codex spelling:** never run triage
+  with `--dangerously-bypass-approvals-and-sandbox` (`--yolo`), and
+  never disable hooks (`[features] hooks = false`). Either removes the
+  floor the canary checks for.
 
 ## What a review produces now (v0.7)
 
