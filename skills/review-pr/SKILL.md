@@ -10,14 +10,14 @@ description: >-
   named condition demands it; greenfield feature work redirects to
   /lq-maintainer:design-plan. Invoke ONLY when the user explicitly runs
   /lq-maintainer:review-pr N (N = PR number) — skill invocation is
-  namespaced by the plugin; there is no bare /review-pr. Never invoke
+  namespaced by the plugin (on Codex it is spelled $lq-maintainer:<skill>); there is no bare /review-pr. Never invoke
   proactively, never mid-conversation on your own judgment — a review
   skill firing unprompted is surprising with no upside. For batch or
   single-item triage without the single-item review, the user runs
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -98,6 +98,22 @@ it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
   Content-only — never a routing input (D-00).
 
 ## Step 0 — Preconditions
+
+**Before anything else, bind the runtime** (`rules/runtime.md`,
+`RT-01`–`RT-07`). Run exactly `lq-maintainer-safety-canary` as the
+first command of the run. The safety hook answers with one line
+beginning `LQ-MAINTAINER SAFETY FLOOR ACTIVE`; **any other answer stops
+the run here** with the one-line fix RT-03 names, and nothing is read
+or drafted. From that line, bind the plugin root and data directory
+(RT-01/RT-02 — every `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}`
+below means the bound absolute path; never put the literal token in a
+shell command), the write mode (RT-04 — on `writes=hand-over` every
+gated write in this skill is handed over as an exact command, never
+attempted), the served model ID where reported (RT-07), and the host
+spelling for any command you render (RT-05; pass it to
+`render-deck.sh` as `LQ_RUNTIME=<runtime>`). Then read
+`${CLAUDE_PLUGIN_ROOT}/rules/runtime.md` whole, and — where this skill
+keeps a work log — record the canary line as its first row.
 
 1. **Inside a clone of the target repo.** `git remote -v` must show a
    remote matching the repository-identity entry in

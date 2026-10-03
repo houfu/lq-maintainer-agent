@@ -169,8 +169,10 @@ only their routing diverges from the security family's.
   of what that text claims.
 - **E-10 — Agent-instruction or tool-config files in the diff.** The
   contribution adds or modifies files that instruct AI agents or
-  configure executable tooling: `CLAUDE.md`, `AGENTS.md`, anything
-  under `.claude/`, copilot-instructions files, or executable tool
+  configure executable tooling: `CLAUDE.md`, `AGENTS.md`,
+  `AGENTS.override.md`, anything under `.claude/`, `.codex/` or
+  `.agents/` (the second host's config, hooks, command rules, custom
+  agents and skills — `rules/runtime.md`), copilot-instructions files, or executable tool
   configs (linter configs, `conftest.py`, hook and workflow configs —
   anything a toolchain loads and runs). These are the
   highest-success documented injection vector (design doc §10.2).

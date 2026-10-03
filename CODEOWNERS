@@ -18,6 +18,12 @@
 /settings/        @houfu
 /skills/          @houfu
 /.claude-plugin/  @houfu
+# The Codex side of the same surfaces (design delta v0.7.5): the manifest
+# names the hook file, and agents/ pins subagent tool surfaces on both
+# hosts (agents/*.md for Claude Code, agents/codex/*.toml for Codex).
+/.codex-plugin/   @houfu
+/.agents/         @houfu
+/agents/          @houfu
 
 # CODEOWNERS itself is a permission surface too.
 /CODEOWNERS       @houfu

@@ -1,0 +1,45 @@
+# lq-maintainer-agent -- Codex command rules (execpolicy), the second
+# enforcement layer on Codex (rules/runtime.md; settings/README.md,
+# "Codex"). The PreToolUse hook (hooks/hooks.json ->
+# settings/hooks/block-writes.sh) is the primary layer on both hosts; this
+# file is what still stands on Codex if that hook is untrusted, disabled
+# with `[features] hooks = false`, or skipped after a plugin update changed
+# its hash. It is Codex's counterpart of the `permissions.deny` list in
+# settings/claude-settings.json, and like that list it is PREFIX-matched:
+# a coarse first-chance layer, never the allow-list structure the hook
+# carries (gh api methods, wrappers, PR refs).
+#
+# Install: copy to ~/.codex/rules/lq-maintainer.rules (user layer), or to
+# <lq-ai>/.codex/rules/ in a trusted project. A plugin cannot ship rules.
+# Verify: codex execpolicy check --pretty --rules <this file> -- git push
+#
+# Permission-bearing (design §3.6): two maintainer reviews, CODEOWNERS-routed.
+
+# --- design §2.1: human-only, always -------------------------------------
+prefix_rule(pattern = ["git", "push"], decision = "forbidden",
+    justification = "Pushing is human-only (lq-maintainer design 2.1).")
+prefix_rule(pattern = ["git", "send-pack"], decision = "forbidden",
+    justification = "Push plumbing is human-only (design 2.1).")
+prefix_rule(pattern = ["gh", "pr", ["merge", "review", "close", "checkout", "edit", "ready", "reopen", "lock"]],
+    decision = "forbidden",
+    justification = "Merge, review, close, checkout and edit are human-only; PR refs never enter an agent session (design 2.1, 10).")
+prefix_rule(pattern = ["gh", "issue", ["close", "edit", "delete", "transfer", "lock", "reopen"]],
+    decision = "forbidden",
+    justification = "Issue state changes are human-only (design 2.1).")
+prefix_rule(pattern = ["gh", "repo", ["delete", "edit", "clone", "fork", "archive", "rename"]],
+    decision = "forbidden",
+    justification = "Repository administration and cloning contributed forks are human-only (design 2.1, 10).")
+prefix_rule(pattern = ["gh", ["alias", "extension"]], decision = "forbidden",
+    justification = "Aliases and extensions can launder blocked verbs (design 2.1).")
+prefix_rule(pattern = ["gh", "label", ["create", "edit", "delete", "clone"]], decision = "forbidden",
+    justification = "The label taxonomy is the target repo's own; the agent never edits it (LB-05).")
+prefix_rule(pattern = ["gh", "release", ["create", "edit", "delete", "upload"]], decision = "forbidden",
+    justification = "Publishing a release is human-only (release-notes skill).")
+
+# --- design 8.4: the gated writes ----------------------------------------
+# The hook hands these over on Codex (RT-04). If the hook is not running,
+# they must at least prompt -- never run unasked.
+prefix_rule(pattern = ["gh", ["pr", "issue"], "comment"], decision = "prompt",
+    justification = "Posting is a gated write: a human approves each one (design 8.4, RT-04).")
+prefix_rule(pattern = ["gh", "api"], decision = "prompt",
+    justification = "gh api can write; the hook screens methods, this rule makes every call ask (design 2.1).")

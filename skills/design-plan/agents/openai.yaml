@@ -1,0 +1,11 @@
+# Codex skill metadata (rules/runtime.md RT-05). Claude Code ignores this
+# file; Codex ignores SKILL.md's `disable-model-invocation`. Both switches
+# must say the same thing: this skill runs only when a maintainer names it.
+# ci/scripts/test-runtime-compat.sh fails the build if either is missing.
+# Permission-bearing (design §3.6): two maintainer reviews.
+interface:
+  display_name: "LQ Maintainer: design plan"
+  short_description: "Turn greenfield feature work into a ratifiable plan"
+  default_prompt: "Run $lq-maintainer:design-plan pr|issue <number> from inside my lq-ai clone."
+policy:
+  allow_implicit_invocation: false

@@ -39,6 +39,8 @@ bytes, later, and only the ones that bear.
 - **LD-02 — The register.**
 
   **Whole, always:**
+  `runtime` (read at Step 0, right after the canary, before this file
+  — it binds the paths every other read uses, `RT-01`),
   `injection-posture` (governs how every span is read, before any
   content), `escalation-triggers` (every `E-NN` must be checked and
   cleared), `change-categories` (you choose one of four, so you need
@@ -128,7 +130,9 @@ bytes, later, and only the ones that bear.
   item has nothing to drift from, so the fan-out
   (`skills/triage/SKILL.md` Step 2, `agents/triage-item.md`) satisfies
   the anti-drift requirement **more** strongly than the re-read, not
-  less. Where the fan-out is unavailable, the re-read stands.
+  less. Where the fan-out is unavailable — including wherever the host
+  cannot pin the subagent read-only (`rules/runtime.md` RT-06) — the
+  re-read stands.
 
 - **LD-12 — The brief carries paths, never content.** A dispatching
   lead gives a subagent the **list of rule files** its shape requires

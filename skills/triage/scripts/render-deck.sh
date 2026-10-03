@@ -251,11 +251,20 @@ def repo_base():
     return (m.group(1).rstrip("/") + "/") if m else "https://github.com/"
 
 
+def _invoke(args):
+    """A skill command in the running host's spelling (rules/runtime.md
+    RT-05): `/lq-maintainer:<skill>` on Claude Code, `$lq-maintainer:<skill>`
+    on Codex. The skill passes the canary's runtime as LQ_RUNTIME; unset
+    means Claude Code, the spelling the rest of this repo's text uses."""
+    sigil = "$" if os.environ.get("LQ_RUNTIME") == "codex" else "/"
+    return sigil + "lq-maintainer:" + args
+
+
 def _plugin_root():
     """${CLAUDE_PLUGIN_ROOT}, falling back to a path relative to this file (same
     resolution main() uses for the glossary) -- so every reader of the plugin
     manifest agrees on where it lives."""
-    root = os.environ.get("CLAUDE_PLUGIN_ROOT")
+    root = os.environ.get("CLAUDE_PLUGIN_ROOT") or os.environ.get("PLUGIN_ROOT")
     if root:
         return root
     return os.path.abspath(
@@ -2254,8 +2263,8 @@ def _outcome_decision_line(outcome, outcome_raw, held, num):
         return ("This adds capability the project has not decided on yet, so it goes to "
                 "the design path rather than a code review: run "
                 "%s to draft the decisions, the obstacles, and the smaller changes that "
-                "would build it." % ("/lq-maintainer:design-plan pr %s" % num if num
-                                     else "/lq-maintainer:design-plan"))
+                "would build it." % (_invoke("design-plan pr %s" % num) if num
+                                     else _invoke("design-plan")))
     if outcome == "security-escalate":
         return ("This is routed for security review — about the surface the change "
                 "touches, not about the person who sent it. It is not decided by one "
@@ -2476,8 +2485,8 @@ def _issue_decision_line(reco, held, num=""):
                 "review: run %s to draft the decisions it needs, the obstacles it would "
                 "hit, and the smaller changes that would build it. The contributor is "
                 "credited in whatever comes out of it."
-                % ("/lq-maintainer:design-plan issue %s" % num if num
-                   else "/lq-maintainer:design-plan"))
+                % (_invoke("design-plan issue %s" % num) if num
+                   else _invoke("design-plan")))
     if reco == "needs-info":
         return ("A drafted request goes back to the reporter first. Until the missing "
                 "piece — a reproduction, or a design anchor — comes back, there is nothing "

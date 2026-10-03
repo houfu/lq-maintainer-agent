@@ -10,14 +10,14 @@ description: >-
   creates a label and never touches one a human applied. Invoke ONLY when the
   user explicitly runs /lq-maintainer:label (bare sweep),
   /lq-maintainer:label pr N, or /lq-maintainer:label issue N — skill
-  invocation is namespaced by the plugin; there is no bare /label. Never
+  invocation is namespaced by the plugin (on Codex it is spelled $lq-maintainer:<skill>); there is no bare /label. Never
   invoke proactively or mid-conversation. The fuller passes
   (/lq-maintainer:triage, /lq-maintainer:review-pr,
   /lq-maintainer:review-issue) are the authority and correct these labels on
   their own sync step.
 disable-model-invocation: true
 argument-hint: "[pr <n> | issue <n>]"
-allowed-tools: Read, Grep, Glob, Bash(gh label list:*), Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*)
+allowed-tools: Read, Grep, Glob, Bash(gh label list:*), Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:label — the express first touch
@@ -57,6 +57,22 @@ All file paths below are relative to the plugin root; resolve them as
 `${CLAUDE_PLUGIN_ROOT}/<path>`.
 
 ## Step 0 — Preconditions (light)
+
+**Before anything else, bind the runtime** (`rules/runtime.md`,
+`RT-01`–`RT-07`). Run exactly `lq-maintainer-safety-canary` as the
+first command of the run. The safety hook answers with one line
+beginning `LQ-MAINTAINER SAFETY FLOOR ACTIVE`; **any other answer stops
+the run here** with the one-line fix RT-03 names, and nothing is read
+or drafted. From that line, bind the plugin root and data directory
+(RT-01/RT-02 — every `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}`
+below means the bound absolute path; never put the literal token in a
+shell command), the write mode (RT-04 — on `writes=hand-over` every
+gated write in this skill is handed over as an exact command, never
+attempted), the served model ID where reported (RT-07), and the host
+spelling for any command you render (RT-05; pass it to
+`render-deck.sh` as `LQ_RUNTIME=<runtime>`). Then read
+`${CLAUDE_PLUGIN_ROOT}/rules/runtime.md` whole, and — where this skill
+keeps a work log — record the canary line as its first row.
 
 1. **Verify you are inside a clone of the target repo.** `git remote -v`
    must show a remote matching the `canon:repo` repository-identity

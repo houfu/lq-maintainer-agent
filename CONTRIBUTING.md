@@ -13,15 +13,18 @@ touches (design doc §3.6):
 | Paths touched | Reviews required |
 |---|---|
 | Anything else (docs, evals, CI, templates, skill bodies) | **1 maintainer review** |
-| `rules/**`, `hooks/**`, `settings/**`, or the YAML frontmatter of any `skills/*/SKILL.md` | **2 maintainer reviews** |
+| `rules/**`, `hooks/**`, `settings/**`, `agents/**`, `.codex-plugin/**`, the YAML frontmatter of any `skills/*/SKILL.md`, or any `skills/*/agents/openai.yaml` | **2 maintainer reviews** |
 
 The two-review surfaces are the judgment-bearing and permission-bearing
 ones: `rules/` decides how contributions to lq-ai are laned and reviewed,
 `hooks/` carries the PreToolUse block that keeps sessions from merging or
 pushing, `settings/` carries the reference copy of that block for lq-ai's
-own `.claude/`, and skill frontmatter (`allowed-tools` and invocation
-metadata) is a permission grant executing in maintainers' authenticated
-sessions. CODEOWNERS routes those paths to the security team
+own `.claude/` and the Codex command rules, skill frontmatter
+(`allowed-tools` and invocation metadata) is a permission grant executing
+in maintainers' authenticated sessions, and `agents/`, the Codex manifest
+and each skill's `agents/openai.yaml` are the same grants on the second
+host (subagent tool surfaces, the hook registration, and the
+explicit-invocation switch — `rules/runtime.md`). CODEOWNERS routes those paths to the security team
 automatically — see [CODEOWNERS](CODEOWNERS).
 
 If a PR touches both categories, the stricter rule applies to the whole
@@ -105,7 +108,16 @@ declined regardless of its other merits.
   testable. Do not restate rule content inside a SKILL.md.
 - Skills reference rules and templates via `${CLAUDE_PLUGIN_ROOT}` — at
   runtime the working directory is the maintainer's lq-ai clone, not
-  this repo.
+  this repo. Treat it as a **token**, not a shell variable: Claude Code
+  substitutes it, Codex does not, and every skill binds it at Step 0
+  from the safety canary (`rules/runtime.md` RT-01). Never write a
+  script that depends on it being exported — resolve the plugin root
+  from the script's own location, as `render-deck.sh` does.
+- **Every change ships to two hosts.** A new skill needs both
+  explicit-invocation switches (`disable-model-invocation: true` and
+  `agents/openai.yaml`), the Step-0 canary, and nothing that only one
+  host enforces standing in for a guarantee;
+  `ci/scripts/test-runtime-compat.sh` checks the mechanical part.
 - There is no committed cache. The deep-dive cache lives under
   `${CLAUDE_PLUGIN_DATA}` (design doc §3.1, §3.5), outside the
   repository tree; never add cache or state directories to this repo.
@@ -146,7 +158,9 @@ Release steps:
 
 1. Land all changes on `main` via PR (two maintainer reviews for the
    permission surfaces, as above).
-2. Bump `version` in `plugin.json` to the next SemVer. **Never move an
+2. Bump `version` in **both** `.claude-plugin/plugin.json` and
+   `.codex-plugin/plugin.json` to the next SemVer
+   (`ci/scripts/test-runtime-compat.sh` fails if they differ). **Never move an
    already-published tag** — if `vX.Y.Z` is already pushed, cut
    `vX.Y.(Z+1)`; moving a tag breaks anyone pinned to it.
 3. Update the changelog — add an entry to [CHANGELOG.md](CHANGELOG.md).
@@ -173,3 +187,31 @@ Because the source is a local path, updates track your working tree
 directly — no tag, no `version` bump, no push required. Remove it with
 `/plugin marketplace remove lq-maintainer-agent` when done so you don't
 shadow the real marketplace entry.
+
+### Codex
+
+Codex installs the same repo the same way — a git clone into
+`~/.codex/plugins/cache/<marketplace>/<plugin>/<version>/` — reading
+`.agents/plugins/marketplace.json` and `.codex-plugin/plugin.json` (it
+also falls back to the `.claude-plugin/` files, undocumented; the
+Codex-native files are there so nothing depends on that). The same
+two consequences hold: the `version` is the delivery mechanism, and
+the pre-release checkbox does nothing.
+
+One consequence is Codex's own: **every release changes the hook's
+hash, and Codex skips a plugin hook until a human re-trusts it in
+`/hooks`.** That is why every skill opens with the safety canary
+(`rules/runtime.md` RT-03) — a maintainer who updates and forgets to
+re-trust gets a refused run with the fix named, not a run without its
+safety floor. Say so in the changelog entry of any release that
+touches `hooks/` or `settings/hooks/`.
+
+Local testing, the Codex way:
+
+```
+codex plugin marketplace add /absolute/path/to/lq-maintainer-agent
+codex plugin add lq-maintainer@lq-maintainer-agent
+```
+
+Start a new Codex session after each change, and re-trust the hook in
+`/hooks` whenever `hooks/` or the hook script changed.

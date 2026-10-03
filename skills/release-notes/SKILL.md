@@ -10,13 +10,13 @@ description: >-
   evidence records — and it publishes nothing: the draft is handed over,
   every write prompts, and tagging is a push the safety hook blocks. Invoke
   ONLY when the user explicitly runs /lq-maintainer:release-notes
-  [<ref>..<ref>] — skill invocation is namespaced by the plugin; there is
+  [<ref>..<ref>] — skill invocation is namespaced by the plugin (on Codex it is spelled $lq-maintainer:<skill>); there is
   no bare /release-notes. Never invoke proactively or mid-conversation. For
   sorting the open queue the user runs /lq-maintainer:triage; for one item,
   /lq-maintainer:review-pr or /lq-maintainer:review-issue.
 disable-model-invocation: true
 argument-hint: "[<ref>..<ref>]"
-allowed-tools: Read, Grep, Glob, Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh release list:*), Bash(gh release view:*), Bash(gh search:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git tag --list:*), Bash(git describe:*), Bash(git status:*)
+allowed-tools: Read, Grep, Glob, Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh release list:*), Bash(gh release view:*), Bash(gh search:*), Bash(git remote:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git tag --list:*), Bash(git describe:*), Bash(git status:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:release-notes — the release narrative
@@ -81,6 +81,22 @@ Load these first — they are data, not to be paraphrased from memory:
   freehand.
 
 ## Step 0 — Preconditions and the four pinned fields
+
+**Before anything else, bind the runtime** (`rules/runtime.md`,
+`RT-01`–`RT-07`). Run exactly `lq-maintainer-safety-canary` as the
+first command of the run. The safety hook answers with one line
+beginning `LQ-MAINTAINER SAFETY FLOOR ACTIVE`; **any other answer stops
+the run here** with the one-line fix RT-03 names, and nothing is read
+or drafted. From that line, bind the plugin root and data directory
+(RT-01/RT-02 — every `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}`
+below means the bound absolute path; never put the literal token in a
+shell command), the write mode (RT-04 — on `writes=hand-over` every
+gated write in this skill is handed over as an exact command, never
+attempted), the served model ID where reported (RT-07), and the host
+spelling for any command you render (RT-05; pass it to
+`render-deck.sh` as `LQ_RUNTIME=<runtime>`). Then read
+`${CLAUDE_PLUGIN_ROOT}/rules/runtime.md` whole, and — where this skill
+keeps a work log — record the canary line as its first row.
 
 1. **Verify you are inside a clone of the target repo.** `git remote -v`
    must show a remote matching the `canon:repo` repository-identity

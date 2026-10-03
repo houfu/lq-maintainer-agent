@@ -8,6 +8,54 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
+## [Unreleased]
+
+### One agent, two hosts — Claude Code and Codex
+
+Design doc: [v0.7.5](docs/design/lq-maintainer-agent-design-v0.7.5.md)
+(proposed; delta over v0.7.4). Request, findings and rulings in
+[docs/proposals/codex-compat.md](docs/proposals/codex-compat.md). From a
+maintainer request: "i need to improve claude/codex compatibility."
+
+Codex was already loading v0.6.0 from the Claude layout, and silently
+dropping explicit invocation, the `allowed-tools` write gate, and the
+pinned read-only subagents. This release makes each guarantee hold on
+both hosts ([rules/runtime.md](rules/runtime.md), `RT-NN`).
+
+- **Safety canary** (`RT-03`). Every skill's first command is
+  `lq-maintainer-safety-canary`; the hook always blocks it with a
+  status line, and a run that does not see it stops. It catches an
+  untrusted Codex plugin hook (skipped silently), disabled hooks, and
+  `--dangerously-skip-permissions`, and names the fix.
+- **Gated writes hand over where no prompt is guaranteed** (`RT-04`).
+  The hook now reads the host and permission mode: `gh pr|issue
+  comment` and `gh api` comment writes pass only in Claude Code's
+  `default`/`acceptEdits`/`plan` modes. On Codex, and in Claude Code
+  `auto`/`dontAsk`/`bypassPermissions`, they are blocked and the agent
+  prints the command for you to run. **Behavior change for Claude Code
+  users in `auto` mode.**
+- **Hook hardening.** A Bash call with no readable command is now
+  blocked (was allowed); an argv-shaped command is screened. The hook
+  has its first direct test suite (258 checks, both payload shapes).
+- **Explicit invocation on Codex** (`RT-05`): `agents/openai.yaml` with
+  `allow_implicit_invocation: false` beside every skill.
+- **Plugin root and data dir bind on Codex** (`RT-01`/`RT-02`), which
+  substitutes neither into skill text nor model shells.
+- **Read-only fan-out or none** (`RT-06`): a Codex custom agent for the
+  Tier-2 review member (`agents/codex/`); batch triage on Codex takes
+  the single-context path.
+- **Codex manifests and command rules**: `.codex-plugin/plugin.json`,
+  `.agents/plugins/marketplace.json`, and
+  `settings/codex/lq-maintainer.rules` (execpolicy, the Codex
+  counterpart of the deny list).
+- **E-10 / I-11** now cover `AGENTS.override.md`, `.codex/**`,
+  `.agents/**`.
+- Decks spell next-step commands the host's way (`$lq-maintainer:…` on
+  Codex).
+- **After updating on Codex, re-trust the hook in `/hooks`** — every
+  release that touches `hooks/` or the hook script re-arms Codex's
+  review.
+
 ## [0.6.0] — 2026-09-27
 
 Two strands: milestone scanning (a design delta), and context-budget

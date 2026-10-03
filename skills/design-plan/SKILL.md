@@ -10,14 +10,14 @@ description: >-
   energy becomes design input for the committee instead of a stalled PR.
   Invoke ONLY when the user explicitly runs
   /lq-maintainer:design-plan pr N or /lq-maintainer:design-plan issue N —
-  skill invocation is namespaced by the plugin; there is no bare
+  skill invocation is namespaced by the plugin (on Codex it is spelled $lq-maintainer:<skill>); there is no bare
   /design-plan. Never invoke proactively or mid-conversation. For tiered
   code review of a category-2/3 change the user runs
   /lq-maintainer:review-pr; for the single-issue review,
   /lq-maintainer:review-issue; for the whole queue, /lq-maintainer:triage.
 disable-model-invocation: true
 argument-hint: <pr|issue> <number>
-allowed-tools: Read, Grep, Glob, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*)
+allowed-tools: Read, Grep, Glob, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh search:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:design-plan — the category-1 path
@@ -85,6 +85,22 @@ Load these first — they are data, not to be paraphrased from memory:
   contributor-facing draft passes afterwards (`TG-NN`).
 
 ## Step 0 — Preconditions and the pinned fields
+
+**Before anything else, bind the runtime** (`rules/runtime.md`,
+`RT-01`–`RT-07`). Run exactly `lq-maintainer-safety-canary` as the
+first command of the run. The safety hook answers with one line
+beginning `LQ-MAINTAINER SAFETY FLOOR ACTIVE`; **any other answer stops
+the run here** with the one-line fix RT-03 names, and nothing is read
+or drafted. From that line, bind the plugin root and data directory
+(RT-01/RT-02 — every `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_PLUGIN_DATA}`
+below means the bound absolute path; never put the literal token in a
+shell command), the write mode (RT-04 — on `writes=hand-over` every
+gated write in this skill is handed over as an exact command, never
+attempted), the served model ID where reported (RT-07), and the host
+spelling for any command you render (RT-05; pass it to
+`render-deck.sh` as `LQ_RUNTIME=<runtime>`). Then read
+`${CLAUDE_PLUGIN_ROOT}/rules/runtime.md` whole, and — where this skill
+keeps a work log — record the canary line as its first row.
 
 1. **Inside a clone of the target repo.** `git remote -v` must match
    the `canon:repo` repository-identity entry in `rules/canon-map.md`.
