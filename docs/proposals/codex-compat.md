@@ -1,4 +1,4 @@
-# One agent, two hosts — Claude Code and Codex (PROPOSED 2026-09-29)
+# One agent, two hosts — Claude Code and Codex (PROPOSED 2026-09-29; INCORPORATED into design delta v0.7.5, 2026-10-03)
 
 Field request from the maintainer, in their words:
 

@@ -1,7 +1,7 @@
 # LQ Maintainer Agent
 
-**Status: v0.6.0 — early (M0/M1).** Built against design doc v0.7.4
-(a delta over v0.7.3): tiered review with a quick-pass default, four
+**Status: v0.7.0 — early (M0/M1).** Built against design doc v0.7.6
+(a delta over v0.7.5): tiered review with a quick-pass default, four
 change categories with a design path for greenfield work, and a
 public-deck / internal-receipt deliverable split. As of v0.5.0 the
 agent also detects breaking changes mechanically from the diff,
@@ -11,16 +11,24 @@ drafts the target repo's release narrative from the accumulated
 review evidence. The deck is the one surface a maintainer reads —
 lean since v0.5.0 (findings and the paste-ready drafts lead, the
 maintainer's ruling rides one decision card, the scaffolding folds
-away) and, as of this release, **checkable**: every finding names
+away) and, since v0.5.1, **checkable**: every finding names
 where it is, what to change and why, with its drafted replacement
 ready to apply in one click, and a work log records what the run
 actually did — what it read, which checks ran, and which passes did
-**not** run. New in this release, the **milestone is a scan unit**:
+**not** run. Since v0.6.0 the **milestone is a scan unit**:
 the queue router takes a milestone scope, and a dedicated scan answers
 what is left in a milestone and what is blocking it — over open items
 only, reading recorded evidence rather than re-reviewing it, reporting
 counts and never a forecast. A milestone selects what gets looked at;
-it never changes how anything is judged. The eval harness and
+it never changes how anything is judged. New in this release: the
+agent runs under **Codex as well as Claude Code** from one tree, with
+every guarantee held on both hosts (a safety canary opens every run,
+and posts are handed over wherever no approval prompt is guaranteed);
+and a change a person will see is flagged for **user acceptance** —
+required or recommended by surface, checked against expectations
+written down first, and, for an eligible web-only PR, built and
+screenshotted by the agent in a sealed, offline sandbox with a
+maintainer's approval. The eval harness and
 canon-drift check are wired and green in CI; batch digests and the
 community repo land in later milestones. See [docs/design/](docs/design/) for the full design and
 milestone plan.

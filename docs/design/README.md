@@ -9,16 +9,16 @@ code or rules disagree with it, one of the two is a bug.
 
 | Version | File | Status |
 | --- | --- | --- |
-| **v0.7.6** | [lq-maintainer-agent-design-v0.7.6.md](lq-maintainer-agent-design-v0.7.6.md) | **Proposed** 2026-09-29; delta over v0.7.5 — a user-facing change is seen running before it merges (UAT), and I-05's one contained exception; request, rulings and status in [../proposals/uat-for-user-facing-changes.md](../proposals/uat-for-user-facing-changes.md) |
-| **v0.7.5** | [lq-maintainer-agent-design-v0.7.5.md](lq-maintainer-agent-design-v0.7.5.md) | **Proposed** 2026-09-29; delta over v0.7.4 — one agent, two hosts (Claude Code and Codex); request, findings and rulings in [../proposals/codex-compat.md](../proposals/codex-compat.md) |
-| **v0.7.4** | [lq-maintainer-agent-design-v0.7.4.md](lq-maintainer-agent-design-v0.7.4.md) | **Current** (Adopted 2026-08-17; delta over v0.7.3 — request, rulings and implementation spec in [../proposals/milestone-scanning.md](../proposals/milestone-scanning.md)) |
+| **v0.7.6** | [lq-maintainer-agent-design-v0.7.6.md](lq-maintainer-agent-design-v0.7.6.md) | **Current** (Adopted 2026-10-03; delta over v0.7.5 — a user-facing change is seen running before it merges (UAT), and I-05's one contained exception; request, rulings and status in [../proposals/uat-for-user-facing-changes.md](../proposals/uat-for-user-facing-changes.md)) |
+| v0.7.5 | [lq-maintainer-agent-design-v0.7.5.md](lq-maintainer-agent-design-v0.7.5.md) | Base document — normative where v0.7.6 is silent (Adopted 2026-10-03; delta over v0.7.4 — one agent, two hosts (Claude Code and Codex); request, findings and rulings in [../proposals/codex-compat.md](../proposals/codex-compat.md)) |
+| v0.7.4 | [lq-maintainer-agent-design-v0.7.4.md](lq-maintainer-agent-design-v0.7.4.md) | Base document — normative where v0.7.5 is silent (Adopted 2026-08-17; delta over v0.7.3 — request, rulings and implementation spec in [../proposals/milestone-scanning.md](../proposals/milestone-scanning.md)) |
 | v0.7.3 | [lq-maintainer-agent-design-v0.7.3.md](lq-maintainer-agent-design-v0.7.3.md) | Base document — normative where v0.7.4 is silent (Adopted 2026-08-12; delta over v0.7.2 — measurement and implementation spec in [../proposals/deck-findings-and-work-log.md](../proposals/deck-findings-and-work-log.md)) |
 | v0.7.2 | [lq-maintainer-agent-design-v0.7.2.md](lq-maintainer-agent-design-v0.7.2.md) | Base document — normative where v0.7.3 is silent (Adopted 2026-08-06; delta over v0.7.1 — proposal and rulings in [../proposals/v0.7.2-labels-breaking-changes-release-narrative.md](../proposals/v0.7.2-labels-breaking-changes-release-narrative.md) and [../proposals/deck-leanness.md](../proposals/deck-leanness.md)) |
 | v0.7.1 | [lq-maintainer-agent-design-v0.7.1.md](lq-maintainer-agent-design-v0.7.1.md) | Base document — normative where v0.7.2 is silent (Adopted 2026-07-30; delta over v0.7) |
 | v0.7 | [lq-maintainer-agent-design-v0.7.md](lq-maintainer-agent-design-v0.7.md) | Base document — normative where v0.7.1 is silent |
 | v0.6 | [lq-maintainer-agent-design-v0.6.md](lq-maintainer-agent-design-v0.6.md) | Base document — normative where v0.7 is silent |
 
-Headline of v0.7.6 *(proposed)* — **seen running before it merges.**
+Headline of v0.7.6 — **seen running before it merges.**
 A path classifier decides whether a change reaches what a person sees;
 a rendered surface, an added page, or a new user-facing feature
 **requires** a UAT, an indirect surface **recommends** one. Expectations
@@ -28,7 +28,7 @@ web-only PR through a single runner that uses `main`'s recipe, builds
 contributed source offline, runs it with no egress or credentials, and
 tears it down, one human-approved run per head SHA.
 
-Headline of v0.7.5 *(proposed)* — **one agent, two hosts.** Codex
+Headline of v0.7.5 — **one agent, two hosts.** Codex
 already loaded the plugin from its Claude layout, and silently dropped
 three mechanisms the guarantees relied on: explicit invocation,
 `allowed-tools` as the write gate, and pinned read-only subagents. The
