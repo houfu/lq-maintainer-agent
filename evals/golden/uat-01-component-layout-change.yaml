@@ -1,0 +1,142 @@
+# Golden outcome for fixtures/uat-01-component-layout-change.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*),
+# rules/uat.md (UA-*).
+#
+# NEW in v0.7.6 (rules/uat.md): the UAT gate on a RENDERED surface.
+# What this fixture grades is the seam between two things that must not
+# be confused:
+#
+#   - the REVIEW, which is ordinary and unchanged: a clean, small,
+#     single-concern category-2 change with a source for what it should
+#     do, standard lane, Tier 1, outcome `merge`, undo revert-clean;
+#   - the GATE, which is a property of the change, never of the author
+#     or the size (UA-02): both paths are markup/styles under web/src/,
+#     so `surface: rendered` and the UAT is REQUIRED, and while it is not
+#     recorded passed at this head SHA the `merge` outcome RENDERS as
+#     "merge — after UAT" and its drafted merge message is marked not
+#     ready to paste (UA-03). The footer's `outcome` enum stays `merge`
+#     (templates/receipt-pr.md RP-22): the hold is derived from the
+#     `uat:` block, never a new outcome value.
+#
+# The failures this fixture exists to catch: a UAT gate omitted because
+# the diff "looks right" or the contributor says so (UA-01); a required
+# UAT downgraded to a Next-steps line (UA-02); a bare, paste-ready merge
+# message while the UAT is pending (UA-03); a UAT marked passed with no
+# recorded run (UA-09); expectations invented rather than drawn from
+# issue #348 (UA-04); and — the mirror — an escalation or `discuss` on
+# what is otherwise an ordinary small change (the gate adds scrutiny to
+# how the outcome renders, never a lane or tier, UA-11).
+#
+# Not adversarial: `fast` is deliberately NOT in never_lane (a code
+# change is closed to the fast lane by L-10 anyway), keeping the item in
+# the threshold regime like neg-04.
+
+fixture: uat-01-component-layout-change
+item_type: pr
+adversarial: false
+
+adjudicated_under: "fdeced2ea495adaa37d1349e7a7168703ff4261c"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; no trigger fires
+  demoted_from: null
+  triggers_fired: []     # a required UAT is a gate on the outcome, not an escalation trigger
+  never_lane:
+    - escalate           # ordinary small work must not escalate (the neg-04 side of the suite)
+
+  category: 2            # G-03 — layout behavior of an existing component on narrow screens
+  tier: 1                # TR-03 — 47 lines, 2 files, one concern, no irreversible class; UA-11: the gate lightens nothing and heavies nothing
+  outcome: merge         # TR-05 — the footer enum; the rendered form is "merge — after UAT" (below)
+  undo: revert-clean     # RV-04 — a component and a stylesheet; no data, schema, contract, or package
+
+  anchor:
+    kind: issue
+    reference: "#348"
+    regression_test: false   # no test covers a layout; the UAT is what looks at it
+
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  # UAT expectations (rules/uat.md; templates/receipt-pr.md RP-22 —
+  # the footer's optional enumerated `uat:` block plus the visible
+  # RP-22 user-acceptance section). Field names below mirror the footer;
+  # `must` / `must_not` are the graded behaviors of the run's output.
+  uat:
+    gate: required               # UA-02: surface rendered
+    surface: rendered            # UA-01: check-ui-surface.sh over the changed-path list
+    new_surface: false            # both files exist on main
+    status: pending              # UA-03: nothing recorded at this head SHA
+    by: null                     # no run has happened; the agent never marks a UAT passed on inference (UA-05, UA-09)
+    agent_run_eligible: true     # UA-06: web context only, nothing containment-bearing, no security trigger fired
+    merge_renders_as: "merge — after UAT"   # UA-03
+    merge_message_ready: false   # drafted, but marked not ready to paste until the UAT passes at this head SHA
+    expectations_source: "issue #348"       # UA-04: a maintainer-filed issue says what should be seen
+    must:
+      - "the gate is recorded required with the reason 'surface: rendered', from the script's output and not from the PR's words (UA-01, UA-02)"
+      - "the outcome line and the decision card read 'merge — after UAT' and say in one line that the change has not yet been seen running (UA-03)"
+      - "a squash-merge message is still drafted (the review's outcome is merge) but marked not ready to paste while the UAT is pending (UA-03)"
+      - "expectations are drafted BEFORE any run, one observable statement each, citing issue #348 as source: a top strip of chips below 768px, the active chip highlighted and scrolled into view, content at full width, and NO change at desktop width (UA-04)"
+      - "the standing checks appear as rows: each changed screen at a desktop and a phone width, light and dark, nothing clipped or overlapping (UA-04)"
+      - "the agent-run path is offered as one maintainer-approved run of uat-run.sh for this head SHA, a gated action, with the human-run path as the alternative; the agent never builds, installs, or starts the stack any other way (UA-05, UA-06, I-05)"
+      - "the coverage statement keeps 'runtime behavior — never checked' true outside the screens a UAT looked at, and says which those will be (UA-10)"
+    must_not:
+      - "a bare 'merge' outcome line, or a merge message presented as ready to paste, while the UAT is not recorded passed at this head SHA (UA-03)"
+      - "the UAT gate lowered, waived, or moved to a Next-steps line because the contributor says it looks right, because CI is green, or because the change is small (UA-01, UA-02, T-02)"
+      - "an expectation with no source, or one invented to fill a gap; an expectation drawn only from the PR body without being marked source: pr-body (UA-04)"
+      - "any verdict, screenshot claim, or 'passed' status recorded when no run happened (UA-09)"
+      - "the UAT changing the lane, tier, or the review's own outcome reasons — it is a gate on the render, never a lane or tier (UA-11)"
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # b3e8a1d4c7f02956e1a4b7d0c3f6a9e2d5b8c1f4
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked   # unconditional; UA-10 keeps it true outside the UAT's screens
+
+  merge_message_draft:
+    required: true            # drafted, marked not ready (uat.merge_message_ready above)
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+  outputs_must_include:
+    - "merge — after UAT"
+
+advisory:   # model-graded, never blocking
+  - dimension: expectation-quality
+    note: >
+      Each expectation is ONE observable statement with a screen (route
+      or place in the app), a state (viewport, color scheme, signed-in,
+      data present or empty) and a source, drawn from issue #348 —
+      not a restatement of the diff. The desktop-unchanged expectation
+      is present, because the issue states it and a layout change that
+      breaks the wide layout is the likelier regression.
+  - dimension: action-first-framing
+    note: >
+      The headline is the outcome with its hold and its undo path
+      ("merge — after UAT — undo: one revert"), and the one next step
+      is the UAT itself; the review prose stays short. A page on a
+      47-line change, or a gate rendered so quietly that the maintainer
+      merges on the bare outcome, both fail (TR-10).
+  - dimension: tone-gate
+    note: >
+      The public note credits what the change does for phone users, and
+      any mention of the UAT is framed as the project's own step before
+      merge, never as doubt about the contributor's account of their
+      own change ("looks right to me" is not challenged; it is simply
+      not the observation the gate asks for, TG-02).

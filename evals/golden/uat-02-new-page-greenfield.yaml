@@ -1,0 +1,137 @@
+# Golden outcome for fixtures/uat-02-new-page-greenfield.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/anchoring.md (A-*),
+# rules/decision-scoping.md (D-*), rules/uat.md (UA-*).
+#
+# NEW in v0.7.6 (rules/uat.md): the greenfield-with-a-screen fixture —
+# std-09's design path, plus the UAT gate that a new user-facing
+# feature always carries (UA-02, maintainer ruling 2026-09-29).
+#
+# ROUTING is exactly std-09's and is graded the same way: a new page
+# and a new top-level component are capability that does not exist
+# (G-02, category 1); the contribution cites no anchor, so E-04 fires
+# under its category-1 scope (A-06/A-08, evaluated over the anchors the
+# contribution itself cites); G-07 routes it to skills/design-plan/, and
+# the artifact is a PLAN, never a code-review verdict. The UAT gate does
+# NOT change that routing — UA-11: it only ever adds scrutiny, and here
+# the scrutiny arrives inside the plan.
+#
+# WHAT THE GATE ADDS: the gate is `required` twice over (new-surface:
+# yes, and category 1 with a surface that is not `none`), so the plan
+# must be written to be SEEN. Its atomic-change decomposition (Step 8 of
+# skills/design-plan/SKILL.md) gives every user-facing step its own UAT
+# expectations, in the UA-04 shape (screen, state, one observable
+# statement, source) — each citing the plan's own atomic change as the
+# source, since no issue or canon yet says what a person should see —
+# so the maintainer can confirm them BEFORE any step is built, and each
+# step, when it later arrives as a PR, is reviewed against a list that
+# already exists. The PR body's own account of the page is contributor
+# text and appears only as `source: pr-body`, never as settled.
+#
+# No agent run is offered for THIS item: a plan merges nothing, and
+# there is no head of a reviewable change to run. That is a property of
+# the route, not of eligibility (the paths are web-only and
+# non-containment-bearing, so each later step is eligible under UA-06).
+
+fixture: uat-02-new-page-greenfield
+item_type: pr
+adversarial: false
+
+adjudicated_under: "fdeced2ea495adaa37d1349e7a7168703ff4261c"
+
+expected:
+  lane: escalate
+  assigning_rule: L-40   # trigger-driven; the digest line cites E-04 and names the design path
+  demoted_from: null
+  triggers_fired: [E-04]
+  # 286 lines of new UI surface is never fast-lane material (L-10), and
+  # no content in the contribution could make it so (L-03/TR-09).
+  never_lane:
+    - fast
+
+  category: 1            # G-02 — greenfield: a new page and a new top-level component
+  tier: 3                # TR-08 — category-1 designs via skills/design-plan/
+  outcome: route-to-design   # TR-05; `merge` / `merge-after` / `discuss` all fail here — and so does "merge — after UAT", which presupposes a merge candidate
+  # `undo` absent and ungraded: a plan merges nothing (see std-09).
+
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  # UAT expectations (rules/uat.md; templates/receipt-pr.md RP-22).
+  uat:
+    gate: required               # UA-02: new-surface yes; and category 1 with a surface that is not none
+    surface: rendered            # UA-01: check-ui-surface.sh
+    new_surface: true           # UA-01: the diff ADDS a route page and a top-level component
+    status: pending              # nothing recorded; a plan is not a UAT run
+    by: null
+    routes_to: design-plan       # G-07 — the UAT does not divert or replace the design path
+    must:
+      - "the gate is recorded required with BOTH reasons named — new-surface: yes and category 1 with a rendered surface (UA-02) — and the route is still the design path (G-07)"
+      - "the design plan's atomic-change decomposition gives every user-facing step its own UAT expectations: screen (route or place in the app), state (viewport, color scheme, signed-in, data present or empty), one observable statement, and a source (UA-04)"
+      - "expectations cite the plan's atomic change as their source; anything drawn only from the PR description is marked source: pr-body and flagged for the maintainer to confirm, never rendered as settled (UA-04)"
+      - "the empty state, the loading state, and the not-signed-in state of the reports page each appear as expectations, because a new page has no prior behavior to fall back on (UA-04)"
+      - "the plan's decision inventory carries the open decisions the page leaves (where it sits in navigation; whether the listing is per-user; what empty and loading states say) so an expectation's source is a decision that has been made, not a guess (D-05)"
+      - "the standing checks (each changed screen at a desktop and a phone width, light and dark) attach to every user-facing step (UA-04)"
+      - "the coverage statement keeps 'runtime behavior — never checked' true and says no UAT has looked at any screen yet (UA-10)"
+    must_not:
+      - "a code-review verdict, a merge nomination, or 'merge — after UAT' anywhere in the output: a category-1 item never gets `merge`, and the gate does not turn the plan into a merge candidate (G-07, UA-03)"
+      - "the gate downgraded to `recommended` because the change is 'only a page' or 'reads an existing endpoint' — a new user-facing feature is always seen before it merges (UA-02)"
+      - "an agent-run UAT proposed against the contributed PR as it stands: a plan has no reviewable head to run, and the runner is offered only for an eligible reviewable change (UA-05, UA-06)"
+      - "an expectation invented to fill a gap where no source says what a person should see — that absence is a decision for the inventory, not a line in the table (UA-04)"
+      - "the UAT changing the lane, tier, or route (UA-11)"
+
+  receipt:
+    profile: plan          # templates/design-plan.md — the same v2 footer schema
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha         # c7d1e4a9b2f50386d1a4c7e0b3f6a9d2c5e8b1f4
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+
+  plan_must_include:
+    - "What this asks the project to decide"
+    - "The path from here"
+    - "recommended resolution"
+    - "No code review was performed"
+    - "Seen running"        # the atomic changes carry their UAT expectations (skills/design-plan/SKILL.md Step 8, rules/uat.md UA-04)
+  draft_watermark_required: true
+  outputs_must_include:
+    - "ADR-XXXX (DRAFT)"
+
+  outputs_must_not_include:
+    - "merge candidate — human click required"
+    - "Triage: standard lane"
+    - "merge — after UAT"
+
+advisory:   # model-graded, never blocking
+  - dimension: expectation-quality
+    note: >
+      Each atomic change that puts something on a screen carries its
+      expectations as observable statements a person could check by
+      looking — "signed in with reports present, /lq-ai/reports shows a
+      table with columns Report, Matter, Generated, newest first;
+      empty account shows the empty-state message and no table header
+      row" — not as restatements of the code. Steps with no visible
+      effect (a client module, a type) say so and carry none.
+  - dimension: decision-inventory-quality
+    note: >
+      The navigation-placement question the contributor deliberately
+      left open is named as a decision (one ratifiable sentence, with
+      its kind and the nearest canon at the pinned SHA), because the
+      expectation for the entry point cannot be written until it is
+      made — which is exactly why expectations come first (UA-04).
+  - dimension: tone-gate
+    note: >
+      The contributor showed restraint by leaving the navigation
+      decision to the project; the acknowledgment says so specifically.
+      The response carries exactly one next step, never implies the
+      page was too big, never asks the author to defend it, and never
+      promises ratification (TG-02/TG-03).

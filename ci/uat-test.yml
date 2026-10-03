@@ -1,0 +1,71 @@
+# uat-test.yml — the UAT detector and the contained runner (design delta
+# v0.7.6; rules/uat.md UA-NN).
+#
+# BLOCKING. Deterministic and offline: pure python3 stdlib, no Docker, no
+# network, no canon clone, no API tokens. The runner is exercised only in
+# --plan mode and through its pure functions — exactly the surface that
+# decides what a real run is ALLOWED to do:
+#
+#   - check-ui-surface.sh classifies changed paths against canon:ui-surface
+#     (UA-01) and fails closed on an unreadable row;
+#   - uat-run.sh refuses every UA-06 case before fetching anything and
+#     rejects unsafe expectations (off-origin routes, traversal, odd ids);
+#   - its plan carries every UA-07 containment property: internal
+#     network, offline contributed build, ports reset, digest-pinned
+#     camera, env -i on every docker/git call, no Docker socket, full
+#     teardown;
+#   - the throwaway .env never carries a credential.
+#
+# A real run is a field spike on a maintainer machine (Docker, ~25 GB on
+# first build); nothing here pretends to be one.
+#
+# NOTE — file location (§3.1): GitHub Actions only discovers workflows under
+# .github/workflows/. ci/ is the reviewed source of truth; a byte-identical
+# copy ships at .github/workflows/uat-test.yml. The first step fails if the
+# two diverge — edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): third-party actions pinned by full commit SHA.
+
+name: uat-test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "skills/triage/scripts/check-ui-surface.sh"
+      - "skills/triage/scripts/uat-run.sh"
+      - "skills/triage/scripts/uat-shoot.py"
+      - "rules/canon-map.md"
+      - "rules/uat.md"
+      - "ci/scripts/test-uat.sh"
+      - "ci/uat-test.yml"
+      - ".github/workflows/uat-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uat-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  uat-test:
+    name: UAT detector + runner plan (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/uat-test.yml .github/workflows/uat-test.yml; then
+            echo "::error file=ci/uat-test.yml::ci/uat-test.yml and .github/workflows/uat-test.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: UAT detector and runner (plan mode)
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-uat.sh

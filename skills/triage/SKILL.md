@@ -18,7 +18,7 @@ description: >
   /lq-maintainer:review-issue N — triage sorts the queue; the review skills
   go deep on one item.
 disable-model-invocation: true
-allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Task, Read, Grep, Glob, Bash(lq-maintainer-safety-canary)
+allowed-tools: Bash(gh pr list:*), Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh issue list:*), Bash(gh issue view:*), Bash(gh search:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git remote:*), Bash(git log:*), Bash(git show:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-semver.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-osv.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-release-age.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Task, Read, Grep, Glob, Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:triage — lane assignment, receipts, and drafts for inbound work
@@ -167,6 +167,10 @@ paraphrase-and-improvise from memory:
   top of the script and never instead of it (BC-02), and a PASS means
   only "no textual break detected" — it moves nothing lighter (BC-03).
   Loaded before Step 6b.
+- `rules/uat.md` *(v0.7.6)* — whether a change reaches what a person
+  sees (`UA-01`, from `check-ui-surface.sh`) and whether that makes a
+  UAT required or recommended (`UA-02`). Triage uses it for the card
+  flag only; it never runs a UAT. Loaded before Step 6b.
 - `rules/salvage.md` — decomposition protocol and dispositions,
   including the slop disposition (§6.1)
 - `rules/issues.md` — issue classification and per-class handling
@@ -501,6 +505,16 @@ nothing below changes their assignment or output. For every
      available path — decomposition into category-2/3-sized slices via
      the salvage machinery (Step 7). Never silence, never closed for
      size alone.
+2a. **Flag the user-facing surface** (every standard-lane PR, all
+   categories; `rules/uat.md` UA-01/UA-02). Pipe the PR's changed
+   paths with their status into
+   `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh`
+   and put its gate on the card (`TC-05`): **UAT required** for a
+   rendered surface, an added page or component, or a category-1 item
+   whose surface is not `none`; **UAT recommended** for an indirect
+   surface. The flag is a heads-up for the reviewer, not a lane or tier
+   input — nothing routes on it (UA-11), and triage never runs a UAT;
+   the review skill offers it.
 3. **Run the breaking-change detector** (every standard-lane PR, all
    four categories, before the tier call — `rules/breaking-changes.md`
    BC-02; category-4 refactors most of all): pipe the diff through
@@ -685,7 +699,7 @@ Non-negotiable content rules:
   "What I checked" card.
 - **Coverage statement** in every internal receipt: what was checked
   and what explicitly was not. Runtime behavior is *always* listed as
-  not checked; for dependency items, package contents are *always*
+  not checked (triage never runs a UAT; `rules/uat.md` UA-05); for dependency items, package contents are *always*
   listed as not inspected (§5.1). Partial coverage is legitimate —
   "covered: vetting checklist, anchor; not yet: code-quality, test
   adequacy" is a valid, resumable receipt. Silent partiality is not.

@@ -127,6 +127,13 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   Partial coverage is legitimate and resumable ("covered: vetting
   checklist, anchor; not yet: code-quality, test adequacy"); silent
   partiality is not.
+  **When a UAT ran (RP-22, v0.7.6)**, the runtime line stays — the
+  footer item keeps `runtime-behavior: never-by-design`, unchanged —
+  and its visible wording gains exactly one qualifier: **runtime
+  behavior — never checked, except the screens the UAT card lists**
+  (`rules/uat.md` UA-10, UA-11). A UAT looked at named screens in named
+  states; everything outside them is as unchecked as before, and the
+  qualifier never becomes "checked", "covered", or "verified".
 - **RP-08 — Four pinned fields.** PR head SHA, canon SHA, agent
   version, **served model ID** (design doc §3.4). All four, always,
   visible and in the footer.
@@ -182,7 +189,10 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   the action **and why** (the canon or gap that requires it), specific
   to this PR, never boilerplate (`rules/burden.md` B-14). Ordered by
   importance; the top entry is the header's "Do next" line (RP-00).
-  Visible body only, never the footer.
+  Visible body only, never the footer. A **recommended** UAT (RP-22)
+  is one entry here — the screens worth seeing running, and why — and
+  a **required** UAT still pending at the reviewed head is one entry
+  too, above any merge step.
 - **RP-17 — Decision scoping (escalated items only).** Rendered if
   and only if `triggers` is non-empty (`rules/decision-scoping.md`
   D-00) — on trigger-free receipts this section is **absent** and the
@@ -310,11 +320,76 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
     pinned canon SHA and the diff at the pinned head SHA (`B-00a` —
     read this run, never recalled). An act that did not happen has no
     row.
+  - **UAT acts (v0.7.6, RP-22).** `check-ui-surface.sh` is a `script`
+    row whose evidence is its `surface:` / `new-surface:` lines. An
+    agent-run UAT through `uat-run.sh` is a `script` row — the exact
+    head SHA it ran at, and `pass` / `fail` / `partial` (some
+    expectations `not-reached`) as its result. A runner command handed
+    over to the maintainer instead (`writes=hand-over`,
+    `rules/runtime.md` RT-04, `rules/uat.md` UA-05) is recorded like
+    every other hand-over, with the result `n-a`; the maintainer's
+    reported result then lands in the RP-22 section attributed to them,
+    never as a row this run performed.
   The deck renders this table as its visible "What I checked" card
   (design v0.7.3), which makes it the maintainer's only trace of
   *what the run did* rather than what it concluded: a claim anywhere
   else in this record with no work-log row behind it is a defect in
   the record.
+- **RP-22 — User acceptance (v0.7.6).** Whether this change must be
+  **seen running** before it merges (`rules/uat.md`), recorded in the
+  visible `### User acceptance` section and the optional footer `uat:`
+  block.
+  - **The gate line — always.** One line: `required` / `recommended` /
+    `n-a`, and the reason that set it (UA-02) — `surface: rendered`, a
+    new surface added (`new-surface: yes`), or a category-1 new
+    user-facing feature; `surface: indirect` for `recommended`;
+    `surface: none` for `n-a`, where the line is the whole section — as
+    `check-ui-surface.sh` printed it, plus any surface the model
+    **raised** with its stated reason (UA-01; nothing lowers it). A
+    PR's words that "nothing visible changed" are never a reason.
+  - **`recommended` stops at the gate line.** A recommended UAT is a
+    **Next steps** entry (RP-16, `B-14`) naming the screens worth
+    looking at — never a gate, never a section of its own beyond this
+    line (UA-03).
+  - **`required` carries the rest.** The **expectations table** —
+    `id` (`U-1`, `U-2`, …) · `screen` (route or place in the app) ·
+    `state` (viewport, color scheme, signed-in, data present or empty)
+    · `expected` (one observable statement) · `source` (the linked
+    issue, the design plan's atomic change, a canon section, or
+    `pr-body` — contributor text, confirmed by the maintainer before
+    any run, UA-04) · `verdict` · `evidence` (the screenshot name(s)
+    in the internal store — never attached to the PR by the agent,
+    UA-10). The standing checks (each changed screen at a desktop and a
+    phone width, light and dark) are rows like any other. No source
+    for what a person should see is itself the finding: the outcome is
+    `discuss`, and no expectation is invented to fill the gap (UA-04).
+  - **Verdicts are exactly `matches` / `differs` / `not-reached`**
+    (UA-09), one per expectation, each resting on its evidence. A
+    `differs` **also** renders as a finding in the normal `L-33` slots
+    (RP-05) — *where* is the screen, viewport and scheme; *what to
+    change* is expected-versus-seen; *why* is the expectation's source.
+    `not-reached` never counts as a pass. A maintainer override is
+    recorded as their ruling, in their name, beside the agent's
+    original verdict, which stays.
+  - **Who ran it, and at which head SHA.** `agent` (through
+    `uat-run.sh`, one maintainer-approved run per head SHA, UA-05) or
+    `maintainer` (human-run under `canon:sandbox-discipline`, recorded
+    as they state it). An agent run adds one **containment line**: the
+    runner's `--plan` guarantees held — trusted recipe from `main` at
+    the canon SHA, offline rebuild of the contributed tree, no egress
+    and no provider keys, the pinned camera, nothing kept but the
+    screenshots and the manifest (UA-07). A UAT recorded at an older
+    head SHA is **stale** and satisfies nothing (UA-03, `MS-12`).
+  - **What it changes elsewhere in this record.** While a `required`
+    UAT is not `passed` at the reviewed head SHA, an outcome of `merge`
+    reads **merge — after UAT**, and the drafted merge message (RP-19)
+    is marked not ready to paste; `failed` takes `merge` off the table
+    until resolved (UA-03, `TR-09`). The footer's `outcome` enum is
+    unchanged — the hold is derived from the `uat:` block, never a new
+    outcome value. The coverage statement gains the RP-07 qualifier.
+  Everything above is visible-body free text except the footer's
+  enumerated `uat:` block (see the footer schema); the expectations,
+  verdict lines and screenshot names never enter the footer (§8.4).
 
 
 ## Template
@@ -462,12 +537,42 @@ Full ledger and drafted artifacts: committee packet (CP-03a/CP-08).
 - Reserved-human: <judgment — reserving citation> <or: none put at
   issue by this escalation>
 
+### User acceptance (RP-22)
+
+**Gate:** <required | recommended | n-a> — <the reason that set it:
+surface: rendered | new surface added: <path> | category 1 — a new
+user-facing feature | surface: indirect | surface: none><if raised:
+; surface raised by the reviewer from <was> — <stated reason> (UA-01)>
+<if recommended: that is the whole section — the UAT is a Next-steps
+entry (RP-16). If n-a: that is the whole section.>
+
+<if required:>
+**Status:** <pending | passed | failed | not-reached> · run by
+<the agent, through uat-run.sh | @<maintainer>, by hand under
+canon:sandbox-discipline | nobody yet> at head `<sha>`<if the head has
+moved since: — stale: the reviewed head is `<sha>`, so this UAT
+satisfies nothing (UA-03)>
+<if agent-run: Containment (UA-07): recipe from `main` at canon `<sha>`;
+contributed tree rebuilt offline; internal network, no egress, no
+provider keys; pinned camera; only screenshots + manifest kept.>
+
+| id | screen | state | expected | source | verdict | evidence |
+| --- | --- | --- | --- | --- | --- | --- |
+| U-<i> | <route or place in the app> | <viewport · scheme · signed-in · data> | <one observable statement> | <[#n](link) / design plan AC-<i> / [canon:prd §x](link) / pr-body (maintainer-confirmed)> | <matches / differs — seen: <one line> / not-reached — <why>> | <screenshot name(s), internal store> |
+
+<for each differs: "U-<i> differs — see F-<j>." For each maintainer
+override: "U-<i>: agent verdict <v>; overruled by @<maintainer>
+(<date>): <their ruling>.">
+
 ### Coverage statement
 
 Covered: <e.g. deterministic gate, anchor, vetting checklist>
 Not yet covered: <e.g. code-quality pass, test-adequacy pass — resumable>
 Never checked, by design:
-- Runtime behavior — this agent does not execute contributed code.
+- Runtime behavior — <no UAT ran: this agent does not execute
+  contributed code. | a UAT ran (RP-22): never checked, except the
+  screens the UAT card lists (UA-10) — those screens, in those states,
+  and nothing else.>
 - Package contents (dependency items) — the lockfile diff shows
   name+version+hash only; contents are never inspected.
 - Semantic breaking changes (standard-lane items) — `check-breaking.sh`
@@ -520,6 +625,10 @@ separate, individually approved human action.
 
 Rendered from `templates/merge-message.md`; the human performs the
 merge and owns the message.
+<if a required UAT is not passed at the reviewed head (RP-22, UA-03):
+**Not ready to paste — the change has not yet been seen running at
+this head.**>
+
 
 ```text
 <the complete drafted squash-merge message, verbatim — paste-ready>
@@ -604,6 +713,15 @@ outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
 undo: <revert-clean|residue|irreversible-class|null>
 tone_gate: <applied|n-a>
 labels_synced: [<name>, ...]
+uat:
+  gate: <required|recommended|n-a>
+  surface: <rendered|indirect|none>
+  new_surface: <true|false>
+  status: <pending|passed|failed|not-reached|n-a>
+  by: <agent|maintainer|null>
+  at_sha: <40-hex|null>
+  expectations: <integer>
+  differs: <integer>
 decision:
   final_outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
   alignment: <accepted|adjusted|overridden|null>
@@ -721,6 +839,35 @@ eval-grading interface (`evals/run-checks.md`).
   entry was appended to `templates/feedback-log.md`'s log this run).
   The ruling's prose, the decider's handle, and the feedback text
   live in the visible `### Maintainer decision` section, never here.
+- **`uat`** (RP-22, `rules/uat.md` UA-10, v0.7.6) — an **optional**,
+  additive block carrying the same backward-compatibility posture as
+  `semantic-breaking-change` and `decision_scoping`: the marker stays
+  `receipt:v2`, and **absent means the run predates v0.7.6** — never
+  "no user-facing surface" (that is `gate: n-a`, `surface: none`).
+  Enumerated fields only, never free text: `gate`
+  (`required`/`recommended`/`n-a`, UA-02), `surface`
+  (`rendered`/`indirect`/`none`, as `check-ui-surface.sh` printed it or
+  as the model raised it, UA-01), `new_surface` (`true`/`false`),
+  `status` (`pending` — required and not yet run or not yet reported;
+  `passed` — every expectation `matches`; `failed` — at least one
+  `differs`; `not-reached` — no `differs`, but at least one expectation
+  was never reached; `n-a` — the gate is not `required`), `by`
+  (`agent` — through `uat-run.sh`; `maintainer` — a human-run UAT, or a
+  maintainer override of the agent's verdicts, recorded in their name
+  in the visible section; `null` — nobody has run it), `at_sha` (the
+  full 40-hex head SHA the UAT ran at, or `null`), and the two counts
+  `expectations` and `differs`. **`status: passed` satisfies the gate
+  only when `at_sha` equals `pinned.pr_head_sha`** (UA-03): a pass at
+  any other SHA is stale and reads, to every parser and to the deck, as
+  not yet seen running — the same posture as a stale receipt (`MS-12`).
+  The block adds no `outcome` value: `merge — after UAT` and the
+  not-ready merge message are derived from it at render time. The
+  expectations, verdict lines, the containment line and screenshot
+  names live in the visible `### User acceptance` section, never here.
+  Like `runtime-behavior`, this block can narrow the runtime caveat's
+  wording (RP-07) and never resolve it: a parser must never read
+  `status: passed` as coverage of anything outside the screens the
+  visible section lists (UA-11).
 - **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
   Parsers match the `lq-maintainer-agent:receipt` prefix and accept
   both markers; a v1 footer parses as

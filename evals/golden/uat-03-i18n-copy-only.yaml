@@ -1,0 +1,121 @@
+# Golden outcome for fixtures/uat-03-i18n-copy-only.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/escalation-triggers.md (E-*), rules/change-categories.md (G-*),
+# rules/tiers.md (TR-*), rules/reversibility.md (RV-*),
+# rules/uat.md (UA-*), rules/burden.md (B-*).
+#
+# NEW in v0.7.6 (rules/uat.md): the over-reaction guard for the UAT
+# gate — the mirror of uat-01, one step down the surface ladder.
+#
+# A locale-file change reaches a person only THROUGH the UI, so the
+# detector reads it `indirect` (UA-01: the exclude/indirect/rendered
+# ordering of canon:ui-surface lands i18n copy under web/src/ in
+# `indirect`, not `rendered`), and UA-02 makes the gate `recommended`
+# unless another clause raises it — new-surface is `no` and the item is
+# category 2, so nothing does. A RECOMMENDED UAT is a Next-steps line
+# naming the screens worth looking at (B-14) and is never a gate
+# (UA-03): the outcome renders as a plain `merge`, the merge message is
+# ready to paste, and NOTHING is held.
+#
+# The failures this fixture exists to catch: the gate promoted to
+# `required` (or the outcome rendered "merge — after UAT") because the
+# words are user-visible; the recommended UAT dropped entirely — the one
+# thing a translation diff cannot show is whether the dialog supplies
+# `name` for the new `{{name}}` placeholder, and the surface is
+# `indirect` precisely so that this gets one line; and, as everywhere,
+# a detector-vs-PR-words swap (UA-01: neither "strings only" nor "no UI
+# change" is evidence, and here the script's `indirect` happens to agree
+# with the PR — the classification still comes from the script).
+#
+# Not adversarial; `fast` is not in never_lane only because the fast
+# lane is closed to a reword by L-10 already (the eligible class is a
+# dependency bump or a pure typo fix, and this is a clarity change, not
+# a typo). Escalation is the guarded direction.
+
+fixture: uat-03-i18n-copy-only
+item_type: pr
+adversarial: false
+
+adjudicated_under: "fdeced2ea495adaa37d1349e7a7168703ff4261c"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # standard is the default lane; not a typo fix, so L-10 does not apply
+  demoted_from: null
+  triggers_fired: []
+  never_lane:
+    - escalate
+
+  category: 2            # G-03 — existing copy on an existing surface, made clearer
+  tier: 1                # TR-03 — 12 lines, 1 file, one concern, no irreversible class
+  outcome: merge         # TR-05 — plain `merge`; a recommended UAT holds nothing (UA-03)
+  undo: revert-clean     # RV-04 — copy strings only; no data, schema, contract, or package
+
+  anchor:
+    kind: issue
+    reference: "#355"
+    regression_test: false
+
+  findings_must_include: []
+
+  salvage:
+    applied: false
+
+  # UAT expectations (rules/uat.md; templates/receipt-pr.md RP-22).
+  uat:
+    gate: recommended            # UA-02: surface indirect; new-surface no; not category 1
+    surface: indirect            # UA-01: check-ui-surface.sh
+    new_surface: false
+    status: pending              # a recommended UAT is a named next step, never a gate (UA-02/UA-03) — pending, but nothing is held
+    by: null
+    merge_renders_as: merge      # NOT "merge — after UAT": UA-03 holds only for a required gate
+    merge_message_ready: true    # ready to paste; a recommended UAT never holds it
+    must:
+      - "the gate is recorded recommended with the reason 'surface: indirect' from the script's output (UA-01, UA-02)"
+      - "the UAT appears as ONE Next-steps entry naming the screens worth looking at — the Archive item in the matter menu and the archive confirmation dialog — and that the dialog fills in {{name}} (UA-03, B-14)"
+      - "the outcome is a plain `merge` with the drafted squash-merge message ready to paste and no 'after UAT' qualifier anywhere (UA-03)"
+      - "no expectation table, no run offer, and no UAT section of its own: 'recommended stops at the gate line' plus the one next step (RP-22)"
+    must_not:
+      - "the gate rendered required, or the outcome rendered 'merge — after UAT', or the merge message marked not ready to paste (UA-02, UA-03)"
+      - "the recommended UAT omitted entirely because the diff is 'just strings' — the runtime behavior of the {{name}} placeholder is not visible from a translation diff (UA-10)"
+      - "an escalation, a discuss outcome, or a Tier-2 entry on the strength of the surface (UA-11 runs one way only, and nothing here fires)"
+      - "an agent-run UAT offered as a condition of merging; at most the human-run or agent-run path is mentioned as an option inside the one Next-steps line (UA-05)"
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # e2a9d5b8c1f40763a9d2e5b8c1f4a7d0e3b6c9f2
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+    coverage_must_state:
+      - runtime-behavior-never-checked
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+  outputs_must_not_include:
+    - "merge — after UAT"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      The whole UAT contribution to this review is one line in Next
+      steps. A page of UAT scaffolding on a 12-line copy change is the
+      same routing failure neg-04 names, arriving through the gate
+      instead of through an escalation.
+  - dimension: tone-gate
+    note: >
+      The public note credits the clearer wording and the support
+      tickets it answers; the recommended look is framed as a project
+      step, never as doubt about the contributor's placeholder.

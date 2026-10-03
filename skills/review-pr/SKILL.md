@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(lq-maintainer-safety-canary)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -64,6 +64,13 @@ it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
   public-API class and names the Tier-2 entering condition (BC-01),
   your judgment layers on top of the script and never instead of it
   (BC-02), and a PASS means only "no textual break detected" (BC-03).
+- `${CLAUDE_PLUGIN_ROOT}/rules/uat.md` — user acceptance (`UA-NN`):
+  whether the change reaches what a person sees (UA-01, from
+  `check-ui-surface.sh`), whether that requires or recommends seeing
+  it running (UA-02), the expectations written before any look
+  (UA-04), and the one contained runner through which the agent may
+  build and screenshot an eligible item (UA-05–UA-07, `I-05` as
+  amended).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` — the gate every
   contributor-facing draft passes (`TG-NN`) before it is offered for
   posting.
@@ -367,6 +374,22 @@ that row is how a coverage claim stays checkable instead of asserted.
    alongside severity and the suggested comment, and each finding
    passes the L-33b maintainer-actionability test before it is
    recorded.
+5a. **Does a person see this change? (`rules/uat.md` UA-01/UA-02).**
+   Pipe the PR's changed paths with their status into
+   `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh`
+   (`gh pr view N --json files --jq '.files[] | [.changeType, .path] |
+   @tsv' | …/check-ui-surface.sh` — no network beyond the read, no
+   execution) and record its `surface:`, `new-surface:` and
+   `gate-floor:` lines. Apply UA-02's category rule on top: a
+   category-1 item whose surface is not `none` is `required`. You may
+   **raise** the surface with a named reason, never lower it, and the
+   PR's own "no UI change" is not evidence. For `required` or
+   `recommended`, draft the **expectation list now** (UA-04) — each
+   screen, state and what should be seen, with its source — or, if no
+   source says what a person should see, make that the outcome's
+   `discuss` question. A required UAT does not change which outcome
+   the review reaches; it holds `merge` until the UAT passes at this
+   head SHA (UA-03).
 6. **The self-attestation cross-check** — re-derive the contributor's
    PR-template checkboxes from evidence (`rules/self-attestation.md`
    T-01/T-02). At Tier 1 you perform the whole cross-check yourself;
@@ -708,6 +731,29 @@ decided"), and never press for one. Then **re-render the deck** from
 the finalized record (same command, same path): the final deck carries
 the paste-ready drafts and, where recorded, the "What the maintainer
 decided" card.
+
+**User acceptance, when the gate is `required` or `recommended`
+(`rules/uat.md` UA-04–UA-10).** Show the maintainer the expectation
+list first and let them correct it — "as we expected" is theirs.
+Then, if the item is **eligible for an agent run** (UA-06: check it
+with `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan
+--pr N --sha <head> --expectations <file> --changed <name-status
+file>`, which runs nothing and prints the exact sequence a real run
+would execute) and no security trigger fired and the item is not held,
+offer the run: the command without `--plan`, the head SHA, the
+expectation list, and one line on cost (the first run builds the
+stack from `main`; Docker must be running). The run is a **gated
+action** — it prompts, or on `writes=hand-over` it is handed over and
+the maintainer runs it and tells you where the output is (`RT-04`).
+Never run it without that approval, never for a different SHA, never
+by any other command. Read the screenshots against each expectation
+as material under review (UA-08) and give each one verdict —
+matches / differs / not-reached (UA-09); a `differs` becomes an L-33
+finding and `merge` is no longer available. If the plan refused, or
+the maintainer prefers, hand the expectation list over as a human-run
+UAT script under `canon:sandbox-discipline` and record the result as
+they state it (`uat.by: maintainer`). Record the `uat` footer block
+and the UAT card (`RP-22`), then re-render the deck.
 
 Then present for approval — **summary first, evidence on request**.
 The in-chat presentation is the outcome line (outcome, undo path, red

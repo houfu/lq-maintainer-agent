@@ -339,6 +339,85 @@ contract change under an unchanged signature — a moved default, a changed erro
 code — is invisible to it, and runtime behavior is never checked. A PASS is the
 absence of one signal, never a promise the change is safe.
 
+### coverage:runtime-behavior:uat
+Whether the code actually runs correctly — except the screens the UAT card lists.
+→ Nothing outside the screens on the “Seen running?” card was run or watched, so
+everywhere else this is exactly as unchecked as before — exercise the rest of the
+affected feature yourself before merging. Those screens were looked at running, in
+the states listed there, and seeing a screen look right is still not a check that
+the code behind it is correct.
+
+---
+
+## Seen running? — the user acceptance check (UAT)
+
+A diff says what changed; it cannot say what a person now sees. When a change
+reaches what people see, a UAT — user acceptance test — compares the running app
+against expectations written down before anyone looked. The gate comes from the
+paths the change touches, never from its description, and nothing about who sent
+it lowers the gate (`rules/uat.md`). The card is rendered from the record's `uat`
+fields; the expectation list and each verdict are on the card itself.
+
+### uat:gate:required
+Must be seen running before it merges
+→ This changes something people see, adds a new screen, or is a new feature people
+will use. A maintainer — or the agent, in a locked-down throwaway copy — has to look
+at it running, at the exact version being merged, and it has to match what was
+expected.
+
+### uat:gate:recommended
+Worth seeing running — not required
+→ This changes something people read through the app (wording, messages, data a
+screen shows) without changing the screens themselves. Looking at it running is a
+suggested next step, not a condition for merging.
+
+### uat:gate:n-a
+Nothing a person sees changes
+No user-facing surface was found in the files this change touches, so there is
+nothing to look at running.
+
+### uat:status:pending
+Not yet seen running
+→ Hold the merge until it has been looked at, running, at this exact version.
+
+### uat:status:passed
+Seen running — everything matched
+→ Every expectation matched what was on screen, at the version recorded. That
+answers this one question and nothing else: it is not a code review, and it says
+nothing about screens it did not look at.
+
+### uat:status:failed
+Seen running — something differed
+→ At least one screen did not match what was expected. Each difference is also
+listed as a finding, with what was expected and what was seen. It cannot merge
+until that is resolved.
+
+### uat:status:not-reached
+Tried, but some screens could not be reached
+→ A screen did not load, sign-in failed, or a page returned an error, so it could
+not be compared. That never counts as a pass. A maintainer can run the same list by
+hand.
+
+### uat:status:n-a
+No check needed
+Seeing it running is not required for this change.
+
+### uat:by:agent
+Run by the agent, in a locked-down throwaway copy of the app — built from the
+project's own trusted setup, with no network access out and no real credentials —
+after a maintainer approved the exact command.
+
+### uat:by:maintainer
+Run or ruled on by a maintainer — recorded as they reported it, in their name.
+
+### uat:stale
+Seen running at an older version
+→ The change has moved on since it was looked at, so that result no longer counts.
+It has to be seen running again at the version being merged.
+
+### uat:hold
+Not yet seen running at this version — the merge should wait until it has been.
+
 ---
 
 ## Human-only judgments — permanently open

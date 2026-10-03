@@ -409,10 +409,20 @@ first. How to read the prompts:
   ("Drafted by lq-maintainer-agent vX; reviewed and posted by @you").
 - **A prompt to run anything that would execute contributed code**
   (`pytest`, `npm ci`, `pip install`, `docker build`, running a
-  script from the diff): **always deny.** The agent must never
-  execute contributed code — no exceptions, no matter how harmless
-  the PR looks (§10). If you need runtime behavior, do it yourself
-  under [sandbox-discipline.md](sandbox-discipline.md).
+  script from the diff): **always deny** — with one named exception,
+  below. No matter how harmless the PR looks (§10). If you need
+  runtime behavior, do it yourself under
+  [sandbox-discipline.md](sandbox-discipline.md).
+- **A prompt to run `uat-run.sh --pr N --sha …`** — the UAT runner
+  (`rules/uat.md`): the only way the agent may run contributed code,
+  to screenshot a user-facing change. Approve it only if the SHA is
+  the PR's current head and you have read the expectation list it
+  will check. It refuses ineligible PRs on its own (anything outside
+  `web/`, dependency or Docker changes, workflows), builds the
+  contributed code offline, and tears everything down. The first run
+  builds the whole stack from `main` (20–30 minutes, ~25 GB); later
+  runs reuse that cache. Docker must be running. On Codex, or in
+  `auto` mode, it is handed over and you run it yourself.
 - **No prompt at all for merge/approve/close/push/PR-checkout**: these
   are hook-blocked outright — approving the prompt is not even an
   option. If you see the agent *attempt* one, that is a bug in the

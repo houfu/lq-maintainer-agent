@@ -11,7 +11,8 @@ fine in every Claude Code test. Checks:
 
   - every skill carries BOTH explicit-invocation switches (RT-05);
   - every skill runs the canary at Step 0 and grants it (RT-03);
-  - no skill's allowed-tools grants a GitHub write (design 3.3);
+  - no skill's allowed-tools grants a GitHub write (design 3.3), or a
+    real UAT run -- only `uat-run.sh --plan` (rules/uat.md UA-05);
   - every Codex custom agent is sandboxed read-only (RT-06);
   - both plugin manifests name the same plugin at the same version, and
     both marketplaces list it;
@@ -78,6 +79,9 @@ def main():
            "%s: allowed-tools grants the canary" % name)
         ok(not WRITE_GRANTS.search(tools),
            "%s: allowed-tools grants no GitHub write" % name)
+        uat = re.findall(r"Bash\([^)]*uat-run\.sh([^)]*)\)", tools)
+        ok(all(g.strip().startswith("--plan") for g in uat),
+           "%s: allowed-tools grants uat-run.sh only in --plan form (a real run is gated)" % name)
         step0 = re.search(r"^## Step 0 [^\n]*\n(.*?)^## ", text, re.S | re.M)
         ok(step0 and "lq-maintainer-safety-canary" in step0.group(1)
            and "rules/runtime.md" in step0.group(1),

@@ -109,6 +109,18 @@ canon SHA; this template names no lq-ai paths.
   pass tests" (`rules/salvage.md` S-13/S-14, with the S-16 file-level
   degradation above the size threshold and the S-12
   maintainer-performed-split default).
+- **DP-06a — What each user-facing change should look like, written
+  now (v0.7.6).** A new user-facing feature is always seen running
+  before it merges (`rules/uat.md` UA-02), and "as expected" needs an
+  expectation. So every atomic change whose paths would reach what a
+  person sees (`canon:ui-surface`) carries, in the table's **Seen
+  running** column, its UAT expectations in UA-04's shape — the
+  screen, the state, what a person should see or be able to do —
+  drawn from the ratified design, never from the contributor's
+  description alone. A change with no user-facing surface reads `—`.
+  These become the expectation list the PR's review checks against,
+  so the design conversation, not the review, is where "what should
+  this look like?" gets answered.
 
 - **DP-07 — The drafted contributor response.** Section 5 is the text
   the maintainer may post, drafted for a possibly non-engineer reader
@@ -241,9 +253,9 @@ sentence and sized for a quick pass (≤400 changed lines, ≤10 files,
 TR-03) unless flagged otherwise. **This is a plan, not a verified
 split — nothing here is checked to compile or pass tests.**
 
-| # | The change, in one sentence | Category | Depends on | Notes |
-| --- | --- | --- | --- | --- |
-| C-1 | <one sentence> | <2 / 3> | <none / C-i> | <e.g. irreversible class (RV-02): Tier 2 from the start> |
+| # | The change, in one sentence | Category | Depends on | Seen running (DP-06a) | Notes |
+| --- | --- | --- | --- | --- | --- |
+| C-1 | <one sentence> | <2 / 3> | <none / C-i> | <— / "on <screen>, <state>: <what a person sees or can do>"; one per expectation> | <e.g. irreversible class (RV-02): Tier 2 from the start> |
 
 <if an existing diff was mapped onto this sequence (S-13):>
 **proposed split not verified to compile or pass tests**

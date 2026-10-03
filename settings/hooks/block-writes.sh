@@ -60,7 +60,9 @@ evaluation -- passing the hook is not "promptless"):
   gh api      POST/PATCH ONLY on .../comments endpoints* -- the
               permission-gated receipt post / update-in-place flow
               (design 8.4). DELETE is never allowed, anywhere.
-  (* the gated-write class: passes only in `prompt` write mode, see
+  uat-run.sh  a real run* (it executes contributed code in the UAT
+              sandbox -- rules/uat.md UA-05); `--plan` passes ungated.
+  (* the gated class: passes only in `prompt` write mode, see
      "Runtime and write mode" above; handed over otherwise.)
   git         everything local (log, diff, show, fetch of branch refs,
               status, ...) EXCEPT the blocked classes below.
@@ -151,6 +153,10 @@ GH_ALLOWED = {
 
 GH_VALUE_FLAGS = {"-R", "--repo", "--hostname"}
 
+UAT_RUNNER = "uat-run.sh"
+UAT_VALUE_FLAGS = {"--pr", "--sha", "--expectations", "--changed", "--out",
+                   "--clone", "--canon-map"}
+
 CANARY = "lq-maintainer-safety-canary"
 CANARY_MARKER = "LQ-MAINTAINER SAFETY FLOOR ACTIVE"
 
@@ -224,7 +230,7 @@ def gated_write(what):
         "HANDED OVER by the lq-maintainer-agent safety hook "
         "(settings/hooks/block-writes.sh).\n"
         "\n"
-        "%s is a gated write, and this session (runtime: %s) cannot "
+        "%s is a gated action, and this session (runtime: %s) cannot "
         "guarantee a human approval prompt for it -- so the agent does not "
         "run it (rules/runtime.md RT-04). This is not a policy violation.\n"
         "\n"
@@ -322,8 +328,23 @@ def analyze_segment(segment, depth):
             i += 1
             continue
         if base in SHELLS:
+            rest = segment[i + 1:]
+            flags = [a for a in rest if a.startswith("-")]
+            if not any("c" in f.lstrip("-") for f in flags if not f.startswith("--")):
+                # `sh script args`: the script and its arguments are one
+                # command -- screen them together, so a script's own flags
+                # (uat-run.sh --plan) are seen with it.
+                j = 0
+                while j < len(rest) and rest[j].startswith("-"):
+                    j += 1
+                if j < len(rest):
+                    analyze_segment(rest[j:], depth + 1)
+                    for arg in rest[j + 1:]:
+                        if " " in arg or "\t" in arg:
+                            analyze(arg, depth + 1)  # a quoted command line as an argument
+                return
             # sh -c 'code': every non-flag argument may be code.
-            for arg in segment[i + 1:]:
+            for arg in rest:
                 if not arg.startswith("-"):
                     analyze(arg, depth + 1)
             return
@@ -332,6 +353,9 @@ def analyze_segment(segment, depth):
             return
         if base == "git" or base == "git.exe":
             check_git(segment[i + 1:])
+            return
+        if base == UAT_RUNNER:
+            check_uat(segment[i + 1:])
             return
         if base in ("git-push", "git-send-pack", "git-receive-pack"):
             block("%s -- push plumbing; writing to any remote is human-only" % base)
@@ -355,6 +379,22 @@ def scan_rest(tokens, depth):
     for t in rest:
         if (" " in t or "\t" in t) and re.search(r"\b(gh|git)\b", t):
             analyze(t, depth + 1)  # e.g. python -c 'os.system("git push")'
+
+
+def check_uat(args):
+    """The UAT runner executes contributed code in its sandbox (rules/uat.md
+    UA-05, I-05 as amended), so a real run is a gated action: it reaches a
+    human prompt or is handed over (RT-04). `--plan` runs nothing and
+    passes -- but only as a standalone flag, never as another flag's value."""
+    i = 0
+    while i < len(args):
+        if args[i] in UAT_VALUE_FLAGS:
+            i += 2
+            continue
+        if args[i] == "--plan":
+            return
+        i += 1
+    gated_write("uat-run.sh (runs contributed code in the UAT sandbox, rules/uat.md UA-05)")
 
 
 def check_gh(args):
