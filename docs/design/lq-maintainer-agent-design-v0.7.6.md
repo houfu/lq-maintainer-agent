@@ -1,9 +1,10 @@
 # LQ Maintainer Agent — Design Doc v0.7.6
 
-**Status: proposed 2026-09-29.** A **delta over v0.7.5**
-(`lq-maintainer-agent-design-v0.7.5.md`, itself proposed the same
-day): one capability — **a user-facing change is seen running before it
-merges** — and the one amendment to a standing prohibition it needs.
+**Status: adopted 2026-10-03** (proposed 2026-09-29; merged as #19, shipping
+as plugin v0.7.0). A **delta over v0.7.5**
+(`lq-maintainer-agent-design-v0.7.5.md`, adopted the same day): one
+capability — **a user-facing change is seen running before it merges**
+— and the one amendment to a standing prohibition it needs.
 `docs/proposals/uat-for-user-facing-changes.md` carries the request,
 the rulings, and the honest status. Where this document is silent,
 v0.7.5 remains normative, then v0.7.4 and the chain beneath it.

@@ -1,6 +1,7 @@
 # LQ Maintainer Agent — Design Doc v0.7.5
 
-**Status: proposed 2026-09-29.** This document is a **delta over
+**Status: adopted 2026-10-03** (proposed 2026-09-29; merged as #18, shipping
+as plugin v0.7.0). This document is a **delta over
 v0.7.4** (`lq-maintainer-agent-design-v0.7.4.md`): it records one
 capability — **the agent runs on two hosts, Claude Code and Codex,
 from one tree** — and restates the design's platform-shaped claims as

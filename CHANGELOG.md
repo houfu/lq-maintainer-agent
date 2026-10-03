@@ -2,18 +2,27 @@
 
 Loosely Keep-a-Changelog shaped, but plainer: what changed, why (the
 field feedback or decision behind it), and what it touches. Versions
-match `.claude-plugin/plugin.json`; releases are tagged `vX.Y.Z` per
+match `.claude-plugin/plugin.json` (and its Codex twin,
+`.codex-plugin/plugin.json`); releases are tagged `vX.Y.Z` per
 [CONTRIBUTING.md](CONTRIBUTING.md)'s release steps. Design-doc deltas
 are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
-## [Unreleased]
+## [0.7.0] — 2026-10-03
+
+Two strands, each its own design delta: the agent now runs on Codex as
+well as Claude Code with every guarantee intact, and a change a person
+will see is seen running before it merges. **Read before updating:**
+on Codex, re-trust the plugin's hook in `/hooks` after this update
+(the hook changed, and Codex skips an untrusted hook — the new safety
+canary will refuse to run until you do); and in Claude Code's `auto`
+mode, posts are now handed over for you to run instead of posting.
 
 ### Seen running before it merges — user acceptance (UAT)
 
 Design doc: [v0.7.6](docs/design/lq-maintainer-agent-design-v0.7.6.md)
-(proposed; delta over v0.7.5). Request, rulings and honest status in
+(adopted 2026-10-03; delta over v0.7.5). Request, rulings and honest status in
 [docs/proposals/uat-for-user-facing-changes.md](docs/proposals/uat-for-user-facing-changes.md).
 From the maintainer: "check whether a PR affects the layout or frontend
 or user facing situation, and if yes, recommend or require a UAT
@@ -52,7 +61,7 @@ features."
 ### One agent, two hosts — Claude Code and Codex
 
 Design doc: [v0.7.5](docs/design/lq-maintainer-agent-design-v0.7.5.md)
-(proposed; delta over v0.7.4). Request, findings and rulings in
+(adopted 2026-10-03; delta over v0.7.4). Request, findings and rulings in
 [docs/proposals/codex-compat.md](docs/proposals/codex-compat.md). From a
 maintainer request: "i need to improve claude/codex compatibility."
 

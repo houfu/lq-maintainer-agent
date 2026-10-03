@@ -1,4 +1,4 @@
-# Seeing a user-facing change before it merges (PROPOSED 2026-09-29)
+# Seeing a user-facing change before it merges (PROPOSED 2026-09-29; INCORPORATED into design delta v0.7.6, 2026-10-03)
 
 Field request from the maintainer, in their words:
 
