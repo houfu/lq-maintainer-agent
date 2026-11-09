@@ -41,7 +41,12 @@ sh publish/site-refresh.sh
 writes a default configuration to `~/.lq-maintainer/site.conf` with
 `PUBLISH=no`, generates the site into `~/.lq-maintainer/site/build/`,
 and stops. Open `~/.lq-maintainer/site/build/index.html` in a browser
-to read what would be published. The log is
+to read what would be published — or, since the item page is the
+entrypoint a PR link lands on (`rules/publishing.md` PB-15), open
+`~/.lq-maintainer/site/build/pr-<number>/index.html` for one item. The
+refresh passes the generator `--site-path /<community-repo-name>/`, the
+path a GitHub project site is served under, so the links on `404.html`
+resolve from any depth. The log is
 `~/.lq-maintainer/logs/site-refresh.log`, one line per run; the
 generator's full output from the last run is
 `~/.lq-maintainer/logs/generate.last`.

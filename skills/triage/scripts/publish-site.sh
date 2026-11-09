@@ -816,6 +816,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
 .ph{padding:18px 20px;border-left:6px solid var(--accent);font-size:15.5px;margin:0 0 22px}
 .ph p{margin:0 0 10px}.ph p:last-child{margin-bottom:0}
 .meta{color:var(--ink-soft);font-size:15px;margin:0 0 18px}
+.start{font-size:15px;margin:0 0 22px;padding:10px 14px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 8px 8px 0}
 .legend{color:var(--ink-soft);font-size:14.5px;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:10px;padding:10px 14px}
 .timeline{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);margin-left:8px}
 .ev{position:relative;padding:0 0 18px 22px}
@@ -855,15 +856,20 @@ def site_css():
     return base + SITE_CSS_EXTRA
 
 
-def page(title, body, rel, footer_line):
+def page(title, body, rel, footer_line, lead=""):
+    """One page. `rel` is the path back to the site root ("" at the root,
+    "../" one level down, or the absolute site path for 404.html, which
+    GitHub Pages serves at any depth). `lead` is HTML for links that come
+    before the site-wide ones in the nav — an item page leads with the
+    item on GitHub and its newest deck (PB-15), the index with nothing."""
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width,initial-scale=1">'
             ''  # v0.8: no robots block — the site exists to be found; a committee may ask for one (R11)
             '<title>%s</title><style>%s</style></head><body><main class="site">'
-            '<p class="nav"><a href="%sindex.html">All reviews</a> · <a href="%sabout.html">About this site</a> · '
+            '<p class="nav">%s<a href="%sindex.html">All reviews</a> · <a href="%sabout.html">About this site</a> · '
             '<a href="%sfor-agents.html">For agents</a></p>%s'
             '<footer class="foot">%s <a href="%sabout.html">About</a> · <a href="%sfor-agents.html">For agents</a></footer>'
-            '</main></body></html>') % (html.escape(title), site_css(), rel, rel, rel, body,
+            '</main></body></html>') % (html.escape(title), site_css(), lead, rel, rel, rel, body,
                                         html.escape(footer_line), rel, rel)
 
 
@@ -871,6 +877,7 @@ class Site:
     def __init__(self, args):
         self.args = args
         self.repo = args.repo
+        self.site_path = args.site_path if args.site_path.endswith("/") else args.site_path + "/"
         self.files = {}           # relpath -> str
         self.now = _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         self.ph = read_blocks(os.path.join(ROOT, "templates", "public-header.md"), "public-header")
@@ -1195,14 +1202,16 @@ class Site:
             for k, v in r.get("draft_labels") or []:
                 dl.append((k, html.escape(v)))
             hd = "%s/" % r["head"]
-            links = '<a href="%sdeck.html">Read the deck</a> · <a href="%sreceipt.md">receipt.md</a> · <a href="%sstate.yaml">state.yaml</a>' % (hd, hd, hd)
+            anchor = "review-%s" % short(r["head"])
+            links = ('<a href="%sdeck.html">Read the deck</a> · <a href="%sreceipt.md">receipt.md</a> · <a href="%sstate.yaml">state.yaml</a>'
+                     ' · <a href="#%s">link to this review</a>') % (hd, hd, hd, anchor)
             note = ""
             if gh and (gh.get("merged_at") or gh.get("closed_at")) and r["at"] > (gh.get("merged_at") or gh.get("closed_at")):
                 note = '<p class="note">This record was last written after the %s closed on GitHub (a closing update), so its file time is later than the review itself.</p>' % kl
             title = "Agent review %d of %d%s" % (i + 1, len(item["reviews"]), " · newest" if r is newest else "")
             evs.append((r["at"], 1, "k-review", "%s · about %s, from the record's file time" % (title, day(r["at"])),
                         '<div class="card"><dl>%s</dl><p class="note">%s</p>%s</div>' % (
-                            "".join("<dt>%s</dt><dd>%s</dd>" % (k, v) for k, v in dl), links, note)))
+                            "".join("<dt>%s</dt><dd>%s</dd>" % (k, v) for k, v in dl), links, note), anchor))
             if item["decision_review"] is r:
                 dd = item["decision"]
                 evs.append((r["at"], 2, "k-decision", "Maintainer's recorded decision%s" % (" · " + dd["date"] if dd.get("date") else ""),
@@ -1229,19 +1238,33 @@ class Site:
         else:
             evs.append((self.now, 6, "k-open", "GitHub state not checked", "This site was generated offline; see the item on GitHub."))
         evs.sort(key=lambda e: (e[0], e[1]))
-        tl = "".join('<li class="ev %s"><div class="when">%s</div><div class="what">%s</div></li>' % (k, html.escape(w), h)
-                     for _, _, k, w, h in evs)
+        tl = "".join('<li class="ev %s"%s><div class="when">%s</div><div class="what">%s</div></li>' % (
+            e[2], (' id="%s"' % e[5]) if len(e) > 5 and e[5] else "", html.escape(e[3]), e[4]) for e in evs)
         url = (gh or {}).get("url") or ""
+        gh_ok = url.startswith("https://github.com/")
+        nh = "%s/" % newest["head"]
+        # PB-15: the reader arrives from the link on the PR or issue, so the
+        # page stands alone — the item on GitHub and the newest deck lead the
+        # nav, and a "start here" line names them again under the title.
+        lead = (('<a href="%s">This %s on GitHub</a> · ' % (html.escape(url, quote=True), kl)) if gh_ok else "") + \
+               '<a href="%sdeck.html">Newest deck</a> · ' % nh
+        start = ('<p class="start"><b>Start here.</b> The newest review (about %s, %s <code>%s</code>): '
+                 '<a href="%sdeck.html">read its deck</a> · <a href="%sreceipt.md">receipt.md</a> · <a href="%sstate.yaml">state.yaml</a>. '
+                 '%s This page is the record of what the agent did, oldest first; it is not where the decision was made.</p>') % (
+            day(newest["at"]), "head" if item["kind"] == "pr" else "canon", short(newest["head"] if item["kind"] == "pr" else newest["canon_sha"]),
+            nh, nh, nh,
+            ('The review itself was posted on <a href="%s">the %s on GitHub</a>, where a maintainer answers.' % (html.escape(url, quote=True), kl))
+            if gh_ok else "The review itself was posted on the %s on GitHub, where a maintainer answers." % kl)
         body = ('<section class="card ph">%s</section>'
                 '<h1>%s #%d — %s</h1>'
-                '<p class="meta">%s · GitHub: %s · %d review%s · <a href="status.yaml">status.yaml</a>%s</p>'
+                '<p class="meta">%s · GitHub: %s · %d review%s · <a href="status.yaml">status.yaml</a>%s</p>%s'
                 '<h2>From triage to %s</h2><ol class="timeline">%s</ol>') % (
             md_to_html(hmd), kl, item["num"], RD.sanitize(item["title"])[0],
             "Issue" if item["kind"] == "issue" else "Pull request", html.escape(github_words(gh, item["kind"]).replace("`", "")),
             len(item["reviews"]), "" if len(item["reviews"]) == 1 else "s",
-            (' · <a href="%s">on GitHub</a>' % html.escape(url, quote=True)) if url.startswith("https://github.com/") else "",
+            (' · <a href="%s">on GitHub</a>' % html.escape(url, quote=True)) if gh_ok else "", start,
             "merge" if item["kind"] == "pr" else "close", tl)
-        return page("%s #%d — review flow" % (kl, item["num"]), body, rel, self.footer_line())
+        return page("%s #%d on %s — agent review record" % (kl, item["num"], self.repo), body, rel, self.footer_line(), lead)
 
     # -- site-level pages --------------------------------------------------
     def index_pages(self, items):
@@ -1270,7 +1293,10 @@ class Site:
         legend = ('<p class="legend">Each line is one pull request or issue the agent reviewed, newest activity first. '
                   '<b>Agent</b> is what its newest review recommended; <b>Decision</b> is whether a maintainer recorded a ruling '
                   '(absence is not agreement); <b>GitHub</b> is what GitHub showed when this site was generated, and it is right '
-                  'when the three disagree. A human maintainer decides, every time.</p>')
+                  'when the three disagree. A human maintainer decides, every time.</p>'
+                  '<p class="legend">This page is the overview and the history. Each item\'s own page is the entrypoint: '
+                  'the link on the pull request or issue on GitHub leads straight to it, at <code>pr-&lt;number&gt;/</code> '
+                  'or <code>issue-&lt;number&gt;/</code>.</p>')
         toc = " · ".join('<a href="index-%s.html">%s (%d)</a>' % (k, l, n) for k, l, n, _ in secs)
         intro = ('<h1>Reviews by lq-maintainer-agent on %s</h1>%s<p class="meta">%d items · %s</p>' % (
             html.escape(self.repo), legend, len(items), toc))
@@ -1312,8 +1338,28 @@ class Site:
         self.files["FOR-AGENTS.md"] = fa + "\n\n*" + self.footer_line() + "*\n"
         self.files["for-agents.html"] = page("For agents", '<div class="prose">%s</div>' % md_to_html(fa), "", self.footer_line())
         self.files[".nojekyll"] = ""
+        # PB-15 (iv): GitHub Pages serves 404.html for any missing path, at
+        # any depth, so its links are anchored at the site path, and it
+        # carries no script — it cannot know which item was asked for, and
+        # says so.
+        sp = self.site_path
+        nf = ('<h1>No published record at this address</h1>'
+              '<p class="meta">%s · one page per pull request or issue, at <code>pr-&lt;number&gt;/</code> or <code>issue-&lt;number&gt;/</code></p>'
+              '<div class="prose">'
+              '<p>If you followed the link from a pull request or issue, the record is not here yet, or not here at all. '
+              'That can mean any of four things, and this page cannot tell you which: the site has not been refreshed since '
+              'the review was posted (it refreshes on a maintainer\'s schedule, not when a review happens); the item is not in '
+              'the selection the maintainers currently publish; the item is held until a human rules on it; or the record was '
+              'refused under the publishing rules and will not appear here.</p>'
+              '<p>The review itself is on the pull request or issue on GitHub, where a maintainer answers. Nothing on this site '
+              'is a decision: <b>a human maintainer decides whether and how a change merges</b>, and GitHub shows what was decided.</p>'
+              '<p><a href="%sindex.html">Everything published here</a> · <a href="%sabout.html">About this site</a></p>'
+              '</div>') % (html.escape(self.repo), sp, sp)
+        self.files["404.html"] = page("Not published here", nf, sp, self.footer_line())
         self.files["README.md"] = ("# Generated site — do not edit\n\nEverything here is generated by %s from lq-maintainer-agent's "
-                                   "review records and is replaced in full on every refresh. Start at `index.html`; machine readers "
+                                   "review records and is replaced in full on every refresh. A reader arrives at an item's own page, "
+                                   "`pr-<number>/` or `issue-<number>/`, from the link on that pull request or issue; `index.html` is the "
+                                   "overview of everything published, and `404.html` answers a link whose page is not here. Machine readers "
                                    "start at `FOR-AGENTS.md` and `index.json`.\n\n*%s*\n" % (GENERATOR, self.footer_line()))
 
 
@@ -1332,7 +1378,7 @@ def plan(args):
         if args.status_from == "gh" else "4. GitHub state: not checked (--status-from none); every item's state is `unknown`, so --select merged|closed selects nothing.",
         "5. Select: --select %s%s." % (args.select, (", --since %s" % args.since) if args.since else ""),
         "6. Sanitize each selected receipt body and footer: local paths -> item-relative; Name <email> -> @login or removed; permission-check prose removed; drafts labelled with their GitHub status.",
-        "7. Render in memory: item flow pages, status.yaml, per-head receipt.md / state.yaml / deck.html (render-deck.sh --public-header, header from templates/public-header.md), index.html + index-<state>.html, index.json, about.html, for-agents.html, FOR-AGENTS.md, README.md, .nojekyll.",
+        "7. Render in memory: item flow pages, status.yaml, per-head receipt.md / state.yaml / deck.html (render-deck.sh --public-header, header from templates/public-header.md), index.html + index-<state>.html, index.json, about.html, for-agents.html, 404.html (links anchored at %s), FOR-AGENTS.md, README.md, .nojekyll." % args.site_path,
         "8. Scan every generated file for local paths, emails, meeting links, token-shaped strings and permission-check prose; any hit refuses the whole run (exit 3) and nothing is written.",
         ("9. --dry-run: print every item's disposition and the scan result; write nothing to %s." % args.out) if args.dry_run else
         ("9. Write the tree to %s (replacing a previous generated tree; refusing a non-empty directory that is not one)." % args.out),
@@ -1543,6 +1589,8 @@ def main(argv):
     ap.add_argument("--caches", type=lambda s: [x for x in s.split(",") if x])
     ap.add_argument("--out")
     ap.add_argument("--repo", default="LegalQuants/lq-ai")
+    ap.add_argument("--site-path", default="/lq-ai-community/",
+                    help="the path GitHub Pages serves the site under (a project site lives at /<repo-name>/); used only for the root-anchored links in 404.html")
     ap.add_argument("--status-from", choices=("gh", "none"), default="gh")
     ap.add_argument("--select", choices=("merged", "closed", "all"), default="merged")
     ap.add_argument("--since")

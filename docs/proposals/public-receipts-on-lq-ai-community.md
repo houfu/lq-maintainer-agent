@@ -196,8 +196,9 @@ index.html                    # every item, newest activity first; open / merged
 index.json                    # the same index for agents (R6)
 about.html                    # what this site is — the header's long form
 for-agents.html, FOR-AGENTS.md
+404.html                      # answers a PR link whose page is not here (PB-15 iv); links anchored at the site path
 pr-663/
-  index.html                  # the flow page: opened → each review → decision → comments → merged
+  index.html                  # the entrypoint (PB-15): the flow page, opened → each review (#review-<head>) → decision → comments → merged
   status.yaml                 # what GitHub says now (R4)
   0062845d3.../
     deck.html                 # this head's deck — the human surface — with the R3 header at its top
@@ -231,6 +232,20 @@ issue-498/
   state and file paths.
 - **Directories are keyed by number and head**; casing differences
   between caches are normalized on publish.
+- **The item page is the entrypoint, not the index** (`PB-15`, decided
+  2026-11-09). The design assumes a reader who followed the one link
+  on a pull request or issue, so `pr-<number>/` is stable before the
+  page exists, the page stands alone (the item on GitHub and the
+  newest deck lead its navigation and a start-here line, above the
+  timeline), names no other item, and addresses each review by
+  anchor. The index is the overview and the history, reached from item
+  pages and never linked from GitHub; there is no search (no script on
+  the site — `index.json` is the machine index). Because the comment
+  is posted at review time and the site refreshes on a schedule, a
+  link may dangle: `404.html` says a record is not published here,
+  lists the four reasons that can be (not refreshed yet, not in the
+  published selection, held, refused) without saying which, and sends
+  the reader back to the item on GitHub.
 
 ### R3 — Every published record opens with the same header **(maintainer)**
 
@@ -412,7 +427,13 @@ replace the human reading.
    `rules/canon-map.md`, `PC-04` turns on so new public comments link
    the item's flow page, `docs/bot-behavior.md` names the site, and
    `docs/community-repo.md` is rewritten to describe what exists
-   (`PB-13`).
+   (`PB-13`). One consequence to decide here, not in the rules: with
+   the pilot selection (`SELECT=merged`) every open PR's link lands on
+   `404.html` until the PR merges, and a held or refused item's link
+   lands there for good. Whether `PC-04` fires on every review, or
+   only when the item would be published under the current selection,
+   is for the maintainer and the committee to settle before step 5;
+   the plugin can do either.
 6. Steady state: the scheduled refresh keeps the site current; a
    review's finalize step may offer a local run of the generator as one
    more handed-over step, for the maintainer to read what the next
@@ -551,6 +572,10 @@ Outside this plugin, by people:
   the flow page uses the record's file time and says so. The agent
   version, host and model on each entry come from the footer and the
   work log, which are exact.
+- **A link on a PR may point at a page that is not there** until
+  the next refresh, or ever (unselected, held, refused). `404.html`
+  answers it honestly; the R7 step-5 question — fire `PC-04` always or
+  only for publishable items — is open.
 - **"Merge method" from GitHub is best-effort**, inferred from the
   merge commit's parent count; `n-a` when it cannot be.
 - **The E-08 items need a human ruling each** (`--allow-security`),

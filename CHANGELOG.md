@@ -115,7 +115,12 @@ shows the flow from triage, review and merge."
 
 - **`skills/triage/scripts/publish-site.sh`** — a whitelist generator
   (reads only `receipt.md`, `deck.html` and the footer) that builds a
-  static, no-JavaScript site: an index, one **flow page** per item
+  static, no-JavaScript site built around the **item page as the
+  entrypoint** (`PB-15`: a stable `pr-<number>/` address a PR comment
+  can carry before the page exists, the item on GitHub and the newest
+  deck led, an anchor per review, a root-anchored `404.html` for a
+  link whose page is not there; `PC-04` now links that page, never a
+  deck); an index as the overview, one **flow page** per item
   (opened → each review → decision or "not recorded — absence is not
   agreement" → comments actually posted → merged/closed), the deck for
   every reviewed head with the fixed public header at its top, the

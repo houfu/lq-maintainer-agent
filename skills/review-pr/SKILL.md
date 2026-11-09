@@ -724,10 +724,11 @@ run produced one (that is where the deck's collapsed below-threshold
 card comes from; omitting it just omits the card), and write it to
 `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/deck.html`
 (ask where if `${CLAUDE_PLUGIN_DATA}` is unset). It leads with the
-action outcome and its undo path. Until the community repo exists
-(design doc v0.7 §12 q.10) the deck stays a **local view**; once it
-does, publishing it there is a human-gated write like any other, and
-the short comment may then link it (`PC-04`).
+action outcome and its undo path. Until the public reviews site is
+live (`rules/publishing.md` PB-13) the deck stays a **local view**;
+once it is, the site's refresh publishes it under the item's own page,
+and the short comment links that page — never the deck itself
+(`PC-04`, PB-15).
 
 **Discuss before settling.** Walk the maintainer through the outcome,
 the undo path, the named checks, and the **Next steps** (`B-14`)

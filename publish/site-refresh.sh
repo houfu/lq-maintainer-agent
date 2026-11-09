@@ -181,7 +181,7 @@ trap 'rmdir "${WORKDIR}/.lock" 2>/dev/null' EXIT INT TERM
 rm -rf "${BUILD}.new"
 log "start select=${SELECT} publish=${PUBLISH} mode=${mode}"
 # shellcheck disable=SC2086
-if ! sh "$GENERATOR" --caches "$CACHES" --out "${BUILD}.new" --status-from gh --select "$SELECT" $allow_flags >"${LOG_DIR}/generate.last" 2>&1; then
+if ! sh "$GENERATOR" --caches "$CACHES" --out "${BUILD}.new" --status-from gh --select "$SELECT" --site-path "/${COMMUNITY_REPO##*/}/" $allow_flags >"${LOG_DIR}/generate.last" 2>&1; then
   stop "generator failed or refused (see ${LOG_DIR}/generate.last); nothing pushed"
 fi
 summary=$(tail -1 "${LOG_DIR}/generate.last" 2>/dev/null)

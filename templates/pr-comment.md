@@ -6,8 +6,8 @@ every reviewed PR or issue. **This is the only thing routinely posted
 to a PR or issue from v0.7 on** (design doc v0.7 §8) — the internal
 evidence record (`templates/receipt-pr.md` / `templates/receipt-issue.md`)
 is no longer posted; it is drafted for the maintainer's local cache
-and, once it exists, the community repo's `reviews/<pr|issue>-NNNN/`
-(`docs/community-repo.md`). **Render, never freehand**: the field
+and, once the public reviews site is live, published from there to
+the item's own page (`rules/publishing.md`). **Render, never freehand**: the field
 rules (`PC-NN`) are normative. Posted (or updated in place) only
 behind an individual human approval, same as every other draft.
 
@@ -64,12 +64,22 @@ unchanged); this template is what the agent drafts going forward.
   theirs (a named, doable ask) or ours ("nothing needed from you —
   this is on us now" is a valid, complete answer) — never both, never
   a list (`rules/tone-gate.md` TG-03.2).
-- **PC-04 — Deck link, optional, and only once the community repo
-  exists.** Until `docs/community-repo.md` bootstraps (open question
-  §12 q.10 of design doc v0.7), the deck stays a local view and this
-  line is **omitted entirely** — no placeholder, no "coming soon".
-  Once the repo exists, the line links the item's public deck
-  (`reviews/<pr|issue>-NNNN/deck.html`).
+- **PC-04 — The flow-page link, optional, and only once the site is
+  live.** Until the public reviews site has had its first scheduled
+  push and a maintainer has read it (`rules/publishing.md` PB-13),
+  this line is **omitted entirely** — no placeholder, no "coming
+  soon". Once it is live, the line carries **one** link: the item's
+  own flow page, `<site>/pr-<number>/` or `<site>/issue-<number>/`,
+  the site base taken from the `canon:community-repo` row of
+  `rules/canon-map.md`. Never the deck, a head directory or the index:
+  the flow page is the entrypoint (PB-15) and the deck is one click
+  inside it. The same link every time this item is commented on,
+  whatever head was reviewed; a second review does not add a second
+  link. The link is posted at review time, and the page it names may
+  not exist yet — the site refreshes on the maintainer's schedule, and
+  an item may be unselected, held or refused — so the site's own
+  not-found page says what that means and points back to the item on
+  GitHub; the comment itself never promises the page is there.
 - **PC-05 — Attribution line, mandatory.** The same line every
   receipt and drafted response carries — agent version, posting
   maintainer, linked to `docs/bot-behavior.md`
@@ -150,7 +160,7 @@ thing done, named.>
 <PC-03: the one next step, and who owns it — "over to you: <ask>" or
 "nothing needed from you — this is on us now.">
 
-<if PC-04 applies: The fuller writeup, if you're curious: <deck link>.>
+<if PC-04 applies: The record of this review, if you're curious: <site>/pr-<number>/>
 
 ---
 *Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)

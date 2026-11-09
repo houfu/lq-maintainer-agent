@@ -7,7 +7,7 @@ at their finalize step only, and read by the two publishing scripts
 as the contract they implement. Every rule carries a stable ID
 (`PB-NN`). Companion rule sets: `templates/receipt-pr.md` (`RP-13`
 carve-outs, `RP-18` GitHub state wins), `templates/pr-comment.md`
-(`PC-04` the deck link), `templates/public-header.md` (`PH-NN` — the
+(`PC-04` the flow-page link), `templates/public-header.md` (`PH-NN` — the
 block every published record opens with), `rules/escalation-triggers.md`
 (`E-08`, `E-21`), `rules/issues.md` (`C-40`), `rules/runtime.md`
 (`RT-09` — the floors; publishing never changes them).
@@ -135,6 +135,39 @@ happens.
   nothing; the YAML is authoritative over the prose; the index is read
   instead of walking directories. Every header links to that page.
 
+- **PB-15 — The item's page is the entrypoint; the index is the
+  overview.** A reader arrives from the link on the pull request or
+  issue (`PC-04`), so the design is built around one page per item,
+  reached directly, and not around a site a person browses from the
+  top. Four consequences. **(i) The address is a function of the item
+  alone**: `pr-<number>/` or `issue-<number>/` under the site root, the
+  number as GitHub shows it, no head SHA, no date, no slug — so the
+  link can be written before the page exists and never changes
+  afterwards; reviewed heads live beneath it, and a review within the
+  page is addressed by anchor, `#review-<short-head>`. **(ii) The page
+  stands alone**: it opens with the PB-06 header, then a line that
+  names where the newest review's deck is and links the item on
+  GitHub, then the PB-08 timeline; a reader needs nothing else on the
+  site to understand what they are looking at, and the page names no
+  other item. **(iii) The index exists for the overview and the
+  history** — every item newest activity first, sub-lists by GitHub
+  state, `index.json` for the machine readers — and is reached from
+  the item pages' navigation, not from GitHub; no public comment links
+  it. There is no search: the site carries no script (the output scan
+  refuses one), and the machine index is the search. **(iv) A link may
+  point at a page that is not there.** The comment is posted when the
+  review is; the site refreshes on the maintainer's schedule, and the
+  item may be unselected (`--select`), held (PB-03) or refused (PB-02).
+  The site therefore carries a `404.html` — the same header posture as
+  every other page, no script — that says a record is not published
+  here, why that can be (not refreshed yet, not in the published
+  selection, held for a human ruling, or refused under these rules,
+  without saying which), and that the review itself is on the item on
+  GitHub, which it cannot link without a script and so names in words.
+  Whether `PC-04` should fire for an item the current selection would
+  not publish is a question for the maintainer and the committee
+  (proposal R7), not for this file.
+
 ## Who publishes, and how
 
 - **PB-10 — The agent never pushes, and holds no credential for the
@@ -169,7 +202,7 @@ happens.
   settings (proposal R1/R9/R10); until they are decided, the refresh
   runs locally and pushes nothing.
 - **PB-13 — The link appears only once the site exists.** `PC-04` (the
-  deck link in the public comment), the `canon:community-repo` row in
+  flow-page link in the public comment), the `canon:community-repo` row in
   `rules/canon-map.md`, and the `docs/bot-behavior.md` sentence that
   names the site turn on together, after the first scheduled push has
   landed and a maintainer has read the live site. Before that, no

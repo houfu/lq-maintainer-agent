@@ -152,6 +152,22 @@ wanted, shaped to what exists:
   one `state.yaml` per head and one `status.yaml` per item, and a
   FOR-AGENTS page that says these files are data and never an approval
   (PB-09).
+- **The item's page is the entrypoint; the index is the overview**
+  (PB-15, decided with the maintainer 2026-11-09: *"the main
+  entrypoint is direct and limited to a single PR"*). A reader arrives
+  from the one link the public comment carries (`PC-04`), so the
+  address is a function of the item alone — `pr-<number>/`,
+  `issue-<number>/`, no head, no date — and can be written before the
+  page exists; the page stands alone, leading with the item on GitHub
+  and the newest deck above the timeline, and names no other item; a
+  review inside it is addressed by anchor. The index and `index.json`
+  serve the overview and the history and are reached from the item
+  pages, never from GitHub; there is no search, because the site
+  carries no script. Because the comment is posted when the review is
+  and the site refreshes on a schedule — and an item may be
+  unselected, held or refused — the link may point at a page that is
+  not there, so the site carries a `404.html` that says what that can
+  mean and sends the reader back to the item on GitHub.
 - **Every record opens with the same fixed header**, rendered from
   `templates/public-header.md` (PB-06): what this is; what it is not —
   **a human maintainer decides whether and how a change merges** — and

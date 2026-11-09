@@ -22,6 +22,11 @@ Guards what skills/triage/scripts/publish-site.sh must never regress
   6. The scan is the floor: a token the sanitizer does not rewrite refuses
      the whole run with exit 3 and nothing is written.
   7. The security hold: E-08 holds an item; `--allow-security <n>` lifts it.
+  8. PB-15: the item page is the entrypoint (stable `pr-<number>/`
+     address, newest deck led in the nav and a start-here line, an anchor
+     per review, no other item named), the index calls itself the
+     overview, `404.html` is root-anchored and script-free, and PC-04's
+     link shape matches what the publisher writes.
 
 Pure stdlib, no network (`--status-from none`), safe as a blocking CI check.
 The file is a sh/python3 polyglot (repo convention); do not lint with `sh -n`.
@@ -105,7 +110,7 @@ def main():
         files = [p for p in glob.glob(os.path.join(out, "**", "*"), recursive=True) if os.path.isfile(p)]
         files += [p for p in glob.glob(os.path.join(out, "**", ".*"), recursive=True) if os.path.isfile(p)]
         rel = {os.path.relpath(p, out) for p in files}
-        for need in ("index.html", "index.json", "about.html", "for-agents.html", "FOR-AGENTS.md", ".nojekyll",
+        for need in ("index.html", "index.json", "about.html", "for-agents.html", "FOR-AGENTS.md", ".nojekyll", "404.html",
                      "pr-9001/index.html", "pr-9001/status.yaml",
                      "pr-9001/%s/deck.html" % ("1" * 40), "pr-9001/%s/receipt.md" % ("1" * 40),
                      "pr-9001/%s/state.yaml" % ("1" * 40), "pr-9001/%s/deck.html" % ("2" * 40),
@@ -146,6 +151,26 @@ def main():
         check("flow page: both reviews, oldest first", page.find("Agent review 1 of 2") < page.find("Agent review 2 of 2") and page.find("Agent review 1 of 2") > 0)
         check("flow page: decision recorded", "accepted the agent&#x27;s recommendation" in page or "accepted the agent's recommendation" in page)
         check("flow page: review time labelled approximate", "from the record&#x27;s file time" in page or "from the record's file time" in page)
+        # PB-15: the item page is the entrypoint and stands alone
+        check("entrypoint: item page is pr-<number>/index.html", "pr-9001/index.html" in rel and not any(re.match(r"^pr-9001-", r) for r in rel))
+        check("entrypoint: title names the repo and the record", "PR #9001 on LegalQuants/lq-ai — agent review record" in page)
+        check("entrypoint: nav leads with the newest deck", re.search(r'<p class="nav"><a href="%s/deck.html">Newest deck</a>' % ("2" * 40), page) is not None)
+        check("entrypoint: start-here line names the newest head", re.search(r'class="start">.*?<code>%s</code>.*?<a href="%s/deck.html">read its deck</a>' % ("2" * 9, "2" * 40), page) is not None)
+        check("entrypoint: each review has an anchor", 'id="review-%s"' % ("1" * 9) in page and 'id="review-%s"' % ("2" * 9) in page)
+        check("entrypoint: anchor is linked from the review card", 'href="#review-%s">link to this review' % ("1" * 9) in page)
+        check("entrypoint: page names no other item", "9002" not in page)
+        nf = texts.get("404.html", "")
+        check("404: says why a page can be missing", "not here yet, or not here at all" in nf and "held until a human rules" in nf and "refused under the publishing rules" in nf)
+        check("404: points back to GitHub in words", "on the pull request or issue on GitHub" in nf)
+        check("404: links anchored at the site path", 'href="/lq-ai-community/index.html"' in nf and 'href="/lq-ai-community/about.html"' in nf)
+        check("404: no relative link", 'href="index.html"' not in nf and 'href="../' not in nf)
+        check("index: calls itself the overview", "This page is the overview and the history" in texts.get("index.html", ""))
+        check("README: the item page is the entrypoint", "from the link on that pull request or issue" in texts.get("README.md", "") and "Start at `index.html`" not in texts.get("README.md", ""))
+        # PC-04's link shape and the directory the publisher writes must not drift apart
+        with open(os.path.join(ROOT, "templates", "pr-comment.md"), encoding="utf-8") as fh:
+            pc = fh.read()
+        check("PC-04: links the flow page at pr-<number>/", "`<site>/pr-<number>/`" in pc and "<site>/pr-<number>/" in pc.split("## Template", 1)[-1])
+        check("PC-04: never links a deck path", "deck.html" not in pc)
         p2 = texts.get("pr-9002/index.html", "")
         check("flow page: absent decision says so", "Absence is not agreement" in p2)
         check("flow page: drafts unknown offline", "unknown (GitHub not checked)" in p2)
