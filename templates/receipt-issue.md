@@ -344,7 +344,7 @@ deterministic_checks:
   release_age: n-a
   ci_green: n-a
 findings:
-  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>}
+  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>, evidence: <observed|canon-gap|mechanical|inferred|unverified>, fairness: <own-burden|not-this-pr|preference|scope-expansion>, confidence: <high|medium|low>}
 findings_filtered: <integer, 0 if none>
 salvage:
   applied: <true|false>

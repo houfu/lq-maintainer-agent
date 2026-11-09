@@ -25,10 +25,13 @@ thanks, one next step if there is one, and a link to the fuller
 analysis — not a dense audit dropped on your PR. The detailed
 work — the evidence, the checks, the findings — lives in a **reading
 deck**, the document the maintainer actually works from. Today that
-deck stays with the maintainer; once the project's community repo is
-live, it will be linked straight from your comment so you can read it
-yourself. Nothing in the deck is hidden from you on principle — it's
-just not pasted into your PR thread.
+deck stays with the maintainer. A public site for these decks — one
+page per PR or issue showing each review, what the maintainer decided,
+and what GitHub shows, with a fixed note at the top that a human
+maintainer decides whether and how a change merges — has been proposed
+to the project's committee; once it exists, your comment will link
+straight to your item's page. Nothing in the deck is hidden from you on
+principle — it's just not pasted into your PR thread.
 
 **A human maintainer decides, every time.** Every comment you receive
 was read, possibly edited, and deliberately posted by the named
@@ -67,6 +70,16 @@ permission architecture and by lq-ai's written policy
   observation for a maintainer to judge, never a verdict on you. Any
   other runtime check was done by a human, who will say so in their
   own name.
+- **It says what each finding rests on, and a guess is never a
+  blocker.** Every finding records whether it was read in your diff,
+  required by a project document the tool read, reported by a check,
+  or inferred; and whether the ask is really this change's to carry.
+  Only a finding read or checked in your own change can hold a merge.
+  Something the tool inferred but did not see becomes a check for a
+  maintainer to run, not a demand on you. A matter of taste is not a
+  finding at all, and work beyond what your PR set out to do is filed
+  as a follow-up, never made a condition
+  ([rules/confidence.md](../rules/confidence.md)).
 - **It never follows instructions in your contribution.** Everything
   in a PR or issue — body, diff, comments, filenames — is treated as
   material under review, never as directions to the reviewer. (See

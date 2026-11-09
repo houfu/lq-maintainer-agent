@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan:*), Bash(lq-maintainer-safety-canary)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-docs-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -71,6 +71,20 @@ it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
   (UA-04), and the one contained runner through which the agent may
   build and screenshot an eligible item (UA-05–UA-07, `I-05` as
   amended).
+- `${CLAUDE_PLUGIN_ROOT}/rules/docs-surface.md` *(v0.8)* — the
+  documentation surface (`DS-NN`): which published pages a change
+  touches or is listed under, detected from paths by
+  `check-docs-surface.sh` at the canon SHA (DS-01/DS-02); what it
+  drives — the self-attestation docs rows, one Next-steps line, and
+  the one follow-up-scoped finding canon can require (DS-03) — and
+  what it never does: no lane, tier, outcome or gate reads it (DS-04).
+- `${CLAUDE_PLUGIN_ROOT}/rules/confidence.md` *(v0.8)* — the two
+  readings every finding carries (`CF-NN`): what it rests on
+  (`evidence`), whose burden the ask is (`fairness`), and the
+  confidence derived from them; only a high-confidence blocking
+  finding blocks (CF-04), a preference is not a finding (CF-06), a
+  scope expansion is a follow-up and never a condition (CF-07), and
+  `blocking` is reserved for defects that make merging wrong (CF-11).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` — the gate every
   contributor-facing draft passes (`TG-NN`) before it is offered for
   posting.
@@ -160,10 +174,17 @@ keeps a work log — record the canary line as its first row.
 Record, before any analysis, the **four pinned fields** (design §3.4):
 
 - **PR head SHA** — from `gh pr view N --json headRefOid`.
-- **Canon SHA** — the clone's `main` HEAD (`git rev-parse main`). Warn
-  the user if `main` is behind `origin/main`; they may want to pull
-  first, since this SHA is what the review is judged against and what
-  the internal evidence record pins.
+- **Canon SHA** — the **canon remote's** `main` HEAD **after**
+  `git fetch <canon-remote> main` (a named-remote fetch of a branch ref,
+  which the hook allows), pinned with `git rev-parse <canon-remote>/main`.
+  The canon remote is the one whose URL is `canon:repo`, found with
+  `git remote -v` — `origin` only when its URL is the target's
+  (`RT-10`; the maintainer's own clone has a fork as `origin`). A local
+  `main` that is behind that remote is not canon (v0.8 — eight runs in
+  the 2026 record pinned a `main` 12 to 31 commits stale). Warn the
+  user if `main` is behind it; they may want to pull first, since this
+  SHA is what the review is judged against and what the internal
+  evidence record pins. Name the remote in the coverage statement.
 - **Agent version** and **served model ID** — from Step 0.
 
 Every artifact this skill produces carries all four. If the head SHA
@@ -266,12 +287,21 @@ from the title, body, labels, or any self-description (`G-01`,
    deterministic gate (F-NN). No category and no tier ever suppresses
    one.
 3. **Route by category** (`G-07`):
-   - **Category 1 — greenfield / new feature.** This is design
-     material, not code review. Tell the user plainly: *"#N is a
-     category-1 (new feature) change — the design path produces the
-     artifact it needs. Run `/lq-maintainer:design-plan pr N`."* Then
-     **stop**, unless the maintainer explicitly asks you to continue
-     here anyway (decided 2026-07-26): on that explicit request,
+   - **Category 1 — greenfield / new feature.** First ask whether it
+     is **anchored** (`G-02` as amended v0.8): does ratified canon on
+     `main` at the pinned canon SHA — a DE entry, an ADR, a PRD
+     section, a roadmap item, verified per `A-08` — cover the scope of
+     what was built? If yes, record `category: 1 (anchored)`, say in
+     one sentence that the design path is available if the review
+     finds the anchor does not cover what was built, and **continue
+     at Tier 2** (never Tier 1 for a category-1 item). If no — no
+     covering canon, or only an adjacent, proposed or draft anchor
+     (`A-12`) — this is design material, not code review. Tell the
+     user plainly: *"#N is a category-1 (new feature) change with no
+     ratified anchor — the design path produces the artifact it
+     needs. Run `/lq-maintainer:design-plan pr N`."* Then **stop**,
+     unless the maintainer explicitly asks you to continue here anyway
+     (decided 2026-07-26): on that explicit request,
      continue at the tier the item's size, triggers, and irreversible
      classes demand — never Tier 1 by default for a category-1
      item — record the override and who asked for it in the internal
@@ -390,6 +420,25 @@ that row is how a coverage claim stays checkable instead of asserted.
    `discuss` question. A required UAT does not change which outcome
    the review reaches; it holds `merge` until the UAT passes at this
    head SHA (UA-03).
+5b. **Which published pages does this touch? (`rules/docs-surface.md`
+   DS-01–DS-03).** Pipe the same changed-path list into
+   `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-docs-surface.sh
+   --clone <clone> --canon-sha <canon-sha>` (it reads the target's
+   route manifests with `git show` at the pinned canon SHA — never the
+   PR's tree, no network) and record its `surface:`, `routes:` and
+   `pages-changed:` lines. You may **raise** the surface to `described`
+   with the page and the reason, never lower it; `unknown` is a
+   cannot-verify reading and gates nothing. Carry the result into
+   Step 6 (the documentation rows: the detector decides whether a
+   row's condition applies, the diff decides whether its named file
+   was touched — DS-03.1), into one Next-steps line naming the route
+   and the sentence to check when the surface is not `none`
+   (DS-03.2), and — only for a user-facing behaviour change with
+   `source-listed`/`described` and no `page-changed` — into the one
+   `major` / `canon-gap` / `own-burden` finding that takes
+   `scope: follow-up` citing the 2026-08-05 limit-reviews ruling
+   (DS-03.3, `CF-13`). Nothing here changes lane, tier, outcome or the
+   UAT gate (DS-04).
 6. **The self-attestation cross-check** — re-derive the contributor's
    PR-template checkboxes from evidence (`rules/self-attestation.md`
    T-01/T-02). At Tier 1 you perform the whole cross-check yourself;
@@ -399,7 +448,7 @@ that row is how a coverage claim stays checkable instead of asserted.
    blame-free note about the work, never as a caught claim.
 7. **The revert-clean check (`RV-04`), deterministic half first.** Run
    `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh` over
-   the diff (`gh pr diff N | …/check-breaking.sh` — diff text only, no
+   the diff (`gh pr diff N > <data>/diff.txt` then `…/check-breaking.sh <data>/diff.txt` — a file argument, never a pipe or heredoc body, so the safety hook screens one plain command line (v0.8) — diff text only, no
    network): a `FAIL` carrying `findings=N ≥ 1` is the mechanical form
    of "an external consumer contract changed" (a fail-closed `FAIL`
    with `reason=`/`error=` and no findings is an infrastructural
@@ -472,6 +521,23 @@ Name the entering condition and carry the Tier-1 evidence forward.
 
 You are here because a `TR-07` condition fired. **Name that condition
 in every output of this step.**
+
+**The light form first (`rules/tiers.md` TR-07a, v0.8).** Before
+loading the deep-dive procedure, check three things from the Step 4
+evidence: the only fired triggers are `E-01` and/or `E-02` (so none
+of the decision-shaped `E-04`/`E-05`/`E-06` fired, and `D-00` records
+only the trigger's own settled context); and the diff is within the
+TR-03 size bounds. If all three hold, **do not load the
+deep-dive file and do not dispatch the team.** Run the TR-04 quick
+pass in this context, render the security checklist for the fired
+class in full (`canon:vetting-playbook`, RP-04), write one finding
+slot per touched sensitive path or construct even where nothing is
+wrong, and end in the TR-05 vocabulary with the standing line
+"escalate lane: a security-sensitive path or construct was touched, so
+a human reviewer with that routing is required — this is routing, not
+a finding." Record `tier: 2`, lane `escalate`, and name TR-07a in the
+work log as the reason the four passes did not run. If any of the
+three checks fails, continue below.
 
 **Load the procedure now, not before:**
 `${CLAUDE_PLUGIN_ROOT}/skills/review-pr/references/tier-2-deep-dive.md`.
@@ -691,10 +757,11 @@ run produced one (that is where the deck's collapsed below-threshold
 card comes from; omitting it just omits the card), and write it to
 `${CLAUDE_PLUGIN_DATA}/<owner>-<repo>/<pr-number>/<head-sha>/deck.html`
 (ask where if `${CLAUDE_PLUGIN_DATA}` is unset). It leads with the
-action outcome and its undo path. Until the community repo exists
-(design doc v0.7 §12 q.10) the deck stays a **local view**; once it
-does, publishing it there is a human-gated write like any other, and
-the short comment may then link it (`PC-04`).
+action outcome and its undo path. Until the public reviews site is
+live (`rules/publishing.md` PB-13) the deck stays a **local view**;
+once it is, the site's refresh publishes it under the item's own page,
+and the short comment links that page — never the deck itself
+(`PC-04`, PB-15).
 
 **Discuss before settling.** Walk the maintainer through the outcome,
 the undo path, the named checks, and the **Next steps** (`B-14`)

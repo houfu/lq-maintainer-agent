@@ -58,7 +58,9 @@ blocking it, over open items only; `/lq-maintainer:triage milestone
 "<name>"` runs the ordinary digest scoped the same way) — and the
 PreToolUse safety hooks
 ([hooks/hooks.json](../hooks/hooks.json)) that block
-merge/approve/close/push/PR-checkout in your session. **Skill
+merge/approve/close/push/PR-checkout in a review session (push is
+allowed in a session that never ran a skill — see the safety canary
+below). **Skill
 invocation is namespaced by the plugin name** — there is no bare
 `/triage`, and this guide never promises one.
 
@@ -111,6 +113,18 @@ this session: `prompt` (you approve each post as it runs) or
 You get `hand-over` on Codex and in Claude Code's `auto` or
 `bypassPermissions` modes, because no approval prompt is guaranteed
 there (RT-04).
+
+The canary also **arms** the session (`armed=yes`; `armed=failed`
+stops the run): from then on the full review floor above applies,
+including the block on `git push`. A session that never ran a skill —
+you coding on the repo yourself — gets the lighter **coder floor**
+instead (`rules/runtime.md` RT-09, the table in
+[settings/README.md](../settings/README.md#two-floors-v080--rulesruntimemd-rt-09)):
+`git push`, `gh pr create` and ordinary edits go to your normal
+permission prompt, while merge, review/approve, close, delete and any
+PR-ref fetch or checkout (including `gh pr checkout`) stay blocked in
+every mode. Arming is one-way and there is no disarm command, so to
+code after a review, open a new session.
 
 ### Version-update discipline
 

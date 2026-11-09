@@ -34,6 +34,23 @@ deterministic gate (G-08).
   here. Signals: mostly-additive diffs creating new files and new
   public surface; an ask whose anchor would be A-01 canon that does
   not yet exist.
+  **Anchored category 1 (v0.8, from ten overrides in eight sessions of
+  the 2026 record).** A category-1 change whose A-01 anchor is
+  **ratified canon that already covers it** — a DE entry, an ADR, a
+  PRD section or a roadmap item on `main` at the pinned canon SHA,
+  verified at A-08's default depth and found to cover the scope, not
+  merely the topic — has had its design decided by the project. It is
+  recorded as `category: 1 (anchored)` and routes to **tiered code
+  review at Tier 2 minimum** (G-07), never Tier 1; the design path is
+  **offered once**, in one sentence, as the place to go if the review
+  finds the anchor does not in fact cover what was built, and is not
+  insisted on. An **unanchored** category-1 change — no covering
+  canon, or an anchor that is adjacent, proposed, or draft (A-12) —
+  routes to the design path as before, and fires E-04. The maintainer
+  overrode "route to design" ten times on features already anchored by
+  a ratified DE ("DE-324 already anchors the design"; "scope and
+  exclusions were already agreed on #699"); this rule is those rulings
+  made general.
 
 - **G-03 — Category 2: behavioral change / improvement /
   optimization.** The diff **modifies what existing code does or how
@@ -70,7 +87,7 @@ deterministic gate (G-08).
 - **G-07 — The category routes the item.**
   | Category | Path |
   |---|---|
-  | 1 — greenfield / new feature | The **design path**: `skills/design-plan/` (plan, ADR drafts, obstacles, atomic decomposition). Not code review. |
+  | 1 — greenfield / new feature | **Unanchored** (no ratified covering canon, G-02): the **design path**, `skills/design-plan/` (plan, ADR drafts, obstacles, atomic decomposition) — not code review. **Anchored** (ratified DE/ADR/PRD/roadmap covering the scope, G-02 as amended v0.8): tiered review at **Tier 2 minimum**, with the design path offered once as optional. |
   | 2 — behavioral change | Tiered review (`rules/tiers.md`) + the necessity check (G-10). |
   | 3 — bug fix / rollback | Tiered review (`rules/tiers.md`). |
   | 4 — refactoring / large-scale | The **holding response** (G-12) + the decomposition offer. |

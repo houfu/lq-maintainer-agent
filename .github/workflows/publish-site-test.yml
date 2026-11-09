@@ -1,0 +1,75 @@
+# publish-site-test.yml — the whitelist publisher behind the public
+# reviews site (design delta v0.8 §3; rules/publishing.md PB-NN).
+#
+# BLOCKING. Deterministic and offline: pure python3 stdlib, no network,
+# no GitHub token (`--status-from none`), a synthetic fixture cache under
+# ci/fixtures/publish/. What it proves is the floor that decides what
+# may ever be published:
+#
+#   - publish-site.sh --plan prints the steps and writes nothing;
+#   - --self-test exercises the sanitizer's pure functions (paths,
+#     addresses, permission prose, draft labelling, the output scan);
+#   - a --dry-run over the fixture cache publishes the clean two-head
+#     item, comes out clean on the item carrying a local path and an
+#     address, and REFUSES the item whose footer records E-21 (PB-02);
+#   - render-deck.sh still passes its own suite with the header option.
+#
+# A real run reads the maintainer's caches and GitHub state on their
+# machine (publish/site-refresh.sh); nothing here pretends to be one.
+#
+# NOTE — file location (§3.1): GitHub Actions only discovers workflows under
+# .github/workflows/. ci/ is the reviewed source of truth; a byte-identical
+# copy ships at .github/workflows/publish-site-test.yml. The first step
+# fails if the two diverge — edit ci/, then copy to .github/workflows/.
+#
+# Supply-chain hygiene (§3.6): third-party actions pinned by full commit SHA.
+
+name: publish-site-test
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "skills/triage/scripts/publish-site.sh"
+      - "skills/triage/scripts/render-deck.sh"
+      - "templates/public-header.md"
+      - "templates/for-agents.md"
+      - "rules/publishing.md"
+      - "ci/fixtures/publish/**"
+      - "ci/scripts/test-publish-site.sh"
+      - "ci/publish-site-test.yml"
+      - ".github/workflows/publish-site-test.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-site-test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-site-test:
+    name: Publisher whitelist, sanitizer and refusals (blocking)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out this repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify ci/ source and .github/workflows/ copy are in sync
+        run: |
+          set -euo pipefail
+          if ! cmp -s ci/publish-site-test.yml .github/workflows/publish-site-test.yml; then
+            echo "::error file=ci/publish-site-test.yml::ci/publish-site-test.yml and .github/workflows/publish-site-test.yml differ — ci/ is the reviewed source of truth (§3.1); copy it over the .github/workflows/ twin in this PR."
+            exit 1
+          fi
+
+      - name: Publisher plan, self-test and offline dry run
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-publish-site.sh
+
+      - name: Deck renderer still passes with the public-header option
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-render-deck.sh

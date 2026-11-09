@@ -33,11 +33,12 @@ denies the rest by default:
 | --- | --- |
 | `gh pr list / view / diff / checks / status` | the read surface |
 | `gh issue list / view / status` | |
-| `gh repo view`, `gh release list/view`, `gh run list/view`, `gh workflow list/view`, `gh label list`, `gh search *`, `gh auth status`, `gh status`, `gh help` | read-only |
+| `gh repo view`, `gh release list/view/download`, `gh run list/view/download/watch`, `gh workflow list/view`, `gh label list`, `gh search *`, `gh auth status`, `gh status`, `gh help` | read-only |
 | `gh api` with method GET or HEAD | the default method; `-f`/`-F` fields imply POST and are screened as POST |
 | `gh api` POST/PATCH on `…/comments` endpoints only | the **permission-gated** receipt post and update-in-place flow (design §8.4) — only in Claude Code's prompting modes; handed over elsewhere (see [Codex](#codex-v075--rulesruntimemd)) |
 | `gh pr comment`, `gh issue comment` | same gated flow, same condition |
 | local `git` (log, diff, show, status, fetch of branch refs, …) | except the blocked classes below |
+| `publish/site-refresh.sh --plan` | the only form a review session may run; any other invocation is **blocked**, not handed over (`rules/publishing.md` PB-10: publication is pushed by a person or their own scheduled job, never from an agent session). On the coder floor it passes to the host's prompt, and the script's own environment check still refuses |
 
 Everything `gh` outside that table is **blocked**: merge, review (all
 forms — use `gh pr comment`), close, checkout, edit, ready, alias,
@@ -61,6 +62,128 @@ still goes through normal permission evaluation; only what a skill's
 that writes to GitHub is ever in that frontmatter (design §3.3).
 Posting a Triage Receipt still requires a human to approve the write —
 it is gated, not banned.
+
+## Two floors *(v0.8.0 — `rules/runtime.md` RT-09)*
+
+Everything above is the **review floor**. It is right for a review run,
+but the plugin is enabled per host, not per project, so the hook fires
+in every session the maintainer opens — including the ones where they
+are a coder on the repo and want the agent to push their branch or open
+their PR. The hook therefore has two floors, chosen per session.
+
+**Arming.** Every skill runs `lq-maintainer-safety-canary` first
+(RT-03). The hook now also writes a marker for that session and appends
+`armed=yes` to the canary line; from then on every Bash call in the
+session gets the review floor. If the marker cannot be written the line
+says `armed=failed` and the skill stops. A session that never ran the
+canary — an ordinary coding session — gets the **coder floor**:
+
+| Coder floor | |
+| --- | --- |
+| **Blocked, in every mode** | `gh pr merge`; `gh pr review` (every form); `gh pr close`, `gh issue close`; `gh pr checkout` (every argument — see below); `gh repo delete` and every other `gh … delete`; every `gh api` `DELETE`; `gh api graphql`; `gh api` writes to a `…/merge(s)` or `…/reviews` endpoint, or that set an issue/PR `state` other than `open`, or send an `--input` body to an issue/PR endpoint; alias definition (`gh alias set/import`, `git config alias.*`, `git -c alias.*=`); `gh extension install/create/exec/upgrade`; the `git-push` / `git-send-pack` / `git-receive-pack` plumbing binaries; any fetch or checkout touching `refs/pull/*` or `pull/<n>/{head,merge}` |
+| **Gated, as on the review floor** | a real `uat-run.sh` run (it executes contributed code) |
+| **Passes to the host's own permission evaluation** | `git push` to any remote (and `git send-pack`); `gh pr create / edit / ready / comment`; `gh issue create / edit / comment`; `gh label` and `gh release` edits; any other non-GET `gh api`; `site-refresh.sh` (its own environment check still refuses) |
+
+The blocked row is what lq-ai's vetting policy fixes for any assistant
+regardless of purpose: merging, reviewing or approving, closing,
+deleting, and bringing contributed code into an agent session — plus the
+GraphQL, alias and extension routes that could launder them. A
+maintainer who wants to run a contributor's branch does it in their own
+terminal under lq-ai's sandbox discipline, never through the agent.
+`gh pr checkout` is blocked in **every** form, branch-name argument
+included: it resolves a PR and fetches its head, from the contributor's
+fork if that is where it lives, and the argv cannot tell the two cases
+apart. Check out your own branches with `git switch`. Block messages
+name the floor that applied, and in coder mode say that the action stays
+human-only in every mode.
+
+**The marker.** `~/.lq-maintainer/armed/` (created mode `0700`), one
+file per session, named by the SHA-256 hex of the hook payload's
+`session_id` — never the raw id — and holding the UTC time it was
+written. A marker older than 24 hours is ignored, so a stale session
+lapses to the coder floor; a later canary re-arms it. The directory is
+found from `HOME` only. There is deliberately **no environment
+override** for it: one would be a disarm switch an agent could set. The
+test harness gives each run a throwaway `HOME` instead.
+
+**Fail-closed.** A payload with no usable `session_id` string, a marker
+directory the hook cannot read, or a marker it cannot parse all mean
+**armed** — today's review floor, never weaker. Only a readable
+directory with no fresh marker for this session yields the coder floor.
+(With no `session_id` the canary prints `armed=yes`: there is nothing to
+key a marker on, but the review floor applies to every call anyway.)
+
+**One-way.** There is no disarm command: a prompt-injected agent would
+run it. In both floors the hook blocks any Bash command naming
+`~/.lq-maintainer/armed`, or naming `~/.lq-maintainer` alongside a
+write or delete verb (`rm`, `mv`, `cp`, `touch`, `chmod`, `truncate`,
+`find … -delete`, …) or a `>` redirection, so the marker cannot be
+deleted or backdated through the Bash tool. Plain reads of the other
+files there (`cat ~/.lq-maintainer/site.conf`, the site-refresh log,
+`open` on the site build) pass (see the limits below for what this does
+not cover). A maintainer who wants to code after a review opens a **new
+session**. And none of this changes what happens where no hook runs —
+under `--dangerously-skip-permissions`, or a Codex hook that is
+untrusted or disabled, there is no floor of either kind (see below).
+
+Session identity per host: Claude Code sends `session_id` on every hook
+event; Codex command hooks share `session_id`, `transcript_path`, `cwd`,
+`hook_event_name` and `model`, with `turn_id` on turn-scoped events (per
+the Codex hooks documentation). Host detection (`turn_id` /
+`PLUGIN_ROOT`) is unchanged.
+
+Known coder-floor over-blocks, kept on purpose: `git push` or a
+write-class `gh` word reached through a wrapper the parser cannot vouch
+for (`xargs`, an unknown launcher) is still blocked, exactly as on the
+review floor — run the command directly.
+
+**What the session logs showed.** Mining the maintainer's ordinary Claude
+Code coding sessions found 147 hook blocks: **117 were quoting false
+positives** ("unparseable shell quoting" on heredocs and backticks — one
+apostrophe in a heredoc body blocked the whole command), 19 were
+read-only `gh` commands missing from the allow-list, 8 were risky words
+inside grep patterns or document text, and only 3 were real write
+attempts. v0.8.0 therefore also changes:
+
+- **Heredoc bodies are data, in both floors.** A body fed to anything
+  but a shell, interpreter, `eval` or `source` (`cat`, `tee`,
+  `gh pr comment -F -`, `git commit -F -`, `psql`, …) is removed before
+  screening. A body that executes (`bash <<EOF`, `python3 - <<EOF`,
+  `cat <<EOF | sh`, `docker exec -i c bash <<EOF`) is screened as
+  commands exactly as before, and in an unquoted-delimiter heredoc the
+  `$(…)` and `` `…` `` substitutions — which the shell runs — are
+  screened too. A heredoc with no terminator line is screened whole.
+- **Coder floor: unparseable is not a block.** Text the tokenizer cannot
+  read is scanned case-insensitively for the human-only invariants
+  (`pr merge/review/close/checkout`, `issue close`, `… delete`,
+  `refs/pull/`, `pull/<n>/head|merge`, `alias.`, `gh alias`,
+  `-X DELETE` / `--method DELETE`, `mutation` with `graphql`, push
+  plumbing) and passes otherwise. The review floor still blocks it.
+- **Coder floor: GraphQL queries pass, mutations block** — as does a
+  query the hook cannot read (`-F query=@file`, `--input`). The review
+  floor still blocks all GraphQL.
+- **Allow-list additions, both floors:** `gh run download`,
+  `gh run watch`, `gh release download`.
+- **A mention is not a call, both floors.** A quoted string is screened
+  as a command line only where something runs it — an interpreter or
+  code-running head (`python -c`, `watch`, `ssh`, `eval`), or a shell
+  later in the argv (`find … -exec sh -c '…'`). `grep -n "gh pr merge"`
+  and `rg "git push"` are patterns, and pass.
+- **Review floor: no fork by another road.** The Codex session logs
+  (2026-11-06) show an armed run fetching a contributor's fork by URL,
+  switching to `FETCH_HEAD` and running its tests — the `refs/pull`
+  blocks never saw it. The review floor now also blocks `git fetch` /
+  `git pull` / `git ls-remote` of a URL (`https://`, `http://`,
+  `ssh://`, `git://`, `git@…`), `git remote add` / `set-url`, and
+  `git clone` (or `git submodule`) of a URL: the maintainer's own clone
+  fetches named remotes only. `git fetch origin main` still passes; the
+  coder floor is unchanged.
+
+**What changed in the second layers.** The `git push` / `git send-pack`
+entries are gone from `claude-settings.json`'s deny list (a vendored
+prefix list cannot know which floor a session is on; the hook can), and
+the Codex rules prompt for them instead of forbidding them. Everything
+else in both lists is unchanged.
 
 ## Two enforcement layers
 
@@ -131,13 +254,29 @@ missing, the hook **blocks everything** rather than allowing anything
 
 ## Verifying
 
-The hook is a plain filter — test it directly:
+The hook is a plain filter — test it directly. Give it a scratch
+`HOME` so the probes leave no markers in your own:
 
 ```sh
-printf '%s' '{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}' \
-  | sh settings/hooks/block-writes.sh
-echo "exit: $?"   # expect 2 and a policy message on stderr
+T=$(mktemp -d)
+# Coder floor: a session that never ran the canary.
+printf '%s' '{"tool_name":"Bash","session_id":"probe-coder","tool_input":{"command":"git push origin my-branch"}}' \
+  | HOME=$T sh settings/hooks/block-writes.sh
+echo "exit: $?"   # expect 0 -- the host's own permission prompt decides
+printf '%s' '{"tool_name":"Bash","session_id":"probe-coder","tool_input":{"command":"gh pr merge 12"}}' \
+  | HOME=$T sh settings/hooks/block-writes.sh
+echo "exit: $?"   # expect 2, "Floor: CODER", human-only in every mode
+
+# Review floor: arm the session, then the same push blocks.
+printf '%s' '{"tool_name":"Bash","session_id":"probe-review","tool_input":{"command":"lq-maintainer-safety-canary"}}' \
+  | HOME=$T sh settings/hooks/block-writes.sh   # stderr ends with armed=yes
+printf '%s' '{"tool_name":"Bash","session_id":"probe-review","tool_input":{"command":"git push --force origin main"}}' \
+  | HOME=$T sh settings/hooks/block-writes.sh
+echo "exit: $?"   # expect 2, "Floor: REVIEW" and a policy message on stderr
 ```
+
+Every probe below is on the review floor (arm first, or omit
+`session_id`, which fails closed to armed).
 
 Swap in any blocked class (expect exit 2), any allow-listed read
 (expect exit 0, no output), or a default-deny probe like
@@ -171,6 +310,23 @@ supports. Hooks can be bypassed by:
   `timeout`, `sh -c`, `eval`, command substitution) and fails closed
   on what it cannot parse, but no text filter is a security boundary
   against a determined evader;
+- **the arming marker** *(v0.8.0)* — deleting or backdating a session's
+  file under `~/.lq-maintainer/armed/` drops that session to the coder
+  floor. The hook blocks Bash commands that name the marker directory or
+  write under `~/.lq-maintainer`, but a write by another tool, or a
+  spelling that never names the path (`cd` there first, a variable, a
+  glob), is not seen
+  — the same class as hook-file self-modification, and as detectable.
+  The hook also assumes a host gives a session's subagents the parent's
+  `session_id`; a worker that received a different id would run on the
+  coder floor (only a *missing* id fails closed);
+- **connector (MCP) tools** *(v0.8.0)* — the hook is registered on the
+  Bash tool only, so a GitHub write made through an MCP connector on
+  either host (the Codex session logs show milestones set through
+  `mcp__codex_apps__github_update_issue`) is not screened at all. The
+  floor covers the Bash tool; a review run reads GitHub through `gh`
+  in Bash and never through a connector (RT-09), and a connector write
+  is the same detectable deviation as any other bypass;
 - **`--dangerously-skip-permissions`** — hooks do not run at all under
   it. **`docs/onboarding.md` therefore forbids running triage sessions
   with permission checks disabled**; there is no legitimate triage
@@ -225,8 +381,9 @@ Three Codex facts change what the hook must do:
 
 **The second layer on Codex** is `settings/codex/lq-maintainer.rules`,
 Codex's execpolicy counterpart of the `permissions.deny` list:
-`forbidden` for the §2.1 classes, `prompt` for the gated writes and
-every `gh api` call. Like the deny list it is prefix-matched (it
+`forbidden` for the §2.1 classes, `prompt` for the gated writes, every
+`gh api` call, and — since v0.8.0 — `git push` / `git send-pack`, which
+the hook decides by session floor (see [Two floors](#two-floors-v080--rulesruntimemd-rt-09)). Like the deny list it is prefix-matched (it
 cannot see `git -C x push`; the hook can), so it is the coarse
 first-chance layer and nothing more. A plugin cannot ship command
 rules: copy the file to `~/.codex/rules/` (or `<lq-ai>/.codex/rules/`
@@ -235,7 +392,7 @@ decision with:
 
 ```sh
 codex execpolicy check --rules settings/codex/lq-maintainer.rules git push origin main
-# {"matchedRules":[…],"decision":"forbidden"}
+# {"matchedRules":[…],"decision":"prompt"}
 ```
 
 **Codex's own limits, stated as plainly as §10.1's:** hooks do not

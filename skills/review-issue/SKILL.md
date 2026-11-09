@@ -73,6 +73,10 @@ Load these first — they are data, not to be paraphrased from memory:
   partition over canon read this run and the drafted decision artifacts
   (with `${CLAUDE_PLUGIN_ROOT}/templates/draft-adr.md`). Content-only —
   it never changes a recommendation, lane, or trigger (D-00).
+- `${CLAUDE_PLUGIN_ROOT}/rules/confidence.md` *(v0.8)* — the evidence
+  and fairness readings every finding carries and the confidence
+  derived from them (`CF-NN`); a preference is not a finding (CF-06),
+  a scope expansion is a follow-up and never a condition (CF-07).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` *(v0.7)* — the mechanical
   pass every contributor-facing draft (the short public comment,
   contributor responses, the deck's contributor-readable sections) must
@@ -112,8 +116,10 @@ keeps a work log — record the canary line as its first row.
    stop and tell the user to run this from inside their clone — the clone
    *is* the runtime canon (§3.4); grades made without it are conservative
    and must say so (`B-00a`).
-2. **Record the canon SHA** (`git rev-parse main`; warn if behind
-   `origin/main`), the **agent version** (`.claude-plugin/plugin.json`
+2. **Record the canon SHA** (`git rev-parse <canon-remote>/main` after
+   `git fetch <canon-remote> main` — the remote whose URL is `canon:repo`,
+   `RT-10`; warn if local `main` is behind it), the **agent version**
+   (`.claude-plugin/plugin.json`
    `version`), and the **served model ID** (as the platform reports it,
    never a guess; if unavailable the field reads "not-recorded — session did
    not expose a model ID", never omitted). An issue has **no PR head SHA**;

@@ -28,24 +28,27 @@ expected:
         # call, but preserving it as a DE stub is also defensible.
         disposition: [S-DOCS, S-DE]
         note: >
-          Docs-first default (S-DOCS): an operator recipe using the
-          existing structured-request template covers most of the ask —
-          beats shipped code when both would work. A DE stub is the
-          acceptable alternative.
+          Docs-first default (S-DOCS): an operator recipe on the
+          existing light intake bridges (docs/intake-bridges.md, PRD
+          §3.15) covers most of the ask — beats shipped code when both
+          would work; the request-portal half is §1.6 out of scope. A
+          DE stub is the acceptable alternative.
       - id: deadline-calculator
         summary_contains: "deadline"
         disposition: S-DE
         note: >
-          The strongest idea and adjacent to Roadmap R-9
-          (deterministic computation skills with receipts). Preserve
-          as a drafted DE-XXX / mini-PRD stub crediting the filer
-          (S-DE, S-22).
+          The strongest idea and adjacent to PRD §9 DE-081 (Obligation
+          Tracking / Renewal Calendar) and §3.10 scheduled tasks —
+          adjacent, not covering: no canon decides a deadline
+          calculator with receipts. Preserve as a drafted DE-XXX /
+          mini-PRD stub crediting the filer (S-DE, S-22).
       - id: billing-integration
         summary_contains: "billing"
         disposition: S-DECLINE
         note: >
-          Canon-cited decline: canon:prd lists practice management
-          and billing under non-goals.
+          Canon-cited decline: canon:prd §1.6 Out of Scope (v1) —
+          "Billing / time tracking. Not a feature of in-house legal
+          work."
       - id: email-ingestion
         summary_contains: "email"
         disposition: S-DUP

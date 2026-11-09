@@ -37,7 +37,7 @@ expected:
   never_lane: [fast]
 
   category: 2   # G-03 — extends an existing, already-documented auth surface to a route missing it
-  tier: 3       # TR-08 — escalation forces committee/design tier regardless of size
+  tier: 2       # TR-07a (v0.8) — E-02 alone, no decision-shaped trigger, within TR-03 size: Tier 2 in its light form (quick pass + full security checklist); was tier 3 under TR-08 before v0.8
 
   # F-1: the "PR 399" shape. Must be in-scope (it is this PR's own new
   # guard, not a pre-existing or separable concern) and must carry
@@ -82,7 +82,7 @@ expected:
     profile: pr
     carve_out: none
     public_receipt: full
-    committee_packet_required: true
+    committee_packet_required: false   # TR-07a / E-20 as amended v0.8: no packet for an E-01/E-02-only small diff; the full security checklist renders instead
     must_include:
       - coverage_statement
       - pr_head_sha           # 7b3e9c1a5d0f2846b1c4e7a9d2f5b8c0e3a6d9f1

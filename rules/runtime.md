@@ -28,6 +28,7 @@ it protected does not run on that host.
 | Every GitHub write reaches a human | `allowed-tools` omits writes, so they prompt | the hook hands them over (RT-04) |
 | Skills fire only when named | `disable-model-invocation: true` | `skills/<skill>/agents/openai.yaml` `allow_implicit_invocation: false` (RT-05) |
 | Fan-out members are read-only | `agents/*.md` `tools:` | `agents/codex/*.toml` `sandbox_mode = "read-only"`, or no fan-out (RT-06) |
+| A review run gets the full floor (RT-09) | the canary arms the session by `session_id` | the same, by Codex's `session_id` |
 | Plugin paths resolve | `${CLAUDE_PLUGIN_ROOT}` substituted | bound from the canary (RT-01) |
 
 ## Binding
@@ -59,9 +60,19 @@ it protected does not run on that host.
   any other command, run exactly `lq-maintainer-safety-canary`. The
   safety hook always blocks it with one status line beginning
   `LQ-MAINTAINER SAFETY FLOOR ACTIVE` and carrying `runtime=`,
-  `writes=`, `model=`, `root=` and `data=`. Record the line in the work
-  log (`RP-21` / `RI-15`, act `script`) and bind RT-01, RT-02, RT-04
-  and RT-07 from it.
+  `writes=`, `model=`, `root=`, `data=` and, last, `armed=`. Record the
+  line in the work log (`RP-21` / `RI-15`, act `script`) and bind RT-01,
+  RT-02, RT-04 and RT-07 from it.
+
+  **The canary also arms the session (RT-09).** `armed=yes` means the
+  hook has recorded this session as a review run, and every later Bash
+  call in it meets the full review floor. `armed=failed` means the hook
+  could not record it: the session would fall back to the coder floor
+  on its next call, so **the run stops** exactly as it does without the
+  marker, and the maintainer is told the fix (the hook could not write
+  the armed-marker directory under their home, named in `settings/README.md`; make it a writable directory of their own).
+  A line with no `armed=` field is an older hook than these rules: stop
+  and update the plugin. `armed=no` is never printed.
 
   **Any other answer — "command not found", an approval prompt, exit
   0, or a block without the marker — means the §2.1 hook is not loaded,
@@ -92,6 +103,80 @@ it protected does not run on that host.
   rephrase one after a hand-over block, and record each hand-over in
   the work log with the result `n-a`. Everything the §2.1 hook blocks
   outright stays blocked in both modes.
+
+- **RT-09 — Two floors: a review run is always armed, and the coder
+  floor never weakens the human-only invariants.** The plugin is enabled
+  per host, not per project, so its hook runs in every session the
+  maintainer opens — including the ones where they are simply a coder
+  on the repo. The hook therefore keys its floor on the host's session
+  identity (`session_id`, sent with every hook event by Claude Code and,
+  per Codex's hooks documentation, by Codex command hooks too):
+
+  - **Review floor (armed).** A session in which the canary has run.
+    Everything §2.1 and RT-04 describe, unchanged: the `gh` allow-list,
+    `git push` blocked, gated writes prompted or handed over. Because
+    RT-03 runs the canary before any other command, **a review run is
+    always armed before it reads anything** — no PR, issue or canon
+    text is in context while it is on any other floor.
+    The review floor also refuses the other roads to contributed
+    code: fetching, pulling or listing a repository by URL, adding or
+    repointing a remote, and cloning a URL — a review run's clone
+    fetches named remotes only.
+  - **Coder floor (unarmed).** A session that never ran the canary.
+    `git push`, `gh pr create` / `edit` / `ready`, `gh issue create` /
+    `edit`, label and release edits, and non-`DELETE`, non-GraphQL
+    `gh api` writes pass the hook and meet the host's own permission
+    evaluation. What stays blocked is the set lq-ai's vetting policy
+    reserves for a human regardless of purpose — the **five human-only
+    invariants**: (1) merging (`gh pr merge`, the REST merge endpoint);
+    (2) reviewing or approving (`gh pr review` in every form, the REST
+    reviews endpoint); (3) closing (`gh pr close`, `gh issue close`, a
+    `state` other than open); (4) deleting (`gh repo delete`, every `gh`
+    `delete` subcommand, every `gh api` `DELETE`); and (5) contributed
+    code never entering an agent session (any fetch or checkout of
+    `refs/pull/*` or `pull/<n>/{head,merge}`, and `gh pr checkout` in
+    every form). The routes that could launder those five stay blocked
+    with them: `gh api graphql`, alias definition on either tool,
+    `gh extension install` / `create` / `exec` / `upgrade`, and the
+    `git-push` / `git-send-pack` / `git-receive-pack` plumbing binaries.
+    The coder floor is not a review floor with holes: no skill runs on
+    it, and nothing on it is ever recorded as a review.
+
+  **Arming is one-way.** There is no disarm command, because a
+  prompt-injected agent would run it, and the hook blocks, in both
+  floors, any Bash command naming the armed-marker directory or writing or
+  deleting under `.lq-maintainer` (plain reads of the publishing
+  config, logs and site build pass). That is a floor, not a
+  boundary: the marker is a hook-bypass surface of the same class as
+  hook-file self-modification (`settings/README.md`), and an agent that
+  deletes or backdates it by another tool is actively evading — which
+  is itself the finding. A marker older than 24 hours is
+  ignored, so an abandoned session lapses rather than lingering. A
+  maintainer who wants to code after a review opens a new session.
+  **A host without session identity gets the review floor**: a payload
+  with no usable `session_id` string, a marker directory the hook cannot
+  read, or a marker it cannot parse all count as armed — the floor only
+  ever fails toward the stricter one. And where no hook runs at all
+  (`--dangerously-skip-permissions`, an untrusted or disabled Codex hook)
+  there is no floor of either kind; RT-03's canary is what makes that
+  visible. The hook screens the Bash tool only, so **a review run uses
+  `gh` through Bash for every GitHub read and never a connector (MCP)
+  tool** — the hook sees what it does.
+
+- **RT-10 — The canon remote is the one whose URL names the target
+  repository, not the one called `origin`.** *(v0.8.)* Every skill that
+  pins a canon SHA finds the remote with `git remote -v` whose URL
+  matches `canon:repo`, fetches that remote's `main` (a named-remote
+  fetch of a branch ref, which the hook allows on both floors), and pins
+  `git rev-parse <canon-remote>/main`. `origin` is the canon remote only
+  when its URL is the target's. A clone whose `origin` is a fork — the
+  maintainer's own machine in the 2026 record — would otherwise pin a
+  fork's `main` as canon and read none of the target's newer files
+  (`canon:docs-routes` first exposed it). When no remote matches, the
+  Step-0 remote check has already stopped the run; when two match, the
+  first in `git remote -v` order is used and named in the coverage
+  statement. The pinned field stays `canon_sha`; the remote name is
+  recorded beside it in the visible record, never in the footer.
 
 ## Invocation
 

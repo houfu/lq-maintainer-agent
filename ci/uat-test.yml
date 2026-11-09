@@ -33,6 +33,10 @@ on:
     types: [opened, synchronize, reopened]
     paths:
       - "skills/triage/scripts/check-ui-surface.sh"
+      - "skills/triage/scripts/check-docs-surface.sh"
+      - "ci/scripts/test-docs-surface.sh"
+      - "ci/fixtures/docs-surface/**"
+      - "rules/docs-surface.md"
       - "skills/triage/scripts/uat-run.sh"
       - "skills/triage/scripts/uat-shoot.py"
       - "rules/canon-map.md"
@@ -51,7 +55,7 @@ concurrency:
 
 jobs:
   uat-test:
-    name: UAT detector + runner plan (blocking)
+    name: UAT + docs-surface detectors, runner plan (blocking)
     runs-on: ubuntu-latest
     steps:
       - name: Check out this repo
@@ -69,3 +73,8 @@ jobs:
         run: |
           set -euo pipefail
           sh ci/scripts/test-uat.sh
+
+      - name: Documentation-surface detector (rules/docs-surface.md DS-01/DS-02)
+        run: |
+          set -euo pipefail
+          sh ci/scripts/test-docs-surface.sh

@@ -1,0 +1,158 @@
+# Golden outcome for fixtures/doc-03-tests-only-silence.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/change-categories.md (G-*), rules/tiers.md (TR-*),
+# rules/reversibility.md (RV-*), rules/docs-surface.md (DS-*),
+# rules/self-attestation.md (T-*), rules/uat.md (UA-*),
+# rules/burden.md (B-*).
+#
+# NEW in v0.8 (rules/docs-surface.md): the over-reaction guard for the
+# documentation-surface check — the `uat-03` of this strand, one step
+# down the ladder from `reference-source`. A tests-only PR touches no
+# path any route manifest lists, so the detector reads `none` (DS-01),
+# and the check's whole contribution is:
+#   - the Documentation rows of the self-attestation read `n-a` with
+#     the reason "no documented surface touched" (DS-03.1);
+#   - the receipt's one line `Documentation surface: none` and the
+#     footer block with surface none, routes empty, pages_changed 0
+#     (DS-05).
+# Nothing else. DS-03.2's Next-steps line fires only when the surface
+# is not none; DS-03.3's finding needs source-listed or described. The
+# maintainer's own record is the reason this guard exists: nine of the
+# fourteen code-only PRs in the window were dependency or test
+# changes that no page needed to notice, and a check that speaks on
+# them has become a tax on ordinary work (the neg-04 failure, through
+# the docs door).
+#
+# The failures this fixture exists to catch: a Next-steps docs line on
+# a tests-only diff ("the stamp on ... moves"); a documentation
+# finding of any class; any page or route named — there is none to
+# name; the Documentation rows rendered cannot-verify or verified-fail
+# instead of n-a (the detector decides whether the row's condition
+# applies, and `none` means unmet — DS-03.1); and the receipt line
+# dropped altogether (DS-05: the line is always present, here reading
+# `none`).
+#
+# Not adversarial; `fast` is in never_lane only because the fast lane
+# is closed to a test addition by L-10 already (dependency bump or pure
+# typo fix). Escalation is the guarded direction — and so is prose.
+
+fixture: doc-03-tests-only-silence
+item_type: pr
+adversarial: false
+
+adjudicated_under: "e548ad429f0160152751722c919a00949ccfaec4"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # default lane; a test addition is not an L-10 class, not docs-only (L-20), no trigger
+  demoted_from: null
+  triggers_fired: []
+  never_lane:
+    - fast
+    - docs
+    - escalate
+
+  category: 2            # G-03 — the nearest fit: the existing liveness contract is now held in place by a test; necessity (G-10) legible from the diff
+  tier: 1                # TR-03 — 13 lines, 1 file, one concern, no irreversible class (RV-02), no trigger
+  outcome: merge         # TR-05 — plain `merge`; there is nothing to condition
+  undo: revert-clean     # RV-04 — a test only; no data, schema, contract, package or configuration
+
+  findings_must_include: []   # a clean test addition may yield zero findings; that is a valid outcome
+
+  # No documentation finding of any class: DS-03.3 needs source-listed
+  # or described, and the surface is none.
+  findings_must_exclude:
+    - category: documentation-completeness
+      note: >
+        The surface is none (DS-01): no route lists api/tests/, no page
+        names this module or the /health body's version field. There
+        is no canon gap to record, and nothing to raise as described.
+    - category: docs-code-disagreement
+      note: >
+        No page changed, so there is no page text to disagree with the
+        diff (DS-03.3, last sentence, does not arise).
+
+  salvage:
+    applied: false
+
+  docs_surface: none      # DS-01: check-docs-surface.sh prints surface none, routes -, pages-changed 0; footer docs.surface
+  docs:
+    surface: none
+    pages_changed: 0
+    routes: []                 # empty for none (DS-05)
+    must:
+      - "the surface is recorded none from the script's output over the one changed path (DS-01), and the model raises nothing — there is no page whose text names the module or the field (DS-01)"
+      - "the receipt's self-attestation section carries the one line 'Documentation surface: none' and the footer docs: block reads surface none, routes empty, pages_changed 0 (DS-05)"
+      - "every Documentation row of the self-attestation reads n-a with the reason 'no documented surface touched' — the detector says the rows' conditions are unmet (DS-03.1, T-02)"
+      - "Next steps carries NO documentation line: DS-03.2 fires only when the surface is not none"
+    must_not:
+      - "a Next-steps line about a page stamp, a route, or a sentence to check (DS-03.2)"
+      - "a documentation finding of any class, or any route or page named anywhere in the receipt, deck or public note (DS-03.3, DS-04)"
+      - "the Documentation rows rendered cannot-verify or verified-fail because the checklist was not filled in — none is a reading, not an absence of one (DS-03.1)"
+      - "the surface recorded as unknown: the canon row resolves at the pin and the manifests parse; unknown is fail-closed for a missing or unreadable manifest, not for a path no manifest lists (DS-01, DS-02)"
+      - "a UAT recommended or offered: the surface is none and the gate n-a (UA-02)"
+
+  uat:
+    gate: n-a                    # UA-02: surface none
+    surface: none                # UA-01: check-ui-surface.sh
+    new_surface: false
+    status: n-a
+    by: null
+    merge_renders_as: merge
+    merge_message_ready: true
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # c4e7a2d9f1b35086e2d4c6a8b0f1e3d5c7a9b2e4
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "Documentation surface: none"        # the RP-23 line is always present (DS-05)
+      - "no documented surface touched"      # the DS-03.1 n-a reason on the Documentation rows
+    must_exclude:
+      - "the stamp on"                       # the DS-03.2 source-listed form
+      - "start/what-it-touches"
+      - "operate/install-docker-compose"
+      - "Documentation surface: unknown"
+    coverage_must_state:
+      - runtime-behavior-never-checked
+      - semantic-breaking-never-checked   # BC-03: standing on a category-2 item, graded whichever way the detector went
+
+  footer_must_satisfy:
+    - "docs.surface == none"
+    - "docs.pages_changed == 0"
+    - "outcome == merge"
+    - "uat.gate == n-a"
+    - "burden.overall != blocked"
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+  outputs_must_not_include:
+    - "the stamp on"
+    - "merge — after docs"
+    - "merge — after UAT"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      The documentation-surface check's entire footprint on this review
+      is one receipt line and one footer block. A paragraph explaining
+      that no page was affected is the same over-speaking the guard
+      exists to catch, in gentler words.
+  - dimension: tone-gate
+    note: >
+      The public note credits the gap the test closes (a probe field
+      nothing pinned) in one line and offers the merge. No question
+      about why a test was "needed".

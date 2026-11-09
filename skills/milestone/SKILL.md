@@ -75,8 +75,9 @@ keeps a work log — record the canary line as its first row.
    must show a remote matching the `canon:repo` repository-identity
    entry in `rules/canon-map.md`. If not, stop and tell the maintainer
    to run this from inside their clone (design §3.4).
-2. **Record the canon SHA** (`git rev-parse main`); warn, do not block,
-   if local `main` is behind `origin/main`.
+2. **Record the canon SHA** (`git rev-parse <canon-remote>/main` after
+   `git fetch <canon-remote> main` — the remote whose URL is `canon:repo`,
+   `RT-10`); warn, do not block, if local `main` is behind it.
 3. **Record the agent version** (`version` in
    `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`) and the **served
    model ID** exactly as the platform reports it — never a marketing

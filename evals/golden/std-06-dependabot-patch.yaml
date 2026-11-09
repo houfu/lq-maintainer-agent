@@ -27,7 +27,7 @@ expected:
     applied: true          # this IS a dependency bump, so the gate runs
     checks:
       F-01: pass           # dependabot[bot] GitHub App identity (API author class)
-      F-02: pass           # manifest/lockfile paths only (pyproject.toml, uv.lock)
+      F-02: pass           # manifest/lockfile paths only (api/pyproject.toml, api/uv.lock — ADR 0023 locations)
       F-03: pass           # 2.7.0 -> 2.7.1 parses as patch on a >=1.0.0 dep (pydantic 2.x)
       F-04: pass           # no new package names anywhere in the diff
       F-05: pass           # OSV batch lookup clean for pydantic@2.7.1

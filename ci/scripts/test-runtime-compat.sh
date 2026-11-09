@@ -117,7 +117,8 @@ def main():
     ok(os.path.exists(rules), "Codex command rules present")
     if shutil.which("codex"):
         expect = [
-            (["git", "push", "origin", "main"], "forbidden"),
+            (["git", "push", "origin", "main"], "prompt"),  # v0.8.0: the hook decides by floor (RT-09); this layer only guarantees a prompt
+            (["git", "send-pack", "origin"], "prompt"),
             (["gh", "pr", "merge", "3"], "forbidden"),
             (["gh", "pr", "checkout", "3"], "forbidden"),
             (["gh", "issue", "edit", "3"], "forbidden"),

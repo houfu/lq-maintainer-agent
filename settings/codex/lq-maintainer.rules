@@ -16,10 +16,15 @@
 # Permission-bearing (design §3.6): two maintainer reviews, CODEOWNERS-routed.
 
 # --- design §2.1: human-only, always -------------------------------------
-prefix_rule(pattern = ["git", "push"], decision = "forbidden",
-    justification = "Pushing is human-only (lq-maintainer design 2.1).")
-prefix_rule(pattern = ["git", "send-pack"], decision = "forbidden",
-    justification = "Push plumbing is human-only (design 2.1).")
+# --- push: decided by the hook's session floor (v0.8.0) -------------------
+# git push / send-pack: the hook decides by session floor (RT-09) -- blocked
+# in an armed review session, passed to the ordinary prompt in a coder
+# session. A prefix rule cannot see the floor, so this layer only makes
+# sure a push still asks when the hook is not running.
+prefix_rule(pattern = ["git", "push"], decision = "prompt",
+    justification = "The safety hook decides push by session floor (review: blocked; coder: allowed); this prefix layer only ensures a prompt when the hook is not running (RT-09).")
+prefix_rule(pattern = ["git", "send-pack"], decision = "prompt",
+    justification = "The safety hook decides push plumbing by session floor; this prefix layer only ensures a prompt when the hook is not running (RT-09).")
 prefix_rule(pattern = ["gh", "pr", ["merge", "review", "close", "checkout", "edit", "ready", "reopen", "lock"]],
     decision = "forbidden",
     justification = "Merge, review, close, checkout and edit are human-only; PR refs never enter an agent session (design 2.1, 10).")

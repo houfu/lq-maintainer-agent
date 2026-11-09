@@ -1,6 +1,19 @@
 # The community repo — design for the public home of the project's reviews
 
-Status: **pre-bootstrap** (design doc v0.7 §12 q.10). This document is
+Status: **superseded in part (2026-11-09).** The repository named below
+now exists — `LegalQuants/lq-ai-community`, created 2026-08-02 under lq-ai
+ADR 0022 as the committee's home for meeting minutes and the decision
+log, with its own publication process — and it was not created for the
+layout this document proposes. What publishes, how, and under which
+rulings is now `docs/proposals/public-receipts-on-lq-ai-community.md`
+(the proposal, with the committee's open questions R1/R9/R10/R11) and
+`rules/publishing.md` (`PB-NN`, normative). This document will be
+rewritten to describe what exists once the first publication lands
+(proposal R7 step 5); until then, read it as the July design that the
+proposal takes as its starting point, and treat the layout and the
+root-index idea below as superseded by R2 and R8.
+
+Original status line: pre-bootstrap (design doc v0.7 §12 q.10). This document is
 the proposed design, not a running system: the repo named below does
 not exist yet. It is written now because the v0.7 deliverable split
 (design doc v0.7 §8) — deck public, PR/issue comment short, receipt

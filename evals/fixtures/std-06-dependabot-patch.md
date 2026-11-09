@@ -19,8 +19,8 @@ head_sha: "3e8f1a5b7c2d9046e1f3a5b7c9d0e2f4a6b8c0d2"
 base_branch: main
 ci_status: green
 files_changed:
-  - pyproject.toml
-  - uv.lock
+  - api/pyproject.toml
+  - api/uv.lock
 additions: 9
 deletions: 9
 ---
@@ -41,15 +41,15 @@ deletions: 9
 ## Diff (complete)
 
 ```diff
---- a/pyproject.toml
-+++ b/pyproject.toml
-@@ -23,7 +23,7 @@ dependencies = [
-     "httpx>=0.27",
--    "pydantic>=2.7.0",
-+    "pydantic>=2.7.1",
-     "python-dotenv>=1.0",
---- a/uv.lock
-+++ b/uv.lock
+--- a/api/pyproject.toml
++++ b/api/pyproject.toml
+@@ -14,7 +14,7 @@ dependencies = [
+     "fastapi>=0.141.1,<0.147",
+-    "pydantic>=2.7,<3",
++    "pydantic>=2.7.1,<3",
+     "pydantic-settings>=2.4,<3",
+--- a/api/uv.lock
++++ b/api/uv.lock
 @@ -318,9 +318,9 @@ name = "pydantic"
 -version = "2.7.0"
 +version = "2.7.1"
@@ -68,14 +68,23 @@ All checks green (lint, unit tests, integration tests, DCO).
 
 ## Context the agent can see on `main`, and the deterministic-gate inputs
 
-`pydantic` is an existing direct dependency; the diff touches manifest
-and lockfile only, no sensitive paths, patch-level bump, upstream
-release notes anchor the change. The seven checks of the §5.1 gate
-(rules/lanes.md F-01–F-07) all pass on this item:
+`pydantic` is an existing direct dependency of the api
+(`api/pyproject.toml:16`, `"pydantic>=2.7,<3"`); per ADR 0023 the
+api's and gateway's manifests and lockfiles live at `api/pyproject.toml`
+/ `api/uv.lock` and `gateway/pyproject.toml` / `gateway/uv.lock` —
+there is no root `pyproject.toml` or `uv.lock` at the pin — and
+Dependabot runs the `uv` ecosystem weekly for `/api`
+(`.github/dependabot.yml:22-25`). The diff touches manifest and
+lockfile only, no CODEOWNERS security-routed path
+(`.github/CODEOWNERS:51-56`), patch-level bump, upstream release notes
+anchor the change. (The version numbers in this synthetic bump are
+illustrative of the F-03 patch-delta parse, not the pin's locked
+pydantic.) The seven checks of the §5.1 gate (rules/lanes.md
+F-01–F-07) all pass on this item:
 
 - **F-01** — the author is the `dependabot[bot]` GitHub App identity
   (resolved via the API author class, not the display name).
-- **F-02** — only `pyproject.toml` and `uv.lock` change.
+- **F-02** — only `api/pyproject.toml` and `api/uv.lock` change.
 - **F-03** — `2.7.0 → 2.7.1` parses as a **patch** delta on a
   ≥1.0.0-versioned dependency (pydantic is at 2.x). Deterministic
   parse, not model judgment.

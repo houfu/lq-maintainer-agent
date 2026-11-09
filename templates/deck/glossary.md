@@ -734,3 +734,19 @@ maintainer adopts, numbers, and merges it.
 An agent-drafted deferred-enhancement / mini-PRD stub (sometimes
 annotated as amending an existing entry or proposing a workflow
 convention), crediting the contributor. A human files it — or doesn't.
+
+### docs:surface:page-changed
+A documentation page this change is built from was edited in the same change. The review checked that the page's words and the code's words still agree; nothing here holds the merge.
+
+### docs:surface:source-listed
+A documentation page lists a changed file as one of its sources, but the page itself was not edited. The page's "checked against" stamp will move at the next site build without anyone having re-read its words. The named pages are where to look.
+→ Not a merge condition. The project's rules ask for docs in the same change; the maintainer's standing ruling makes a missing update a follow-up, not a gate.
+
+### docs:surface:reference-source
+A file the site's generated reference pages are built from changed. The tables regenerate on their own; only the hand-written introduction around them can go stale.
+
+### docs:surface:described
+A documentation page describes the changed code in words, though it does not list the file as a source. The reviewer raised this by reading the page; it cannot be lowered mechanically.
+
+### docs:surface:unknown
+The documentation check could not run — the site's page map was not readable at the pinned version of the project. Recorded as "cannot verify", never as a problem with the change.

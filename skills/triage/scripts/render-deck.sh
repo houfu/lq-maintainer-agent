@@ -36,6 +36,14 @@ Input  : the rendered receipt markdown on stdin (the exact text Step 9 of
          collapsed card. Missing/unreadable file or absent section: the deck
          simply has no such card (fail-open; this input is a maintainer-only
          enrichment, never the record).
+         Optional `--public-header <html-file>` (v0.8, for
+         skills/triage/scripts/publish-site.sh): a trusted HTML block --
+         the public header rendered from templates/public-header.md --
+         inserted right after <body>, ahead of the deck, with its small
+         stylesheet. The flag may come before or after the positional
+         report path. An unreadable header file fails closed (exit 1, the
+         error page): a public deck is never emitted without its header.
+         Without the flag the output is byte-identical to before.
 Output : a complete, self-contained HTML document on stdout (inline CSS,
          native <details> disclosure, NO JavaScript, NO external resource,
          NO network) -- open it in a browser or drop it on a static host.
@@ -135,6 +143,12 @@ ISSUE_RECOS = ("proceed", "design", "needs-info", "decompose", "escalate")  # IV
 UAT_GATES = ("required", "recommended", "n-a")
 UAT_STATUSES = ("pending", "passed", "failed", "not-reached", "n-a")
 UAT_BY = ("agent", "maintainer")
+
+# The v0.8 optional `docs:` footer block (templates/receipt-pr.md RP-23,
+# rules/docs-surface.md DS-05). Enumerated only; absent on every earlier
+# footer. `none` and an absent block render nothing.
+DOCS_SURFACES = ("page-changed", "source-listed", "reference-source", "described",
+                 "none", "unknown")
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 # The never-checked rail's runtime line when a UAT looked at named screens at
 # the reviewed head (RP-07, UA-10). A qualifier, never a resolution: the item
@@ -464,7 +478,7 @@ def maintainer_ruling_html(md, base):
 
 
 def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False,
-                        uat_note="", uat_bad=False):
+                        uat_note="", uat_bad=False, docs_note=""):
     """The decision card -- ONE card, never two (v0.7.2 §4): the maintainer's
     recorded ruling (RP-18) leads where it exists, and the agent's
     recommendation-shaped line rides under it, labelled, so the two can never
@@ -493,6 +507,10 @@ def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False,
     if undo_note:
         out.append('<p class="decnote%s">%s</p>'
                    % (" d-bad" if undo_bad else "", esc(undo_note)))
+    if docs_note:
+        # v0.8 (DS-05): one plain line, never a hold -- the documentation
+        # surface is a surface, not a verdict (DS-04).
+        out.append('<p class="decnote docsnote">%s</p>' % esc(docs_note))
     out.append('</section>')
     return "".join(out)
 
@@ -1185,7 +1203,7 @@ ul.find>li:first-child{border-top:0}
 .fhead .tag{font-size:11px; font-weight:600; padding:1px 8px; border-radius:20px}
 .fsev{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; padding:2px 9px; border-radius:5px}
 .fsev.s-hi{background:var(--bad-bg); color:var(--bad); border:1px solid var(--bad-line)}
-.fsev.s-lo{background:var(--surface-2); color:var(--ink-faint); border:1px solid var(--line-soft)}
+.fsev.s-lo{background:var(--surface-2); color:var(--ink-faint); border:1px solid var(--line-soft)}.fconf{display:inline-block;font-size:.72rem;letter-spacing:.02em;padding:.1rem .45rem;border-radius:999px;border:1px solid var(--line,#8886);margin-left:.35rem;vertical-align:middle}.fconf.c-high{color:var(--ok,#1a7f37);border-color:currentColor}.fconf.c-medium{color:var(--warn,#9a6700);border-color:currentColor}.fconf.c-low{color:var(--mute,#6b6b6b);border-color:currentColor;border-style:dashed}
 .ftitle{font-size:16px; font-weight:600; margin:9px 0 0}
 .fslots{display:grid; grid-template-columns:auto 1fr; gap:5px 16px; margin:11px 0 0; font-size:15px}
 .fslots dt{
@@ -1476,6 +1494,48 @@ def uat_hold_line(u, g):
                                      "merge should wait until it has been.")
 
 
+def docs_state(r):
+    """The v0.8 `docs:` block (RP-23) read into what the deck needs, or None
+    when the block is absent or its surface is `none`. A surface outside the
+    enum is kept as raw text and rendered as unrecognised (degrade, never
+    hide); routes are plain identifiers and are escaped like every other
+    footer value."""
+    d = r.get("docs")
+    if not isinstance(d, dict):
+        return None
+    raw = str(d.get("surface") or "").strip().lower()
+    if raw in ("", "none"):
+        return None
+    routes = d.get("routes")
+    if isinstance(routes, str):
+        routes = [x.strip() for x in routes.strip("[]").split(",") if x.strip()]
+    elif not isinstance(routes, list):
+        routes = []
+    routes = [str(x).strip() for x in routes if str(x).strip()][:6]
+    try:
+        pages = max(0, int(str(d.get("pages_changed"))))
+    except (TypeError, ValueError):
+        pages = 0
+    return {"surface": raw if raw in DOCS_SURFACES else "", "raw": raw,
+            "routes": routes, "pages": pages}
+
+
+def docs_line(d, g):
+    """The decision card's one documentation line (DS-05): the glossed surface
+    plus the routes it named. Never a hold (DS-04)."""
+    if not d:
+        return ""
+    if d["surface"]:
+        cap = g.cap("docs:surface:%s" % d["surface"], "") or \
+            ("Documentation surface: %s" % d["surface"])
+    else:
+        cap = ("Documentation surface recorded as \u201c%s\u201d, which this view does not "
+               "recognise" % d["raw"][:40])
+    if d["routes"]:
+        cap += " \u2014 " + ", ".join(d["routes"])
+    return cap
+
+
 def build_uat_card(u, md, g, base):
     """'Seen running?' -- the gate in plain words, the status, who ran it and
     at which head, the counts, and the screens it looked at. Every figure
@@ -1695,6 +1755,23 @@ def build_finding_li(f, ftext_map, g, base, head_sha):
 
     chips = ['<span class="fsev %s">%s</span>' % ("s-lo" if lo else "s-hi", esc(sev.title())),
              '<span class="id">%s</span>' % esc(fid)]
+    # v0.8 (rules/confidence.md CF-14): the derived confidence rides beside
+    # the severity, with its two readings as the hover text. A blocking or
+    # major finding below high confidence is marked as needing a human check
+    # rather than as something that blocks (CF-04/CF-05).
+    conf = str(f.get("confidence", "") or "").strip().lower()
+    if conf in ("high", "medium", "low"):
+        ev = str(f.get("evidence", "") or "").strip().lower()
+        fa = str(f.get("fairness", "") or "").strip().lower()
+        basis = " · ".join(x for x in (("evidence: " + ev) if ev else "",
+                                       ("fairness: " + fa) if fa else "") if x)
+        chips.append('<span class="fconf c-%s" title="%s">confidence %s</span>'
+                     % (conf, esc(basis), esc(conf)))
+        if not lo and conf != "high":
+            chips.append('<span class="tag g-mute" title="rules/confidence.md CF-04: '
+                         'below high confidence a blocking or major finding does not hold '
+                         'the merge on its own; it is a check for a maintainer to run">'
+                         'needs a human check — does not block</span>')
     # in-scope is the unremarkable default and gets no chip; follow-up /
     # pre-existing are the cases worth flagging as not this change's problem
     if scope and scope != "in-scope":
@@ -1855,6 +1932,9 @@ def build_deck(md, g, below=None):
     # block renders byte-for-byte as before.
     uat = uat_state(r, pinned.get("pr_head_sha"))
     uat_hold = uat_hold_line(uat, g)
+    # v0.8 optional `docs:` block (RP-23): one line on the decision card, or
+    # nothing -- a footer without the block renders byte-for-byte as before.
+    docs_note = docs_line(docs_state(r), g)
 
     # --- verdict state + copy ---
     BSTATE = {"blocked": "s-bad", "high": "s-bad", "medium": "s-warn", "low": "s-ok"}
@@ -2122,7 +2202,7 @@ def build_deck(md, g, below=None):
         undo_note = ""
     A(build_decision_card(md, base, agent_line, undo_note,
                           undo == "irreversible-class",
-                          uat_hold, bool(uat and uat["failed"])))
+                          uat_hold, bool(uat and uat["failed"]), docs_note))
 
     # ---- spine 3a: seen running? (v0.7.6, RP-22) — directly under the
     # decision it can hold. Absent block or `gate: n-a`: no card at all.
@@ -2850,6 +2930,22 @@ HEAD = ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<title>%s</title><style>%s</style></head><body><main class="wrap">')
 TAIL = '</main></body></html>'
 
+# The public header block (templates/public-header.md, via publish-site.sh):
+# styled from the deck's own tokens so the site and the deck read as one.
+# Appended to the stylesheet only when --public-header is passed.
+PUBLIC_HEADER_CSS = """
+.public-header{max-width:820px; margin:0 auto; padding:24px 22px 0}
+.public-header .ph{padding:20px 24px; border-left:6px solid var(--accent); font-size:15.5px}
+.public-header .ph p{margin:0 0 10px; max-width:70ch}
+.public-header .ph p:last-child{margin-bottom:0}
+.public-header .ph code{font-family:var(--mono); font-size:.88em}
+.public-header .ph a{color:var(--accent-ink)}
+.public-header .ph-nav{font-size:13.5px; color:var(--ink-faint); margin:0 0 10px}
+.public-header .ph-nav a{color:var(--accent-ink)}
+.public-header .ph-gen{font-size:12.5px; color:var(--ink-faint); margin:10px 0 0}
+@media (max-width:560px){.public-header{padding:16px 16px 0} .public-header .ph{padding:16px}}
+"""
+
 
 def error_page(reason):
     return (HEAD % ("Triage deck — unavailable", CSS)
@@ -2866,8 +2962,24 @@ def main():
         sys.stderr.write("render-deck: empty input on stdin (expected receipt markdown).\n")
         sys.stdout.write(error_page("No receipt was provided."))
         return 1
+    args = sys.argv[1:]
+    public_header = None
+    if "--public-header" in args:
+        i = args.index("--public-header")
+        if i + 1 >= len(args):
+            sys.stderr.write("render-deck: --public-header needs a file path.\n")
+            sys.stdout.write(error_page("The public header was not provided."))
+            return 1
+        try:
+            with open(args[i + 1], encoding="utf-8") as fh:
+                public_header = fh.read()
+        except OSError as exc:
+            sys.stderr.write("render-deck: cannot read the public header (%s).\n" % exc)
+            sys.stdout.write(error_page("The public header could not be read."))
+            return 1
+        args = args[:i] + args[i + 2:]
     g = Gloss(load_glossary(os.path.join(_plugin_root(), "templates", "deck", "glossary.md")))
-    below = load_below_threshold(sys.argv[1] if len(sys.argv) > 1 else None)
+    below = load_below_threshold(args[0] if args else None)
     try:
         body = build_deck(md, g, below)
     except Exception as exc:  # fail closed: never emit a confidently-wrong deck
@@ -2875,6 +2987,11 @@ def main():
         sys.stdout.write(error_page("This receipt could not be parsed (%s)." % html.escape(str(exc))))
         return 1
     title = "Triage deck"
+    if public_header is not None:
+        head = (HEAD % (esc(title), CSS + PUBLIC_HEADER_CSS)).replace(
+            "<body>", "<body>" + public_header, 1)
+        sys.stdout.write(head + body + TAIL)
+        return 0
     sys.stdout.write(HEAD % (esc(title), CSS) + body + TAIL)
     return 0
 
