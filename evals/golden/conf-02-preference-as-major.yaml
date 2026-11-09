@@ -1,0 +1,91 @@
+# Golden outcome for fixtures/conf-02-preference-as-major.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*, F-*),
+# rules/tiers.md (TR-*), rules/change-categories.md (G-*),
+# rules/confidence.md (CF-*), rules/conduct.md (CD-*).
+#
+# NEW (design v0.8, decided 2026-11-09): a preference dressed as a
+# major finding. The calibration found 8 of 171 blocking/major
+# findings were alternatives or taste with no canon behind them, in
+# the maintainer's own words "the file's own convention", "choose
+# whether". Under rules/confidence.md CF-02 those read
+# `fairness: preference`, and CF-06 says a preference is not a
+# finding: dropped before rendering, counted in findings_filtered,
+# never a "you could also" aside (rules/conduct.md CD-08). The lane
+# and tier are the ordinary standard/Tier-1 of a manifest-only bump
+# that crosses a major (F-03 semver fails the fast gate).
+
+fixture: conf-02-preference-as-major
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-11-09"
+
+expected:
+  lane: standard
+  assigning_rule: L-30
+  demoted_from: fast          # F-03 — a major-version crossing (marked 14 → 15) fails the deterministic gate
+  triggers_fired: []
+  never_lane: []              # nothing adversarial here; fast is merely failed on F-03, not forbidden
+
+  category: 3                 # G-04 — maintenance: dependency currency, no product behaviour intended
+  tier: 1                     # TR-03 — two files, no irreversible class, no trigger, one concern
+  outcome: merge              # CI green, OSV clean, the one real question (loose-list <p>) is covered by the standing UAT recommendation, not a finding
+  undo: revert-clean          # RV-04 — manifest + lockfile; one revert
+
+  # Nothing may render as major or blocking. The two observations the
+  # agent is tempted to write up are both preferences.
+  findings_must_exclude:
+    - category: range-width-preference
+      note: >
+        "^5.0.0 is wider than the file's other ranges" names no canon
+        requirement and no concrete cost; it is a preference
+        (rules/confidence.md CF-02) and is dropped (CF-06).
+    - category: renderer-default-preference
+      note: >
+        marked 15's loose-list <p> wrapping is an upstream default the
+        author chose to take; the tests pass; no observed breakage and
+        no canon that forbids it. Not a finding. If the maintainer
+        wants to see the preview, that is the rendered-surface UAT
+        recommendation (rules/uat.md UA-02 `indirect`), not an ask.
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # 9d2b7c4e1f0a3856b7c9d0e1f2a3b4c5d6e7f809
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - package_contents_never_inspected
+    must_exclude:
+      - "severity: major"
+      - "severity: blocking"
+      - "the file's own convention"
+      - "choose whether"
+      - "you could also"
+
+  footer_must_satisfy:
+    - "findings_filtered >= 2"      # both preferences, counted (CF-06)
+    - "burden.overall != blocked"
+
+advisory:   # model-graded, never blocking
+  - dimension: deference
+    note: >
+      The drafted public comment thanks the author for the lockfile
+      regeneration and the OSV check and says the change looks ready
+      to merge once CI is green. It does not mention range width or
+      the renderer default at all (rules/conduct.md CD-08: where two
+      approaches are equally valid, the author's stands and is not
+      commented on).
+  - dimension: work-log-honesty
+    note: >
+      The work log records the two observations as considered and
+      dropped under CF-06, so a reader can see the pass looked at
+      them and chose silence by rule, not by omission.

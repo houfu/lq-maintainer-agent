@@ -101,6 +101,23 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   carries the drafted GitHub suggestion block and its one-line
   **apply path** (`rules/lanes.md` L-33a) — the human learns not just
   what to fix but how to apply it in one click.
+  **Confidence (v0.8, `rules/confidence.md` CF-NN).** Every finding
+  additionally states, in the visible body, its **evidence** reading
+  (`observed` / `canon-gap` / `mechanical` / `inferred` / `unverified`)
+  and its **fairness** reading (`own-burden` / `not-this-pr` /
+  `preference` / `scope-expansion`), each with the one sentence that
+  justifies it, and the **confidence** derived from them by CF-03
+  (`high` / `medium` / `low`) — all three enumerated in the footer
+  tuple, additive and optional. A `preference` is dropped before this
+  section and counted in `findings_filtered` (CF-06); a
+  `scope-expansion` renders with `scope: follow-up` and its stub
+  (CF-07); a `low`-confidence inferred or unverified finding keeps its
+  severity word here but renders its force as a Next-steps named check
+  in the RV-06 form (CF-05), and only a `high` blocking finding
+  blocks, counts toward TR-06, or names a `merge-after` fix (CF-04).
+  `blocking` is reserved for defects that make merging wrong; process
+  and mechanical requirements are `major` with `evidence: mechanical`
+  (CF-11).
 - **RP-06 — Salvage section.** Mandatory whenever salvage was applied
   (`rules/salvage.md`): part list with one-sentence statements and
   disposition IDs; and if a mechanical split was proposed, the split
@@ -672,7 +689,7 @@ deterministic_checks:
   release_age: <pass|fail|n-a>
   ci_green: <pass|fail|n-a>
 findings:
-  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>}
+  - {id: F-1, severity: <blocking|major|minor>, disposition: <trivial|relayable|structural>, scope: <in-scope|follow-up|pre-existing>, evidence: <observed|canon-gap|mechanical|inferred|unverified>, fairness: <own-burden|not-this-pr|preference|scope-expansion>, confidence: <high|medium|low>}
 findings_filtered: <integer, 0 if none>
 salvage:
   applied: <true|false>
@@ -753,7 +770,10 @@ eval-grading interface (`evals/run-checks.md`).
   finding's **impact** and **ask** are free text and are, like every
   free-text field, **visible-body only** (RP-05) — they never appear
   in this footer tuple, which carries `id` / `severity` / `disposition`
-  / `scope` and nothing else.
+  / `scope` and, from v0.8, the three optional enumerated confidence
+  keys `evidence` / `fairness` / `confidence` (`rules/confidence.md`
+  CF-01–CF-03; the roll-up must agree with its components or the
+  footer is malformed) — and nothing else.
 - `split_verified` is **always `false`** — the agent never verifies a
   split compiles (design doc §6 step 4); the field exists so a parser
   cannot assume otherwise.

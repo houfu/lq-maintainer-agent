@@ -171,6 +171,11 @@ paraphrase-and-improvise from memory:
   sees (`UA-01`, from `check-ui-surface.sh`) and whether that makes a
   UAT required or recommended (`UA-02`). Triage uses it for the card
   flag only; it never runs a UAT. Loaded before Step 6b.
+- `rules/confidence.md` *(v0.8)* — the evidence and fairness readings
+  on every finding and the confidence derived from them (`CF-NN`);
+  only a high-confidence blocking finding blocks (CF-04), a preference
+  is not a finding (CF-06), a scope expansion is a follow-up (CF-07).
+  Loaded before any finding is written.
 - `rules/salvage.md` — decomposition protocol and dispositions,
   including the slop disposition (§6.1)
 - `rules/issues.md` — issue classification and per-class handling
@@ -519,7 +524,7 @@ nothing below changes their assignment or output. For every
    four categories, before the tier call — `rules/breaking-changes.md`
    BC-02; category-4 refactors most of all): pipe the diff through
    `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh`
-   (`gh pr diff N | …/check-breaking.sh` — diff text only, no network,
+   (`gh pr diff N > <data>/diff.txt` then `…/check-breaking.sh <data>/diff.txt` — a file argument, never a pipe or heredoc body, so the safety hook screens one plain command line (v0.8) — diff text only, no network,
    deterministic and read-only like the Step 6a scripts). A **FAIL
    carrying `findings=N ≥ 1`** is a detection and fires the RV-02
    public-API class (`BC-01`): the item is Tier-1

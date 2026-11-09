@@ -69,6 +69,18 @@ the GitHub merge box.
   anything: it reads commit authors and existing sign-off trailers and
   prefills the Co-authored-by / preserved sign-off lines for the human
   to commit, exactly as it prefills the merging human's own identity.
+- **MM-05b — A reimplementation credits the original author (v0.8).**
+  When a maintainer re-does a contributor's work in a fresh branch —
+  because a sign-off was missing, a branch could not be pushed to, or
+  a fix was easier to write than to relay — the drafted message
+  carries `Co-authored-by: <original author name> <email>` for the
+  contributor whose PR it replaces, and the body names that PR
+  ("Reimplements #N by @<contributor>"). The contributor's own
+  `Signed-off-by:` is **not** copied, because they did not sign this
+  commit; credit and certification are different things (MM-05a iv).
+  Four reimplementations in the 2026 record dropped the author's
+  credit until the maintainer noticed ("dropthejase is not a
+  co-author — I meant in the commits").
 - **MM-06 — Immutable skeleton.** Once merged, this block is the
   deletion-proof audit record (receipt comments are editable; the
   trailer is not). It is the *entire* committed audit surface — no

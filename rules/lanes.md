@@ -347,6 +347,13 @@ it (L-04).
       correct (`rules/tone-gate.md` TG-03.2);
     - *structural* — recommend close, and draft an issue describing the
       goal so the idea survives the PR.
+- **L-33c — Two readings on every finding (v0.8).** Every finding also
+  carries an **evidence** reading and a **fairness** reading, and the
+  **confidence** derived from them, per `rules/confidence.md`
+  (`CF-01`–`CF-03`): a preference is not a finding (CF-06), a scope
+  expansion is a follow-up and never a condition (CF-07), and only a
+  high-confidence blocking finding blocks (CF-04). The slots above are
+  unchanged; the readings sit beside them.
 - **L-33a — The apply path (decided 2026-07-27).** A finding is not
   actionable until the human knows *how* to act on it, not just what
   is wrong. Where the remedy is a concrete replacement of the cited

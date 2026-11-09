@@ -313,6 +313,9 @@ SET_outcome="merge merge-after discuss route-to-design hold security-escalate"
 SET_undo="revert-clean residue irreversible-class"
 SET_recommendation="needs-info decompose proceed design escalate"
 SET_finding_scope="in-scope follow-up pre-existing"
+SET_finding_evidence="observed canon-gap mechanical inferred unverified"
+SET_finding_fairness="own-burden not-this-pr preference scope-expansion"
+SET_finding_confidence="high medium low"
 SET_item_type="pr issue batch"
 
 lint_enum() {
@@ -364,6 +367,44 @@ for g in $(graded_goldens); do
       *) err "$g" "golden's finding 'scope' is '$w', which is not in the canonical vocabulary ($SET_finding_scope) — rules/lanes.md L-33" ;;
     esac
   done
+  # findings[].evidence / fairness / confidence (rules/confidence.md
+  # CF-01..CF-03, v0.8): enumerated, optional, additive. The roll-up
+  # must agree with its components: high <=> strong evidence AND
+  # own-burden; medium <=> strong evidence AND not-this-pr; low
+  # otherwise. Checked per `- ` entry of findings_must_include.
+  for key in evidence fairness confidence; do
+    case $key in
+      evidence) set_="$SET_finding_evidence" ;;
+      fairness) set_="$SET_finding_fairness" ;;
+      confidence) set_="$SET_finding_confidence" ;;
+    esac
+    for w in $(grep -oE "^[[:space:]]+$key:[[:space:]]*[A-Za-z-]+" "$g" 2>/dev/null \
+               | sed -E "s/^[[:space:]]+$key:[[:space:]]*//"); do
+      case " $set_ " in
+        *" $w "*) : ;;
+        *) err "$g" "golden's finding '$key' is '$w', which is not in the canonical vocabulary ($set_) — rules/confidence.md CF-01..CF-03" ;;
+      esac
+    done
+  done
+  # roll-up consistency: walk each finding entry (a `- ` block under
+  # findings_must_include) and derive the expected confidence.
+  awk -v g="$g" '
+    function flush() {
+      if (ev != "" && fa != "" && co != "") {
+        strong = (ev == "observed" || ev == "canon-gap" || ev == "mechanical")
+        want = "low"
+        if (strong && fa == "own-burden") want = "high"
+        else if (strong && fa == "not-this-pr") want = "medium"
+        if (co != want) printf("%s: finding entry %d asserts confidence %s but evidence=%s fairness=%s derive %s (rules/confidence.md CF-03)\n", g, n, co, ev, fa, want)
+      }
+      ev = ""; fa = ""; co = ""
+    }
+    /^[[:space:]]+- / { flush(); n++ }
+    /^[[:space:]]+(- )?evidence:/   { sub(/.*evidence:[[:space:]]*/, ""); ev = $1 }
+    /^[[:space:]]+(- )?fairness:/   { sub(/.*fairness:[[:space:]]*/, ""); fa = $1 }
+    /^[[:space:]]+(- )?confidence:/ { sub(/.*confidence:[[:space:]]*/, ""); co = $1 }
+    END { flush() }
+  ' "$g" | while IFS= read -r line; do [ -n "$line" ] && err "$g" "${line#*: }"; done
 
   # tier 1 and a fired trigger cannot both be right (TR-03.3): a fired
   # trigger takes the item to Tier 2, so a golden pairing them would

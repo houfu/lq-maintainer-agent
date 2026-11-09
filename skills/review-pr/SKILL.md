@@ -71,6 +71,13 @@ it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
   (UA-04), and the one contained runner through which the agent may
   build and screenshot an eligible item (UA-05–UA-07, `I-05` as
   amended).
+- `${CLAUDE_PLUGIN_ROOT}/rules/confidence.md` *(v0.8)* — the two
+  readings every finding carries (`CF-NN`): what it rests on
+  (`evidence`), whose burden the ask is (`fairness`), and the
+  confidence derived from them; only a high-confidence blocking
+  finding blocks (CF-04), a preference is not a finding (CF-06), a
+  scope expansion is a follow-up and never a condition (CF-07), and
+  `blocking` is reserved for defects that make merging wrong (CF-11).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` — the gate every
   contributor-facing draft passes (`TG-NN`) before it is offered for
   posting.
@@ -160,7 +167,7 @@ keeps a work log — record the canary line as its first row.
 Record, before any analysis, the **four pinned fields** (design §3.4):
 
 - **PR head SHA** — from `gh pr view N --json headRefOid`.
-- **Canon SHA** — the clone's `main` HEAD (`git rev-parse main`). Warn
+- **Canon SHA** — the clone's `main` HEAD **after** `git fetch origin main` (a named-remote fetch of a branch ref, which the hook allows), pinned with `git rev-parse origin/main`; a local `main` that is behind the remote is not canon (v0.8 — eight runs in the 2026 record pinned a `main` 12 to 31 commits stale). Warn
   the user if `main` is behind `origin/main`; they may want to pull
   first, since this SHA is what the review is judged against and what
   the internal evidence record pins.
@@ -266,12 +273,21 @@ from the title, body, labels, or any self-description (`G-01`,
    deterministic gate (F-NN). No category and no tier ever suppresses
    one.
 3. **Route by category** (`G-07`):
-   - **Category 1 — greenfield / new feature.** This is design
-     material, not code review. Tell the user plainly: *"#N is a
-     category-1 (new feature) change — the design path produces the
-     artifact it needs. Run `/lq-maintainer:design-plan pr N`."* Then
-     **stop**, unless the maintainer explicitly asks you to continue
-     here anyway (decided 2026-07-26): on that explicit request,
+   - **Category 1 — greenfield / new feature.** First ask whether it
+     is **anchored** (`G-02` as amended v0.8): does ratified canon on
+     `main` at the pinned canon SHA — a DE entry, an ADR, a PRD
+     section, a roadmap item, verified per `A-08` — cover the scope of
+     what was built? If yes, record `category: 1 (anchored)`, say in
+     one sentence that the design path is available if the review
+     finds the anchor does not cover what was built, and **continue
+     at Tier 2** (never Tier 1 for a category-1 item). If no — no
+     covering canon, or only an adjacent, proposed or draft anchor
+     (`A-12`) — this is design material, not code review. Tell the
+     user plainly: *"#N is a category-1 (new feature) change with no
+     ratified anchor — the design path produces the artifact it
+     needs. Run `/lq-maintainer:design-plan pr N`."* Then **stop**,
+     unless the maintainer explicitly asks you to continue here anyway
+     (decided 2026-07-26): on that explicit request,
      continue at the tier the item's size, triggers, and irreversible
      classes demand — never Tier 1 by default for a category-1
      item — record the override and who asked for it in the internal
@@ -399,7 +415,7 @@ that row is how a coverage claim stays checkable instead of asserted.
    blame-free note about the work, never as a caught claim.
 7. **The revert-clean check (`RV-04`), deterministic half first.** Run
    `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh` over
-   the diff (`gh pr diff N | …/check-breaking.sh` — diff text only, no
+   the diff (`gh pr diff N > <data>/diff.txt` then `…/check-breaking.sh <data>/diff.txt` — a file argument, never a pipe or heredoc body, so the safety hook screens one plain command line (v0.8) — diff text only, no
    network): a `FAIL` carrying `findings=N ≥ 1` is the mechanical form
    of "an external consumer contract changed" (a fail-closed `FAIL`
    with `reason=`/`error=` and no findings is an infrastructural
@@ -472,6 +488,23 @@ Name the entering condition and carry the Tier-1 evidence forward.
 
 You are here because a `TR-07` condition fired. **Name that condition
 in every output of this step.**
+
+**The light form first (`rules/tiers.md` TR-07a, v0.8).** Before
+loading the deep-dive procedure, check three things from the Step 4
+evidence: the only fired triggers are `E-01` and/or `E-02` (so none
+of the decision-shaped `E-04`/`E-05`/`E-06` fired, and `D-00` records
+only the trigger's own settled context); and the diff is within the
+TR-03 size bounds. If all three hold, **do not load the
+deep-dive file and do not dispatch the team.** Run the TR-04 quick
+pass in this context, render the security checklist for the fired
+class in full (`canon:vetting-playbook`, RP-04), write one finding
+slot per touched sensitive path or construct even where nothing is
+wrong, and end in the TR-05 vocabulary with the standing line
+"escalate lane: a security-sensitive path or construct was touched, so
+a human reviewer with that routing is required — this is routing, not
+a finding." Record `tier: 2`, lane `escalate`, and name TR-07a in the
+work log as the reason the four passes did not run. If any of the
+three checks fails, continue below.
 
 **Load the procedure now, not before:**
 `${CLAUDE_PLUGIN_ROOT}/skills/review-pr/references/tier-2-deep-dive.md`.

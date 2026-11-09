@@ -49,7 +49,9 @@ bytes, later, and only the ones that bear.
   — an unchecked class is an unchecked risk), `breaking-changes`,
   `conduct` and `tone-gate` (they bind every drafted line, and a banned
   pattern you did not read is one you will emit), `self-attestation`,
-  `anchoring`, `stale-sweep`, `queue`, and `canon-map` (a routing
+  `anchoring`, `confidence` (every finding carries its two readings,
+  and a roll-up rule you did not read is one you will get wrong —
+  `CF-03`), `stale-sweep`, `queue`, and `canon-map` (a routing
   table, no rule IDs at all).
 
   **Spine, then sections:**
@@ -57,7 +59,10 @@ bytes, later, and only the ones that bear.
   when an item overreaches), `burden` (rolled up at render), `labels`
   (Step 9 only, and never a routing input — `LB-01`), `issues` (one
   class per issue), `decision-scoping` (escalated items only, already
-  conditional under `D-00`), `milestones` (scoped runs only).
+  conditional under `D-00`), `milestones` (scoped runs only),
+  `publishing` (the finalize step only, when a maintainer asks to see
+  what the next site refresh would publish — `PB-10`; nothing in it
+  reads into a judgment, `PB-14`).
 
 - **LD-03 — The size floor.** A rule file under **~2,000 tokens** loads
   whole regardless of class. Below that the spine saves too little to

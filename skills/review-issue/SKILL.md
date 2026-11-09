@@ -73,6 +73,10 @@ Load these first — they are data, not to be paraphrased from memory:
   partition over canon read this run and the drafted decision artifacts
   (with `${CLAUDE_PLUGIN_ROOT}/templates/draft-adr.md`). Content-only —
   it never changes a recommendation, lane, or trigger (D-00).
+- `${CLAUDE_PLUGIN_ROOT}/rules/confidence.md` *(v0.8)* — the evidence
+  and fairness readings every finding carries and the confidence
+  derived from them (`CF-NN`); a preference is not a finding (CF-06),
+  a scope expansion is a follow-up and never a condition (CF-07).
 - `${CLAUDE_PLUGIN_ROOT}/rules/tone-gate.md` *(v0.7)* — the mechanical
   pass every contributor-facing draft (the short public comment,
   contributor responses, the deck's contributor-readable sections) must

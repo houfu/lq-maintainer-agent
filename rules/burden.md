@@ -76,6 +76,9 @@ apply to issues too; only the five-axis grade does not.
   graded **burden** across five axes (`B-03`–`B-07`), rolled up
   worst-of (`B-08`). "Can't merge yet" is kept distinct from "costs you
   work"; a blocker is never merely "high burden".
+  A **finding** is a third thing again: a blocking *finding* blocks
+  only at high confidence (`rules/confidence.md` CF-04, CF-11), and
+  never by borrowing a `B-02` slug's name.
 
 ## 1. Layer 1 — blockers
 

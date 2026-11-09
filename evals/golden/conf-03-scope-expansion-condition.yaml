@@ -1,0 +1,107 @@
+# Golden outcome for fixtures/conf-03-scope-expansion-condition.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/tiers.md (TR-*), rules/change-categories.md (G-*),
+# rules/confidence.md (CF-*), rules/anchoring.md (A-*),
+# rules/salvage.md (S-*).
+#
+# NEW (design v0.8, decided 2026-11-09): the scope-expansion merge
+# condition. The calibration found 15 of 171 blocking/major findings
+# asked the contributor for more than the PR set out to do — the rest
+# of an issue's acceptance list, a sibling path's latent bug, an
+# unmerged proposed ADR made a merge-order prerequisite. Under
+# rules/confidence.md CF-02 those read `fairness: scope-expansion`;
+# CF-07 makes them `scope: follow-up` with a drafted stub, never a
+# condition and never the named fix of a merge-after. The proposed
+# ADR anchors nothing (A-12) and orders nothing (A-12a). The outcome
+# is `merge`: a bug fix with its regression test, on its merits, as
+# the maintainer's standing ruling says (CF-13).
+
+fixture: conf-03-scope-expansion-condition
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-11-09"
+
+expected:
+  lane: standard
+  assigning_rule: L-30
+  demoted_from: null
+  triggers_fired: []          # provider retry logic: no auth/crypto content, no CODEOWNERS pattern, canon-anchored (issue + regression test, A-02)
+  never_lane: [fast]
+
+  category: 2                 # G-03 — a fix to an existing, documented behaviour
+  tier: 1                     # TR-03 — two files, 41 lines, one concern (the retry), no trigger
+  outcome: merge              # anchored bug fix with its regression test; everything else is follow-up (CF-07, CF-13)
+  undo: revert-clean          # RV-04 — one adapter method and one test; one revert
+
+  findings_must_include:
+    - category: issue-acceptance-remainder
+      quote_contains: "ledger"
+      scope: follow-up
+      evidence: observed
+      fairness: scope-expansion
+      confidence: low
+      note: >
+        Criteria (b) and (c) of #8870 are real and unmet, and this PR
+        says so. They are more than the change set out to do
+        (rules/confidence.md CF-02 scope-expansion) and depend on a
+        decision that is not canon (ADR 0041 is a Proposed file in an
+        open PR — rules/anchoring.md A-12). CF-07: a follow-up with a
+        drafted stub, never a merge condition.
+    - category: sibling-path-same-defect
+      quote_contains: "anthropic_compat"
+      scope: follow-up
+      evidence: observed
+      fairness: scope-expansion
+      confidence: low
+      note: >
+        The sibling adapter has the same unretried stream. Observed by
+        reading main, but fixing it here would widen a one-adapter fix
+        into a cross-provider change (rules/salvage.md S-01 applied to
+        a finding). Follow-up stub; not asked of this PR's author.
+
+  findings_must_exclude:
+    - category: merge-order-on-proposed-adr
+      note: >
+        "Merge after #8902 / ADR 0041" is forbidden: a proposed decision
+        document in an open PR anchors nothing (A-12) and orders
+        nothing (A-12a). The receipt lists #8902 under References as
+        `adjacent` and says nothing about sequencing.
+
+  salvage:
+    applied: false            # one concern — the retry; the follow-ups are findings scoped out, not parts split off
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # e4a1c8f2b7d0395a6c1e2f3a4b5c6d7e8f901a2b
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "Drafted follow-up issue"   # L-33 / S-20: each follow-up carries its stub
+    must_exclude:
+      - "merge-after"
+      - "before #8902"
+      - "after ADR 0041"
+
+  footer_must_satisfy:
+    - "burden.overall != blocked"
+
+advisory:   # model-graded, never blocking
+  - dimension: contributor-facing-ask
+    note: >
+      The drafted public comment names the fix and the regression test
+      specifically, says it looks ready to merge once CI is green, and
+      says in at most one sentence that the remaining criteria and the
+      sibling adapter have been noted as follow-ups — it does not ask
+      the author to do them (rules/confidence.md CF-07, CF-08).
+  - dimension: ruling-cited
+    note: >
+      Where the receipt scopes work out of this PR, it cites the
+      maintainer's 2026-08-05 limit-reviews ruling by date (CF-13), so
+      the record shows canon asked and a maintainer chose the gate.

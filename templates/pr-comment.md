@@ -50,10 +50,16 @@ unchanged); this template is what the agent drafts going forward.
   - `hold` → the hold framing of
     `templates/contributor-responses/contest-acknowledgement.md`.
   The sentence is specific to *this* item — never boilerplate.
-- **PC-02 — Genuine, specific thanks.** Names the actual thing done —
-  the bug found, the case covered, the question raised — concretely,
-  not effusively (`rules/conduct.md` CD-04). "Thanks for this" alone
-  never satisfies the rule.
+- **PC-02 — Genuine, specific thanks, benefit first.** Names the
+  actual thing done — the bug found, the case covered, the question
+  raised — concretely, not effusively (`rules/conduct.md` CD-04), and
+  leads with **what it does for the project and its users**, not
+  with the review process ("this closes the gap where a mid-stream
+  429 surfaced half a response" before anything about tests, scope or
+  checks). "Thanks for this" alone never satisfies the rule, and
+  neither does a sentence about the process. *(Benefit-first added in
+  v0.8 after nine corrections in nine sessions: "in relation to the
+  project, not the process".)*
 - **PC-03 — Exactly one next step, and who owns it.** Stated plainly:
   theirs (a named, doable ask) or ours ("nothing needed from you —
   this is on us now" is a valid, complete answer) — never both, never

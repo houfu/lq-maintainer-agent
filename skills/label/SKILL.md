@@ -172,7 +172,7 @@ maintainer can audit the projection at a glance:
 3. **Breaking change** (every standard-lane PR, all categories —
    `rules/breaking-changes.md` BC-02) — pipe the diff through
    `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh`
-   (`gh pr diff N | …/check-breaking.sh` — diff text only, no network,
+   (`gh pr diff N > <data>/diff.txt` then `…/check-breaking.sh <data>/diff.txt` — a file argument, never a pipe or heredoc body, so the safety hook screens one plain command line (v0.8) — diff text only, no network,
    deterministic and read-only). A `FAIL` carrying `findings=N ≥ 1`
    is a BC-01 detection and projects `breaking-change`; a fail-closed
    `FAIL` (`reason=`/`error=`, no findings) is an infrastructural

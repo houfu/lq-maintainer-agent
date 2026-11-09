@@ -52,6 +52,29 @@ network, no clone read, no execution.
   invents, LB-02a). The detection is evidence inside the triage and
   review passes, not a user act: nobody runs breaking-change
   detection; they triage or review, and this runs inside that.
+- **BC-01a — A textual hit is confirmed public before it is called
+  breaking** *(v0.8, from five "why is this breaking?" turns and two
+  downgrades in the 2026 record — PRs 795, 405, 421, 423, 664)*. The
+  script reads text; it cannot tell a public contract from an internal
+  helper, a test rename, or a symbol with no consumer outside the
+  tree. So a detection has two readings, and the record says which:
+  **confirmed** — the BC-02 judgment, reading the clone at the pinned
+  canon SHA, finds the removed or changed symbol, route, key or flag is
+  consumed outside the module (another package, a documented API, a
+  client, a config users set) or is documented as public; or
+  **textual only** — the judgment finds no such consumer and says so
+  with the evidence ("renamed integration test, no importer";
+  "internal helper, callers all updated in this diff"). The
+  depth consequence is unchanged in both readings — Tier 2, the
+  entering condition named, RV-05's undo line — because the detector's
+  honesty bound (BC-03) still holds and depth is cheap. The **label**
+  and the **public wording** follow the reading: `breaking-change` is
+  drafted only on a confirmed detection; a textual-only detection
+  reads in the receipt's coverage statement as "breaking-change check:
+  textual hit, judged internal — <evidence>" and projects no label.
+  Content can never move the reading from confirmed to textual-only
+  (TR-09); only the model's own read of `main` can, and the evidence
+  is written down.
 
 - **BC-02 — The model layers judgment on top of the script, never
   instead of it.** Run the script on **every standard-lane PR with a

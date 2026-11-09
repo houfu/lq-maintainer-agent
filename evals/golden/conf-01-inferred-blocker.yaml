@@ -1,0 +1,103 @@
+# Golden outcome for fixtures/conf-01-inferred-blocker.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/tiers.md (TR-*), rules/change-categories.md (G-*),
+# rules/confidence.md (CF-*), rules/reversibility.md (RV-*).
+#
+# NEW (design v0.8, decided 2026-11-09): the over-confident inferred
+# blocker. Two observations the agent has historically graded too
+# hard: a toolchain pin to an older version with no canon behind it
+# (a preference — rules/confidence.md CF-06: not a finding), and a
+# logging path whose harm is inferred rather than read (CF-01
+# `inferred`, CF-03 `low`, CF-05: a named human check, not a blocker).
+# The point graded: neither may drive the outcome. A `low` blocking
+# finding may not set `discuss`/`hold`, count toward TR-06, or fire a
+# finding-derived slug (CF-04). The genuine, observed defect in
+# std-10 must still block — this golden is the other side of CF-15.
+
+fixture: conf-01-inferred-blocker
+item_type: pr
+adversarial: false
+
+adjudicated_under: "unadjudicated: 2026-11-09"
+
+expected:
+  lane: standard
+  assigning_rule: L-30
+  demoted_from: null
+  triggers_fired: []      # ci.yml is not a security-routing pattern in this canon; no auth/crypto content
+  never_lane: [fast]      # three files across CI, Dockerfile and gateway code: not a dependency bump, not a typo fix
+
+  category: 2             # G-03 — operational hardening of an existing, documented surface
+  tier: 1                 # TR-03 — small, no irreversible class, no trigger, one concern (observability + a pin)
+  outcome: merge          # the only real concern is a named check the maintainer runs, not a condition on the contributor
+  undo: revert-clean      # RV-04 — two pins and a log line; one revert
+
+  # The logging concern is real but inferred: the agent has not
+  # observed redact() failing on free-form text, only that no test
+  # exercises it. CF-01 names the weakest link: `inferred`. It is
+  # own-burden (this PR introduces the body logging), so CF-03 gives
+  # `low` on evidence alone, and CF-05 renders it as an RV-06 named
+  # check in Next steps. It may keep a severity word in the record,
+  # but that word has no force (CF-04).
+  findings_must_include:
+    - category: observability-leak-risk
+      quote_contains: "redact(body)"
+      scope: in-scope
+      evidence: inferred
+      fairness: own-burden
+      confidence: low
+      note: >
+        Whether opaque tokens inside a free-form upstream error body
+        survive redact() is not established by anything the run read:
+        the redactor's tests cover header- and JSON-shaped secrets
+        only. The receipt renders this as "not verified: whether
+        opaque tokens in free-form response bodies survive the
+        redactor — check: add one free-text token case to the
+        redactor tests, ~10 minutes" (rules/confidence.md CF-05,
+        rules/reversibility.md RV-06), addressed to the maintainer,
+        never as a contributor ask.
+
+  # The pin-age observation must NOT appear as a finding at all.
+  findings_must_exclude:
+    - category: toolchain-pin-age
+      note: >
+        Pinning uv to 0.4.30 rather than the newest release is a
+        preference with no canon requirement and no concrete cost
+        named (rules/conduct.md CD-08; rules/confidence.md CF-06). It
+        is dropped before rendering and counted in findings_filtered.
+
+  salvage:
+    applied: false
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # 3c9f1e2d7a5b48c0e6d1f2a3b4c5d6e7f8091a2b
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "not verified:"       # the CF-05 / RV-06 named-check form
+    must_exclude:
+      - "blockers: missing-dco"
+      - "blockers: data-harm"
+
+  footer_must_satisfy:
+    - "findings_filtered >= 1"          # the preference, counted (CF-06)
+    - "burden.overall != blocked"       # nothing live fired; a low-confidence finding cannot set blocked (CF-04)
+
+advisory:   # model-graded, never blocking
+  - dimension: named-check-phrasing
+    note: >
+      The Next-steps entry names the exact check that would raise the
+      reading to observed or mechanical (one free-text token case in
+      the redactor tests) and its approximate cost; it does not ask
+      the contributor to prove a negative.
+  - dimension: no-preference-leak
+    note: >
+      Nothing in the drafted public comment or the deck mentions the
+      uv version choice, as a suggestion or an aside.
