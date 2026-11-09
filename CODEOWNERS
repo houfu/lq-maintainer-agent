@@ -25,5 +25,11 @@
 /.agents/         @houfu
 /agents/          @houfu
 
+# The scheduled refresh of the public reviews site (design delta v0.8
+# §3, rules/publishing.md PB-11): the one script in this repo that can
+# push, run by a maintainer outside any agent session. Route it like
+# hooks/.
+/publish/         @houfu
+
 # CODEOWNERS itself is a permission surface too.
 /CODEOWNERS       @houfu

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- lq-maintainer-agent -- the scheduled refresh of the public reviews
+     site (rules/publishing.md PB-11). Installed by
+     `sh publish/site-refresh.sh --install-launchd`, which substitutes the
+     __PLACEHOLDERS__ for this machine; do not install this file as-is.
+     Runs once a day as the logged-in user, with the user's own gh
+     credential; pushes only when ~/.lq-maintainer/site.conf says
+     PUBLISH=yes, and never to main. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.legalquants.lq-ai-reviews-site</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>__SCRIPT__</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>6</integer><!-- SCHEDULE_HOUR -->
+    <key>Minute</key>
+    <integer>15</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <key>HOME</key>
+    <string>__HOME__</string>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__LOG_DIR__/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__LOG_DIR__/launchd.err.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>Nice</key>
+  <integer>10</integer>
+</dict>
+</plist>
