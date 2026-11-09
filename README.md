@@ -313,6 +313,23 @@ files in a diff escalate and are never loaded, and nothing inside a
 contribution can raise its lane, suppress a check, or claim approval. The
 load-bearing defense is the permission architecture, not prompt vigilance.
 
+**Two floors (v0.8).** The hook knows which session it is in. A
+review run arms itself with the safety canary as its first command and
+gets the full floor above. A session that never ran the canary — the
+maintainer coding on the repo through the same host — gets the coder
+floor: merge, approve, close, repository deletion, GraphQL mutations
+and PR-ref checkout stay blocked in every mode, and everything else,
+`git push` and `gh pr create` included, goes to the host's own
+permission prompt. Arming is one-way; no disarm command exists
+([rules/runtime.md](rules/runtime.md) RT-09,
+[settings/README.md](settings/README.md)).
+
+**Findings carry their confidence (v0.8).** Every finding states what
+it rests on and whose burden the ask is; only a high-confidence
+blocking finding blocks, an inferred one becomes a named human check,
+a preference is not a finding, and a scope expansion is a follow-up
+([rules/confidence.md](rules/confidence.md)).
+
 The hooks are the chosen primary enforcement layer, and their known limits
 are stated honestly rather than papered over — see
 [docs/onboarding.md](docs/onboarding.md), including the one absolute rule:
@@ -334,6 +351,15 @@ links there.
   session
 - [docs/bot-behavior.md](docs/bot-behavior.md) — contributor-facing: what
   the agent does and the contest/hold path
+- [rules/publishing.md](rules/publishing.md) and
+  [publish/README.md](publish/README.md) — the public reviews site:
+  what may be published, the fixed disclaimer header, and the
+  maintainer's scheduled refresh (inert until the lq-ai committee
+  decides; proposal in
+  [docs/proposals/public-receipts-on-lq-ai-community.md](docs/proposals/public-receipts-on-lq-ai-community.md))
+- [docs/proposals/v0.8-pain-points.md](docs/proposals/v0.8-pain-points.md)
+  — what the session logs showed after lq-ai v0.9.1, and what v0.8
+  changed because of it
 - [CONTRIBUTING.md](CONTRIBUTING.md) — governance for this repo, including
   the stricter review rules for `rules/`, `hooks/`, `settings/`, and
   skills frontmatter

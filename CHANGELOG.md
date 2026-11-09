@@ -9,6 +9,174 @@ are recorded in [docs/design/](docs/design/); this file is the
 maintainer-facing summary of what shipped, not the rationale of
 record.
 
+## [0.8.0] — 2026-11-09
+
+Four strands, one design delta
+([v0.8](docs/design/lq-maintainer-agent-design-v0.8.md)), all from a
+read of the field record after lq-ai shipped v0.9.1: the session logs
+on both hosts, the 161 receipts, and the maintainer's own corrections.
+**Read before updating:** on Codex, re-trust the plugin's hook in
+`/hooks` after this update (the hook changed; the canary refuses to
+run until you do), and the first command of every review run must now
+report `armed=yes`.
+
+### Two floors — a maintainer can code through the agent again
+
+Design §1; `rules/runtime.md` RT-03 (amended), RT-09;
+`settings/README.md` "Two floors". From the session logs: the hook
+fired in every session on a host where the plugin is enabled —
+including the maintainer's own development sessions in lq-ai and four
+unrelated projects — and blocked 29 pushes the maintainer had asked
+for on Codex and 106 hand-run writes on Claude Code
+([docs/proposals/v0.8-pain-points.md](docs/proposals/v0.8-pain-points.md)).
+
+- **The canary arms the session.** `lq-maintainer-safety-canary` now
+  writes a per-session marker (a hash of the host's session id under
+  `~/.lq-maintainer/armed/`) and reports `armed=yes`; a review run
+  that does not see it stops (RT-03). Arming is one-way — no disarm
+  command exists, because an injected session would run it.
+- **Review floor (armed): unchanged.** Every rule, test and evasion
+  case of v0.7 holds. Two additions from the record: fetching,
+  pulling or cloning by URL, adding or repointing a remote, and
+  submodules by URL are blocked (a fork-URL fetch had brought
+  contributed code into a review session); `publish/site-refresh.sh`
+  is blocked except `--plan`.
+- **Coder floor (unarmed): targeted deny only.** Merge, every
+  `gh pr review` form, close, repository and release deletion,
+  GraphQL mutations, `gh api` DELETE and the REST merge/review
+  endpoints, alias and extension laundering, push plumbing binaries
+  and PR-ref checkout stay blocked in every mode. `git push`,
+  `gh pr create/edit`, `gh issue create`, label edits, GraphQL
+  queries and non-GET `gh api` otherwise pass to the host's own
+  permission prompt.
+- **Fail-closed.** No usable session id, an unreadable marker
+  directory or an unrecognized host all give the review floor; only a
+  readable, fresh marker's absence gives the coder floor.
+- **False positives fixed, both floors** (117 of 147 ordinary-session
+  blocks on Claude Code were "unparseable shell quoting"): heredoc
+  bodies are data unless the receiving command executes them;
+  unparseable text on the coder floor is regex-scanned for the
+  invariants instead of blocked; risky words are screened in command
+  position only (a `grep "gh pr merge"` passes); `gh run
+  download/watch` and `gh release download` are allow-listed.
+- **Second layers follow:** `settings/claude-settings.json` drops its
+  `git push` deny entries (a vendored prefix deny cannot be
+  session-aware); `settings/codex/lq-maintainer.rules` makes `git
+  push` `prompt` rather than `forbidden`.
+- Tests: `ci/scripts/test-block-writes.sh` 459 checks (arming, both
+  floors, stale and garbled markers, heredocs, fork URLs);
+  `test-runtime-compat.sh` 62.
+- **Known limits, stated:** Codex's payload fields are taken from its
+  documentation, not observed; subagents are assumed to share the
+  parent's session id; MCP connector tools are not screened (the hook
+  is registered on the Bash tool).
+
+### Confidence on findings — evidence and fairness
+
+Design §2; new [rules/confidence.md](rules/confidence.md) (`CF-NN`);
+evidence base in
+[docs/proposals/blocker-confidence.md](docs/proposals/blocker-confidence.md).
+From the maintainer: "confidence readings on blockers based on whether
+your evidence supports … a blocking or major issue … and whether it is
+fair to the contributor".
+
+- Every finding carries an **evidence** reading (observed / canon-gap
+  / mechanical / inferred / unverified) and a **fairness** reading
+  (own-burden / not-this-pr / preference / scope-expansion); the
+  **confidence** (high / medium / low) is derived by rule, never
+  declared. Additive optional keys on the footer's findings tuple;
+  `receipt:v2` unchanged.
+- **Only a high-confidence blocking finding blocks** (CF-04); an
+  inferred or unverified one renders as an RV-06 named check (CF-05);
+  a **preference is not a finding** (CF-06); a **scope expansion is a
+  follow-up**, never a condition (CF-07); what is not this PR's is
+  never asked of its author (CF-08). Live-signal blockers are untouched
+  (CF-09).
+- **`blocking` means one thing** — a defect that makes merging wrong
+  (CF-11); sign-offs, dependency floors and headings are *must-fix
+  (mechanical)*; an infrastructure-only CI failure is a note (CF-12).
+- Calibrated over 171 blocking/major findings: 51 would lose their
+  force; the maintainer had disagreed with 10% of those graded high
+  and 64–80% of the rest.
+- Eval lint learns the vocabularies and the roll-up rule; three new
+  fixtures (`conf-01`–`conf-03`) with goldens; new golden keys
+  documented in `evals/run-checks.md`.
+
+### The public reviews site — Pages, a flow page, a scheduled refresh
+
+Design §3; new [rules/publishing.md](rules/publishing.md) (`PB-NN`);
+proposal amended in
+[docs/proposals/public-receipts-on-lq-ai-community.md](docs/proposals/public-receipts-on-lq-ai-community.md)
+(R2, R7 amended; R9–R11 added). From the maintainer: "allows people to
+read receipts on lq-ai-community … add in the requisite disclaimers
+about whether maintainers decide how to merge"; "we will enable pages
+… a scheduled run (maybe on this mac) to update the pages so that it
+shows the flow from triage, review and merge."
+
+- **`skills/triage/scripts/publish-site.sh`** — a whitelist generator
+  (reads only `receipt.md`, `deck.html` and the footer) that builds a
+  static, no-JavaScript site: an index, one **flow page** per item
+  (opened → each review → decision or "not recorded — absence is not
+  agreement" → comments actually posted → merged/closed), the deck for
+  every reviewed head with the fixed public header at its top, the
+  sanitized receipt, `state.yaml`, `status.yaml`, `index.json` and a
+  FOR-AGENTS page. Refuses E-21, C-40 and held items; holds E-08 and
+  security-tagged items until a per-item ruling; strips paths,
+  addresses and permission prose; labels drafts by what was actually
+  posted; scans every output and refuses the whole run on a hit.
+  `--plan`, `--dry-run`, `--self-test`.
+- **`templates/public-header.md`** (`PH-NN`) and
+  **`templates/for-agents.md`** — the disclaimer block every page opens
+  with ("a human maintainer decides whether and how a change merges";
+  recommendation, recorded decision and GitHub state side by side — if
+  they disagree, GitHub is right) and the page for machine readers.
+- **`publish/site-refresh.sh`** with a `launchd` template — the
+  maintainer's own scheduled job, running as them with their own
+  credential and no model in the loop; `PUBLISH=no` by default; pushes
+  only to the branch the committee designates and never to `main`;
+  refuses to run inside an agent session.
+- **Nothing publishes yet.** Pages, the branch and the publication
+  floor are the committee's decisions (R1, R9–R11); a draft of the
+  issue to put to them is
+  [docs/proposals/lq-ai-community-reviews-issue-draft.md](docs/proposals/lq-ai-community-reviews-issue-draft.md).
+  `docs/community-repo.md` carries a superseded note until the first
+  publication lands.
+
+### Rule fixes from the session record
+
+Each cited to the sessions that motivated it in
+[docs/proposals/v0.8-pain-points.md](docs/proposals/v0.8-pain-points.md).
+
+- `E-08` gains two tests before the private-advisory redirect fires
+  (already public by the project's hand; design or fix without exploit
+  detail), names the triggering span, and never ends the maintainer
+  conversation.
+- **Anchored category 1** (`G-02`, `G-07`, review-pr Step 3): a new
+  feature covered by a ratified DE/ADR/PRD/roadmap anchor goes to
+  tiered review at Tier 2; the design path is offered once.
+- `TR-07a` — the light Tier-2 form for small E-01/E-02-only diffs:
+  quick pass plus the full security checklist; lane `escalate`, no
+  team, no packet.
+- `A-12a` — a proposed decision anchors nothing and orders nothing.
+- `BC-01a` — a textual breaking-change hit is confirmed public before
+  the `breaking-change` label is drafted.
+- `PC-02` leads with the benefit to the project; `MM-05b` credits the
+  original author on a reimplementation; `canon:release-conventions`
+  joins the canon map.
+- The canon SHA is `origin/main` after a named-remote fetch; skills
+  pass the diff to `check-breaking.sh` as a file argument.
+
+### Status
+
+Rules, templates, hook, generator, refresh job and evals exist and
+pass their local tests; none has run against a live PR, and nothing
+has been published anywhere. The three field reports behind the
+pain-points and confidence proposals are kept by the maintainer at
+`~/.lq-maintainer/field-reports/2026-11-09/` (they quote private
+session logs and are not in the repository). Deferred with reasons in the pain-points
+proposal: the Codex read-only agents' install step, a batch skill,
+mid-session feedback capture.
+
 ## [0.7.0] — 2026-10-03
 
 Two strands, each its own design delta: the agent now runs on Codex as
