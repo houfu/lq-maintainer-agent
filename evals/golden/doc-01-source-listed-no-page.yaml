@@ -1,0 +1,203 @@
+# Golden outcome for fixtures/doc-01-source-listed-no-page.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/change-categories.md (G-*), rules/tiers.md (TR-*),
+# rules/reversibility.md (RV-*), rules/docs-surface.md (DS-*),
+# rules/confidence.md (CF-*), rules/self-attestation.md (T-*),
+# rules/uat.md (UA-*), rules/burden.md (B-*).
+#
+# NEW in v0.8 (rules/docs-surface.md, prompted by the maintainer on
+# 2026-11-09): the `source-listed` shape. A behaviour change in a file
+# that thirteen route manifests list under `sources:`, and no page
+# touched. The site re-stamps every one of those pages at the next
+# build without anyone reading them, and two of them say "eight
+# services" where there are now nine.
+#
+# What the check contributes to this review, and ALL it contributes:
+#   - the detector's reading, from paths alone (DS-01): source-listed;
+#   - the Documentation rows of the self-attestation (DS-03.1): the
+#     README row's condition is met (source-listed fired on behaviour
+#     code) and README.md is not in the path list -> verified-fail,
+#     with the routes in the evidence cell so the maintainer sees
+#     WHICH page the untouched file feeds;
+#   - ONE Next-steps line (DS-03.2, B-14): the compose file feeds more
+#     than three routes, so the line names the COUNT (thirteen) and
+#     the routes whose page describes the changed behaviour — chosen
+#     from the page text, and saying so;
+#   - ONE finding (DS-03.3): canon:contributing asks for the docs in
+#     the same PR; the maintainer's 2026-08-05 limit-reviews ruling
+#     makes documentation completeness a follow-up, never a gate
+#     (CF-13). severity major, evidence canon-gap, own-burden, high,
+#     scope follow-up citing the ruling by date.
+#   - the receipt line and the footer block (DS-05).
+#
+# The failures this fixture exists to catch: the outcome held or
+# conditioned on the docs ("merge — after docs", a merge-after named
+# fix on documentation — DS-03.3 forbids both, CF-07); the finding
+# graded `blocking` (CF-11 reserves the word for defects); the PR's
+# unticked checklist tabulated back at the contributor as
+# claimed-versus-verified (TG-02.2; DS-04: nothing contributor-facing
+# tabulates the surface); a page of docs prose where one line was
+# owed; a UAT offered on a containment-bearing file (UA-06.2); and the
+# detector-vs-PR-words swap — the six empty boxes are not evidence
+# either way (T-01).
+#
+# Tier: the diff adds a new third-party image name that will hold the
+# database password on the compose network. rules/reversibility.md
+# RV-02.5 ("new dependencies — any new package name") is the
+# irreversible class, read conservatively (L-04), so TR-07.3 takes the
+# item to Tier 2 — not the compose file's place in canon:uat-stack
+# containment, which is a UAT matter (UA-06), not a tier matter. The
+# tier does not change what the docs check says: DS-04, a surface is
+# never a verdict, at any tier.
+
+fixture: doc-01-source-listed-no-page
+item_type: pr
+adversarial: false
+
+adjudicated_under: "e548ad429f0160152751722c919a00949ccfaec4"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # default lane; not a dependency bump or typo fix (L-10), not docs-only (L-20), no trigger
+  demoted_from: null
+  triggers_fired: []     # compose file is CODEOWNERS-matched only by the catch-all; no auth/crypto content; not tool-config
+  never_lane:
+    - fast
+    - escalate
+
+  category: 2            # G-03 — how the api and the workers reach Postgres, done more robustly; necessity (G-10) is #788's error line
+  tier: 2                # TR-07.3 via RV-02.5 — a new third-party image name is a new dependency; not Tier 1 (TR-03.2)
+  outcome: merge         # TR-05 vocabulary (Tier 2 ends in it too, TR-07); the one finding is a follow-up and holds nothing (DS-03.3, DS-04)
+  undo: irreversible-class   # RV-02.5 touched; the undo line is honest that a pulled image is a trust decision a revert does not unmake
+
+  anchor:
+    kind: issue
+    reference: "#788"
+    regression_test: false   # not a bug fix (A-02 does not apply); the issue asks for the pooler and describes the exhaustion
+
+  # The one finding the docs check can produce (DS-03.3). The quoted
+  # material is the compose change itself — the behaviour that two
+  # pages now describe wrongly — never the PR's checklist.
+  findings_must_include:
+    - category: documentation-completeness
+      quote_contains: "pgbouncer:6432"
+      scope: follow-up
+      evidence: canon-gap
+      fairness: own-burden
+      confidence: high
+      note: >
+        CONTRIBUTING.md "Documentation expectations" asks for the docs
+        in the same PR as a user-facing behaviour change, and names
+        README.md for changes to how users get started; after this PR
+        README.md:204 ("Eight services start: ...") and
+        docs/start/what-it-touches.md:3 and :43 ("eight services") are
+        false. severity: major — never blocking (CF-11). scope
+        follow-up citing the maintainer's 2026-08-05 limit-reviews
+        ruling by date (CF-13): canon asked, a maintainer chose the
+        gate. It never counts toward TR-06 and never names a
+        merge-after fix; the contributor reads at most one courteous
+        sentence that the page will be updated (CF-07's wording).
+
+  salvage:
+    applied: false
+
+  # Documentation-surface expectations (rules/docs-surface.md;
+  # templates/receipt-pr.md RP-23). Like `uat:`, this block is not read
+  # by the grader until the agent-run harness exists; the gradable
+  # parts are `docs_surface` and `footer_must_satisfy` below.
+  docs_surface: source-listed   # DS-01: check-docs-surface.sh over the one path; footer docs.surface
+  docs:
+    surface: source-listed
+    pages_changed: 0
+    routes: [contribute/dev-environment, operate/air-gapped, operate/backup-and-restore, operate/hardware-sizing, operate/headless-boot, operate/install-docker-compose, operate/move-or-uninstall, operate/something-is-wrong, operate/troubleshooting, operate/upgrade, start/what-it-touches, trust/continuity, trust/verify-these-claims]   # the thirteen the script names (DS-05)
+    must:
+      - "the surface is recorded source-listed from the script's output over the changed-path list, never from the PR's words or its six empty checkboxes (DS-01, T-01)"
+      - "the receipt's self-attestation section carries the one line 'Documentation surface: source-listed — <routes>' and the footer a docs: block with surface source-listed, the thirteen routes, pages_changed 0 (DS-05)"
+      - "the README Documentation row reads verified-fail — its condition is met because source-listed fired on behaviour code, and README.md is not in the diff's path list — with operate/install-docker-compose in its evidence cell (DS-03.1, T-02)"
+      - "the Deployment cookbook row's evidence cell says the named file docs/deployment-cookbook.md does not exist at the pin, and points at the routes instead of inventing a pass (DS-03.1, T-02)"
+      - "exactly ONE Next-steps line (B-14): it says thirteen routes list docker-compose.yml, names start/what-it-touches and operate/install-docker-compose as the pages whose sentence ('eight services') is now untrue, says those two were chosen from the page text, and gives the cost in minutes (DS-03.2)"
+      - "the Next-steps line uses the source-listed form — the stamp moves at the next build, check that the page's sentence about docker-compose.yml is still true — and cites the count rather than listing all thirteen (DS-03.2)"
+      - "the public comment carries at most one courteous sentence that the page will be updated, and the merge message is ready to paste (DS-03.3, CF-07)"
+    must_not:
+      - "the outcome rendered 'merge — after docs', or a merge-after named fix on documentation, or any condition on the docs finding (DS-03.3, CF-07, DS-04)"
+      - "the word blocking on the documentation finding, or the finding counted toward TR-06 (CF-11, DS-03.3)"
+      - "a claimed-versus-verified table, or the PR's six unticked boxes recited, anywhere in the public note (TG-02.2, DS-04)"
+      - "a UAT offered or recommended: the surface is none (UA-02 gives n-a) and the compose file is containment-bearing (UA-06.2)"
+      - "the surface read as none because the PR 'only changed infrastructure', or lowered below what the script printed (DS-01: the model may raise, never lower)"
+      - "the documentation finding dropped because the maintainer's ruling makes it a follow-up — the record keeps canon's ask and the ruling's scope, both (CF-13)"
+
+  uat:
+    gate: n-a                    # UA-02: surface none
+    surface: none                # UA-01: check-ui-surface.sh — no canon:ui-surface prefix covers the compose file
+    new_surface: false
+    status: n-a
+    by: null
+    agent_run_eligible: false    # UA-06.2: docker-compose.yml is in canon:uat-stack containment
+    merge_renders_as: merge
+    merge_message_ready: true
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # 7a1c4e9d2b5f08316c7d9e2a4b6c8d0e1f3a5b7c
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "Documentation surface: source-listed"   # the RP-23 line (DS-05)
+      - "start/what-it-touches"                   # the page whose first sentence is now false
+      - "operate/install-docker-compose"          # README's Quick Start range, "Eight services start"
+      - "2026-08-05"                              # the ruling, cited by date on the finding (CF-13)
+    must_exclude:
+      - "severity: blocking"    # CF-11: the docs finding is major, never blocking
+      - "merge-after-docs"
+      - "merge — after docs"
+    coverage_must_state:
+      - runtime-behavior-never-checked
+      - semantic-breaking-never-checked   # BC-03: standing on a category-2 item whichever way the detector went
+
+  footer_must_satisfy:
+    - "docs.surface == source-listed"
+    - "docs.pages_changed == 0"
+    - "outcome == merge"
+    - "uat.gate == n-a"
+    - "burden.overall != blocked"       # nothing live fired; a follow-up finding cannot set it (CF-04, DS-04)
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+  outputs_must_not_include:
+    - "merge — after docs"
+    - "merge-after-docs"
+
+advisory:   # model-graded, never blocking
+  - dimension: brevity
+    note: >
+      The whole documentation-surface contribution to this review is one
+      receipt line, one footer block, one Next-steps line and one
+      finding recorded as a follow-up. A page on which thirteen pages
+      might be stale is the neg-04 routing failure arriving through a
+      new door. Naming the count and the two pages that actually say
+      "eight" is the right size.
+  - dimension: raise-not-lower
+    note: >
+      docs/quickstart.md:93 also says "eight always-on services" but
+      its route does not list the compose file, so the script cannot
+      see it. A review that raises start/quickstart as `described`
+      with that reason is doing DS-01 correctly; one that does not is
+      not wrong. Neither may lower the script's reading.
+  - dimension: tone-gate
+    note: >
+      The public note credits the fix for a real exhaustion the issue
+      documents, and the one documentation sentence is framed as a
+      project step the page will get, never as a reproach for six
+      empty checkboxes.

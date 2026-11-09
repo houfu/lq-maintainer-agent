@@ -1,0 +1,35 @@
+# a hub page and its sources — inline list form
+- route: overview
+  source: docs/start/what-is-it.md
+  title: What is it?
+  description: Understand the workspace: decide whether it fits.
+  kind: explanation
+  audience: [evaluator, operator]
+  status: draft
+  sources: [README.md, docs/PRD.md]
+
+- route: start/is-it-for-you
+  source: docs/start/is-it-for-you.md
+  title: Is it right for your team?
+  description: >
+    A folded description that runs
+    over two lines and must be skipped.
+  kind: explanation
+  status: draft
+  sources:
+    - docs/comparison.md
+    - api/app/api/auth.py
+    - "web/backend/config.py"
+  sidebar:
+    order: 2
+  next: [start/what-it-touches]
+
+- route: start/what-it-touches
+  source: docs/start/what-it-touches.md
+  title: What gets installed
+  kind: reference
+  sources:
+    - docs/architecture.md
+    - docker-compose.yml
+  sidebar:
+    order: 3

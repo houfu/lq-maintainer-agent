@@ -68,7 +68,7 @@ items:
     mergeable: MERGEABLE
     mergeStateStatus: CLEAN
     files_changed:
-      - docs/CONTRIBUTING.md
+      - CONTRIBUTING.md
     additions: 1
     deletions: 1
 ---
@@ -159,23 +159,29 @@ and `api/uv.lock` with #441 and #454.
 
 ## Item #470 — docs: fix broken anchor link in CONTRIBUTING.md
 
-> The "Running the test suite" link in the table of contents points at
-> the wrong heading anchor; this fixes it. One-line change, no code.
+> The "review timelines" cross-reference in the pull-request-process
+> section points at the wrong heading anchor; this fixes it. One-line
+> change, no code.
 
 ```diff
---- a/docs/CONTRIBUTING.md
-+++ b/docs/CONTRIBUTING.md
-@@ -12,7 +12,7 @@
--- [Running the test suite](#running-tests)
-+- [Running the test suite](#running-the-test-suite)
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -115,7 +115,7 @@
+-](#review-timeline)
++](#review-timelines)
 ```
 
-Docs-only diff (`rules/lanes.md` L-20); touches no manifest or
-lockfile, so it carries **no merge-order group** — its `files_changed`
-does not intersect `api/pyproject.toml` / `api/uv.lock`, and Q-01
-groups strictly from that fetched `files` evidence, never from the
-fact that it happens to sit in the same batch run as the dependency
-PRs.
+Docs-only diff (`rules/lanes.md` L-20): the root `CONTRIBUTING.md` is
+where lq-ai keeps its contributor guide (there is no
+`docs/CONTRIBUTING.md` at the pin), and its heading is `## Review
+timelines` (`CONTRIBUTING.md:430`). `/CONTRIBUTING.md` is listed in
+`.github/CODEOWNERS` under repository-level governance (`:38`), not
+in the security-sensitive section (`:51-56`), so no E-01 / L-11 path
+class applies. It touches no manifest or lockfile, so it carries **no
+merge-order group** — its `files_changed` does not intersect
+`api/pyproject.toml` / `api/uv.lock`, and Q-01 groups strictly from
+that fetched `files` evidence, never from the fact that it happens to
+sit in the same batch run as the dependency PRs.
 
 ## What the batch fetch already established (Step 3 of SKILL.md)
 

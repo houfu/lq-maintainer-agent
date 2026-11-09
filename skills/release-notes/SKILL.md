@@ -109,8 +109,10 @@ keeps a work log — record the canary line as its first row.
    no flag, no "just this once", no manual override. This repo's own
    release narrative stays a manual act. If the remote is this agent's
    repo, say so plainly and stop.
-2. **Record the canon SHA**: `git rev-parse main` in the clone. Warn
-   (do not block) if local `main` is behind `origin/main` — a
+2. **Record the canon SHA**: `git rev-parse <canon-remote>/main` in the
+   clone after `git fetch <canon-remote> main` (the remote whose URL is
+   `canon:repo`, `RT-10`). Warn (do not block) if local `main` is behind
+   it — a
    narrative built from a stale clone will miss merges, and the
    maintainer may want to pull first.
 3. **Record the agent version**: read `version` from

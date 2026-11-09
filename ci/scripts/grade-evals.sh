@@ -317,6 +317,7 @@ SET_finding_evidence="observed canon-gap mechanical inferred unverified"
 SET_finding_fairness="own-burden not-this-pr preference scope-expansion"
 SET_finding_confidence="high medium low"
 SET_item_type="pr issue batch"
+SET_docs_surface="page-changed source-listed reference-source described none unknown"
 
 lint_enum() {
   # $1=golden $2=key $3=allowed set — every word of the golden's value
@@ -338,6 +339,26 @@ for g in $(graded_goldens); do
   lint_enum "$g" outcome "$SET_outcome"
   lint_enum "$g" undo "$SET_undo"
   lint_enum "$g" recommendation "$SET_recommendation"
+  # v0.8 (rules/docs-surface.md DS-05, evals/run-checks.md): the footer's
+  # optional docs.surface, asserted through the flat golden key.
+  lint_enum "$g" docs_surface "$SET_docs_surface"
+
+  # v0.8 footer_must_satisfy (evals/run-checks.md): each predicate must
+  # parse as `<dotted.key> <op> <value>` with op in == != >= <= -- the
+  # harness grades them (M1); the lint only refuses one it could never
+  # evaluate.
+  awk '
+    found && /^[[:space:]]*#/ { next }
+    found && /^[[:space:]]*$/ { next }
+    found { if ($0 ~ /^[[:space:]]*-[[:space:]]*/) { sub(/^[[:space:]]*-[[:space:]]*/, ""); sub(/[[:space:]]*#.*$/, ""); gsub(/"/, ""); print; next } found = 0 }
+    /^  footer_must_satisfy:/ { found = 1 }
+  ' "$g" | while IFS= read -r pred; do
+    [ -n "$pred" ] || continue
+    case "$pred" in
+      *" == "*|*" != "*|*" >= "*|*" <= "*) : ;;
+      *) err "$g" "footer_must_satisfy entry '$pred' is not '<dotted.key> <op> <value>' with op in == != >= <= (evals/run-checks.md)" ;;
+    esac
+  done
 
   # item_type (evals/README.md "Fixture anatomy"): a top-level field,
   # not nested under `expected:`, so expected_scalar's exactly-two-space

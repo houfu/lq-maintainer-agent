@@ -147,6 +147,62 @@ shows the flow from triage, review and merge."
   `docs/community-repo.md` carries a superseded note until the first
   publication lands.
 
+### Which published pages does this touch — the documentation-surface check
+
+Design §5; `rules/docs-surface.md` DS-01–DS-05; `templates/receipt-pr.md`
+RP-23; proposal and evidence in
+[docs/proposals/docs-surface-check.md](docs/proposals/docs-surface-check.md).
+Asked by the maintainer the day after the release was cut and ruled
+into it the same day. lq-ai's documentation site is built from route
+manifests that map each page to one source file and a list of further
+sources — code among them — and stamps every page with the newest
+commit touching those sources, so a change to a listed file moves the
+stamp without anyone re-reading the words. In the v0.9.1 window one or
+two of sixty-four PRs did exactly that.
+
+- **`check-docs-surface.sh`** reads the manifests from the clone at the
+  pinned canon SHA (never the PR) and classifies the diff:
+  `page-changed`, `source-listed`, `reference-source`, `none`, or
+  `unknown` (fail-closed: a missing row or a manifest the stdlib
+  subset parser refuses; a cannot-verify, never a gate). The model may
+  raise `described`; nothing lowers. 27 offline checks in
+  `ci/scripts/test-docs-surface.sh` (in the `uat-test` workflow).
+- **What it drives:** the self-attestation documentation rows stop
+  reading `cannot-verify` (the detector decides whether a row's
+  condition applies, the diff whether its named file was touched); one
+  Next-steps line names the page and the sentence to check; and the
+  one finding canon can require is `major` / `canon-gap` / `own-burden`
+  with `scope: follow-up` citing the 2026-08-05 limit-reviews ruling
+  (`CF-13`). No lane, tier, outcome or UAT gate reads it.
+- **The record:** one receipt line, an optional additive `docs:` footer
+  block (`surface`, `routes`, `pages_changed`), one line on the deck's
+  decision card; glossary captions for each surface; the golden key
+  `docs_surface` and its vocabulary lint, plus a parse lint for
+  `footer_must_satisfy` predicates that `evals/run-checks.md` described
+  and the grader did not have. Three new evals: `doc-01` (the
+  no-page-touched shape), `doc-02` (a page updated wrongly in the same
+  PR — the docs row passes *and* the disagreement is a finding),
+  `doc-03` (tests only: silence).
+- **Pulled into the release by the check.** The **CI canon pin
+  advances** from lq-ai `fdeced2e` (2026-07-10) to `e548ad429`
+  (2026-11-08) — the manifests do not exist at the old pin. The drift
+  check passes against the new canon with no canon-map edit. Every
+  fixture's canon claims were re-checked against the new tree: eight
+  pairs would have graded differently (lq-ai's CODEOWNERS now routes
+  all of `gateway/` to security review, so synthetic files placed
+  there fire E-01; two "no canon covers this" claims had become
+  false) and were repaired so each keeps the behaviour it tests —
+  `adv-04`'s triggers and dispositions are the one golden whose graded
+  fields moved, `std-12`'s label projection moves from `gateway` to
+  `api`; ten more had wording corrected. The four goldens adjudicated
+  under the old pin are re-adjudicated under the new one; the rest
+  stay marked unadjudicated, as they were. The twenty-five open
+  nightly pin-advance PRs are superseded. And
+  **`RT-10`: the canon remote is the one whose URL names the target**,
+  found with `git remote -v`, not the one called `origin` — the
+  maintainer's own clone has a fork as `origin` and would have read
+  none of the target's newer files; every skill's pin step now says so.
+
 ### Rule fixes from the session record
 
 Each cited to the sessions that motivated it in
@@ -168,8 +224,10 @@ Each cited to the sessions that motivated it in
 - `PC-02` leads with the benefit to the project; `MM-05b` credits the
   original author on a reimplementation; `canon:release-conventions`
   joins the canon map.
-- The canon SHA is `origin/main` after a named-remote fetch; skills
-  pass the diff to `check-breaking.sh` as a file argument.
+- The canon SHA is the canon remote's `main` after a named-remote
+  fetch — the remote whose URL names the target (`RT-10`), not
+  necessarily `origin`; skills pass the diff to `check-breaking.sh` as
+  a file argument.
 
 ### Status
 

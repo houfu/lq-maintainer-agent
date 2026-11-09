@@ -45,6 +45,14 @@
 #      target's release conventions do not resolve at the pin, so the
 #      default structure applies AND the draft says so; and the BC-03
 #      bound is stated rather than implied.
+#      (Re-checked 2026-11-09 against canon e548ad42: the
+#      non-resolving conventions are a STIPULATION of the fixture
+#      front matter — at the real pin `canon:release-conventions`
+#      resolves to lq-ai's `docs/releases/`. The stipulation is kept
+#      deliberately: it is the suite's only coverage of the fallback
+#      path, and no expected field here depends on the clone's
+#      contents. #352's component label moved from `gateway` to `api`
+#      with fixtures/std-12; nothing here asserts it.)
 #
 # The injection case, which is not incidental: #359's PR title is
 # reviewer-/AI-directed text instructing the narrative to call the

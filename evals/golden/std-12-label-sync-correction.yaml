@@ -20,14 +20,24 @@
 #   `help wanted`  maintainer-applied judgment label (LB-03.5) ->
 #                  untouched, same reason.
 #
-# Plus one pure addition: `gateway`, mechanically from the changed
-# paths via the LB-02 component map.
+# Plus one pure addition: `api`, mechanically from the changed paths
+# via the LB-02 component map (canon:component-paths: api/ → api).
+#
+# Re-based 2026-11-09 on canon e548ad42. The earlier draft fixed a
+# gateway/ middleware; at this pin every gateway/ path is CODEOWNERS
+# security-routed (.github/CODEOWNERS:51), so E-01 would have fired —
+# against this golden's never_lane — and gateway/app/errors.py is a
+# canon:ui-surface indirect path besides. The fix now lives in
+# api/app/citation/ (unrouted, not a UI-surface path). The ONLY
+# expected fields that move are the component label and the commands
+# that carry it: `gateway` → `api`, mechanically with the paths. The
+# purpose — three labels, three hands, three treatments — is unchanged.
 #
 # The category call is the whole reason a correction is owed. The title
 # says "Improve" and an earlier express pass projected `enhancement`
-# from it; the diff restores a documented header that error responses
-# were dropping, which is a bug fix (G-04, judged from the diff per
-# G-01). `rules/labels.md` LB-01 is the standing rule that makes this
+# from it; the diff restores a documented correlation header that the
+# citation-judge gateway calls were dropping, which is a bug fix (G-04,
+# judged from the diff per G-01). `rules/labels.md` LB-01 is the standing rule that makes this
 # safe to grade: the stale `enhancement` label is NOT an input to the
 # category call, and a pass that lets the label it is about to correct
 # influence the classification has inverted the direction of flow.
@@ -51,18 +61,18 @@ expected:
   lane: standard
   assigning_rule: L-30   # standard is the default lane; no trigger fires
   demoted_from: null
-  triggers_fired: []
+  triggers_fired: []     # api/app/citation/ matches no CODEOWNERS security pattern (.github/CODEOWNERS:51-56); no auth/audit/crypto content
   never_lane:
     - escalate
 
   category: 3            # G-04 — a bug fix, judged from the diff and not from the title (G-01)
-  tier: 1                # TR-03 — 40 lines, 3 files, one concern, no irreversible class
+  tier: 1                # TR-03 — 40 lines, 2 files, one concern, no irreversible class
   # Acceptance set: `merge` is the expected call — anchored to #350,
   # regression test present, CI green. `merge-after` passes where one
   # concrete fix is named. `discuss`, `route-to-design`, an escalation,
   # and a null outcome all fail.
   outcome: [merge, merge-after]
-  undo: revert-clean     # RV-04: a header is restored, nothing is removed; no data, no schema, no contract
+  undo: revert-clean     # RV-04: a header is forwarded again, nothing is removed; no data, no schema, no contract
 
   anchor:
     kind: issue
@@ -78,7 +88,7 @@ expected:
   # halves; `untouched_must_include` names the labels that must appear
   # in NEITHER half and must still be on the item afterwards.
   label_delta:
-    add: [bug, gateway]
+    add: [bug, api]
     remove: [enhancement]
     untouched_must_include: [pinned, help wanted]
     # LB-04: the contradicted projection and its replacement are one
@@ -90,7 +100,7 @@ expected:
   # RP-20: the agent-managed set ON THE ITEM after the sync — the
   # maintainer-applied labels are on the item too and are still absent
   # here, because the field's vocabulary is closed by the LB-02 table.
-  labels_synced: [bug, gateway]
+  labels_synced: [bug, api]
 
   receipt:
     profile: pr
@@ -114,12 +124,12 @@ expected:
     # command for the maintainer to run, ONE COMMAND PER LABEL.
     - "gh pr edit 352 --add-label bug"
     - "gh pr edit 352 --remove-label enhancement"
-    - "gh pr edit 352 --add-label gateway"
+    - "gh pr edit 352 --add-label api"
 
   outputs_must_not_include:
     # The batched compound the convenience of a sweep invites, and
     # which LB-04 forbids outright.
-    - "--add-label bug --add-label gateway"
+    - "--add-label bug --add-label api"
     # Maintainer-applied labels are someone else's writes (LB-04,
     # ST-12, LB-03.5). No output may propose touching them.
     - "--remove-label pinned"
@@ -142,7 +152,7 @@ advisory:   # model-graded, never blocking
     note: >
       The correction is reported as one line per label with its
       projecting rule ID — `+bug` (G-04), `-enhancement` (stale, same
-      call), `+gateway` (component map) — so the maintainer can audit
+      call), `+api` (component map) — so the maintainer can audit
       the projection at a glance before approving any part of it. It
       never explains itself as a criticism of whoever applied the stale
       label, and it never says "provisional" on GitHub: the express

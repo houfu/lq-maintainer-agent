@@ -11,14 +11,25 @@
 # is that the item arrives at a PLAN rather than at a stalled PR or a
 # bare committee packet.
 #
+# Re-based 2026-11-09 on canon e548ad42 (synthetic facts only; no
+# expected field moved). The earlier capability — saved searches with a
+# scheduled digest — is decided canon at this pin (PRD §3.10 M4
+# watches / scheduled tasks / notifications, docs/PRD.md:988-995; ADR
+# 0044), so it no longer tested an undecided feature. The capability is
+# now a legal-entity register, verified absent from PRD, ROADMAP,
+# docs/adr/ and docs/contribute/ by grep (the fixture records the
+# terms); the synthetic paths sit in lq-ai's real api/ tree, outside
+# every CODEOWNERS security pattern.
+#
 # THE CATEGORY CALL (G-01, from the diff): four new modules in a new
-# package, a new CLI command, a new operator-config block — capability
-# that does not exist, whose anchor would be canon that does not yet
-# exist. Both G-02 signals, so **category 1**, and G-07 routes it to
-# `skills/design-plan/`, not to tiered code review. The contrast with
-# neg-02 is deliberate and is the corpus's category boundary: neg-02 is
-# also additive and also creates a new file, but the decision behind it
-# was already ratified (roadmap R-7), so it is category 2 and merges.
+# package, a new CLI subcommand, a new operator-supplied input file —
+# capability that does not exist, whose anchor would be canon that does
+# not yet exist. Both G-02 signals, so **category 1**, and G-07 routes
+# it to `skills/design-plan/`, not to tiered code review. The contrast
+# with neg-02 is deliberate and is the corpus's category boundary:
+# neg-02 is also additive and also introduces new surface, but the
+# decision behind it was already ratified (PRD §9 DE-258), so it is
+# category 2 and merges.
 #
 # WHY E-04 FIRES (and why that is not the v0.6 behavior): the
 # contribution cites no anchor, and for a PR the trigger is evaluated
@@ -124,10 +135,12 @@ advisory:   # model-graded, never blocking
   - dimension: decision-inventory-quality
     note: >
       The inventory should name the decisions this feature actually
-      puts to the project — whether saved searches are a product
-      concept and where definitions live; what schedules a daily
-      digest, given the tree has no scheduler; how a digest reaches a
-      person; whether matching runs over new documents only — each as
+      puts to the project — whether legal entities are a product
+      concept and where definitions live (operator YAML or a table);
+      how an entity relates to a Project (§3.11) and the Organization
+      Profile (§3.12); whether officer names are personal data under
+      the anonymization layer; whether constitutional documents become
+      a Knowledge Base — each as
       ONE ratifiable sentence with its kind, nearest canon cited
       click-through at the pinned SHA, and drafted artifact (D-05,
       `templates/design-plan.md` §2). "Canon absent" never renders

@@ -17,7 +17,7 @@ description: >-
   /lq-maintainer:triage instead.
 disable-model-invocation: true
 argument-hint: <pr-number>
-allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan:*), Bash(lq-maintainer-safety-canary)
+allowed-tools: Read, Grep, Glob, Task, Bash(gh pr view:*), Bash(gh pr diff:*), Bash(gh pr checks:*), Bash(gh pr list:*), Bash(gh issue view:*), Bash(gh issue list:*), Bash(gh label list:*), Bash(git rev-parse:*), Bash(git log:*), Bash(git show:*), Bash(git remote:*), Bash(git status:*), Bash(git config --get:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-breaking.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/render-deck.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/rules-index.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-ui-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-docs-surface.sh:*), Bash(${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/uat-run.sh --plan:*), Bash(lq-maintainer-safety-canary)
 ---
 
 # /lq-maintainer:review-pr — the single-PR reviewer, tiered
@@ -71,6 +71,13 @@ it is applied or cited (`LD-05`). Fail toward loading (`LD-06`);
   (UA-04), and the one contained runner through which the agent may
   build and screenshot an eligible item (UA-05–UA-07, `I-05` as
   amended).
+- `${CLAUDE_PLUGIN_ROOT}/rules/docs-surface.md` *(v0.8)* — the
+  documentation surface (`DS-NN`): which published pages a change
+  touches or is listed under, detected from paths by
+  `check-docs-surface.sh` at the canon SHA (DS-01/DS-02); what it
+  drives — the self-attestation docs rows, one Next-steps line, and
+  the one follow-up-scoped finding canon can require (DS-03) — and
+  what it never does: no lane, tier, outcome or gate reads it (DS-04).
 - `${CLAUDE_PLUGIN_ROOT}/rules/confidence.md` *(v0.8)* — the two
   readings every finding carries (`CF-NN`): what it rests on
   (`evidence`), whose burden the ask is (`fairness`), and the
@@ -167,10 +174,17 @@ keeps a work log — record the canary line as its first row.
 Record, before any analysis, the **four pinned fields** (design §3.4):
 
 - **PR head SHA** — from `gh pr view N --json headRefOid`.
-- **Canon SHA** — the clone's `main` HEAD **after** `git fetch origin main` (a named-remote fetch of a branch ref, which the hook allows), pinned with `git rev-parse origin/main`; a local `main` that is behind the remote is not canon (v0.8 — eight runs in the 2026 record pinned a `main` 12 to 31 commits stale). Warn
-  the user if `main` is behind `origin/main`; they may want to pull
-  first, since this SHA is what the review is judged against and what
-  the internal evidence record pins.
+- **Canon SHA** — the **canon remote's** `main` HEAD **after**
+  `git fetch <canon-remote> main` (a named-remote fetch of a branch ref,
+  which the hook allows), pinned with `git rev-parse <canon-remote>/main`.
+  The canon remote is the one whose URL is `canon:repo`, found with
+  `git remote -v` — `origin` only when its URL is the target's
+  (`RT-10`; the maintainer's own clone has a fork as `origin`). A local
+  `main` that is behind that remote is not canon (v0.8 — eight runs in
+  the 2026 record pinned a `main` 12 to 31 commits stale). Warn the
+  user if `main` is behind it; they may want to pull first, since this
+  SHA is what the review is judged against and what the internal
+  evidence record pins. Name the remote in the coverage statement.
 - **Agent version** and **served model ID** — from Step 0.
 
 Every artifact this skill produces carries all four. If the head SHA
@@ -406,6 +420,25 @@ that row is how a coverage claim stays checkable instead of asserted.
    `discuss` question. A required UAT does not change which outcome
    the review reaches; it holds `merge` until the UAT passes at this
    head SHA (UA-03).
+5b. **Which published pages does this touch? (`rules/docs-surface.md`
+   DS-01–DS-03).** Pipe the same changed-path list into
+   `${CLAUDE_PLUGIN_ROOT}/skills/triage/scripts/check-docs-surface.sh
+   --clone <clone> --canon-sha <canon-sha>` (it reads the target's
+   route manifests with `git show` at the pinned canon SHA — never the
+   PR's tree, no network) and record its `surface:`, `routes:` and
+   `pages-changed:` lines. You may **raise** the surface to `described`
+   with the page and the reason, never lower it; `unknown` is a
+   cannot-verify reading and gates nothing. Carry the result into
+   Step 6 (the documentation rows: the detector decides whether a
+   row's condition applies, the diff decides whether its named file
+   was touched — DS-03.1), into one Next-steps line naming the route
+   and the sentence to check when the surface is not `none`
+   (DS-03.2), and — only for a user-facing behaviour change with
+   `source-listed`/`described` and no `page-changed` — into the one
+   `major` / `canon-gap` / `own-burden` finding that takes
+   `scope: follow-up` citing the 2026-08-05 limit-reviews ruling
+   (DS-03.3, `CF-13`). Nothing here changes lane, tier, outcome or the
+   UAT gate (DS-04).
 6. **The self-attestation cross-check** — re-derive the contributor's
    PR-template checkboxes from evidence (`rules/self-attestation.md`
    T-01/T-02). At Tier 1 you perform the whole cross-check yourself;

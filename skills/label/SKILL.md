@@ -81,9 +81,10 @@ keeps a work log — record the canary line as its first row.
    canon (design §3.4), and `rules/labels.md` LB-02's component map is
    verified against it. This is triage's Step 0 check and nothing more:
    no canon doc is read here.
-2. **Record the canon SHA** (`git rev-parse main`), which is the pin the
-   component path prefixes are verified at (LB-02). Warn, do not block,
-   if local `main` is behind `origin/main`.
+2. **Record the canon SHA** (`git rev-parse <canon-remote>/main` after
+   `git fetch <canon-remote> main` — the remote whose URL is `canon:repo`,
+   `RT-10`), which is the pin the component path prefixes are verified
+   at (LB-02). Warn, do not block, if local `main` is behind it.
 3. **No pinned-field artifact is produced here**, because no document
    is: a label carries no text, no citation, and no coverage statement.
    The four pinned fields ride the receipt the fuller pass writes

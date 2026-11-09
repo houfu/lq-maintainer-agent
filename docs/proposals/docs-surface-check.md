@@ -1,4 +1,4 @@
-# Does this change need a docsite update? — the docs-surface check (PROPOSED 2026-11-09; PLAN, not yet implemented)
+# Does this change need a docsite update? — the docs-surface check (PROPOSED 2026-11-09; INCORPORATED into design delta v0.8 §5 the same day, shipping in v0.8.0)
 
 Field request from the maintainer, in their words, the day after
 v0.8.0 was cut:
@@ -9,10 +9,12 @@ v0.8.0 was cut:
 The answer is **yes, a narrow one: a mechanical detector that says
 which published pages a change touches or is listed under, feeding one
 Next-steps line and the self-attestation docs row — never a gate.**
-This document is the plan for it, written against a read-only look at
-lq-ai's documentation site on 2026-11-09. It is the next release item
-after v0.8.0 (a v0.8.1 or v0.9 strand); nothing here is implemented
-yet, and the sequencing section says what has to land first.
+This document is the plan it was built from, written against a
+read-only look at lq-ai's documentation site on 2026-11-09. The
+maintainer ruled the same day that it ships in v0.8.0 rather than
+after it; the normative result is `rules/docs-surface.md` (`DS-NN`),
+and the sequencing section below records what that ruling pulled into
+the release.
 
 ## What the docsite is, in the terms this plan depends on
 
@@ -208,9 +210,9 @@ is the one the agent cannot verify.
   `unknown` reading adds the `canon:docs-routes` dangling-key note to
   the coverage statement, as any unresolved row does.
 
-## Sequencing — what has to land first
+## Sequencing — what the v0.8.0 ruling pulled into the release
 
-1. **The canon pin.** `ci/canon-pin.txt` is at
+1. **The canon pin — advanced in v0.8.0.** `ci/canon-pin.txt` is at
    `fdeced2e` (lq-ai, 2026-07-10). `docs/site/` does not exist there,
    so a `canon:docs-routes` row fails the drift check at the pin, and
    new goldens cannot be `adjudicated_under` it. Twenty-five scheduled
@@ -222,20 +224,25 @@ is the one the agent cannot verify.
    (`action_required`: the default token does not trigger workflows,
    as the workflow's token note says). **Step zero is to approve its
    runs, merge it, and re-adjudicate whatever goldens eval-run
-   re-flags.** This item does not start until the pin is past
-   2026-10-25.
-2. **The base.** This plan sits on a worktree stacked on the v0.8.0
-   release branch head; the implementation rebases onto `main` once
-   PR #45 merges.
-3. **The canon remote, by URL.** `RT-01`/`review-pr` Step 0 pin canon
-   to `origin/main` after a fetch. On the maintainer's own machine the
+   re-flags.** Shipping the check in v0.8.0 made that step part of the
+   release: `ci/canon-pin.txt` moves to `e548ad429` in the same
+   change, the drift check passes against it with no canon-map edit,
+   and every existing fixture's canon claims were re-checked against
+   the new tree — eighteen pairs needed repair or re-wording, one
+   golden's graded fields moved (the changelog records the result). The open
+   pin-advance PRs are superseded by this and can be closed.
+2. **The base.** Built on the v0.8.0 release branch, as part of its
+   PR.
+3. **The canon remote, by URL — `RT-10`.** Before this, `review-pr`
+   Step 1 pinned canon to `origin/main` after a fetch. On the maintainer's own machine the
    lq-ai clone's `origin` is the `houfu` fork — behind, and without
    `site/` at all; the LegalQuants remote there is named
    `legalquants`. This detector reads manifests from that clone, so it
    would read nothing. Amend the pin rule to **the remote whose URL
    matches `canon:repo`**, falling back to `origin` only when it does,
-   and warn when no remote matches. Small, and it belongs in the same
-   release because the check is useless without it.
+   and warn when no remote matches. Small, and in the same release
+   because the check is useless without it — now `rules/runtime.md`
+   RT-10, applied in every skill's pin step.
 
 ## The canon-map row (draft)
 
@@ -285,26 +292,30 @@ grader's enumerated-value lint beside `evidence`/`fairness`.
   finding with `evidence: observed` pointing at the sentence; the docs
   row `verified-pass` (the page was updated) **and** the finding (it
   was updated wrong) — both, not one.
-- **`doc-03-deps-only-silence`** — the over-reaction guard, the
-  `uat-03` of this strand: a dependency bump touching `uv.lock` and
-  `package-lock.json`. Expect `docs.surface == none`, no Next-steps
-  docs line, no finding, nothing in the receipt but the one `n-a` row.
-  Nine of fourteen code-only PRs in the window were this; a check that
-  speaks on them has become a tax.
+- **`doc-03-tests-only-silence`** — the over-reaction guard, the
+  `uat-03` of this strand: a PR that adds test cases and nothing else.
+  Expect `docs.surface == none`, no Next-steps docs line, no finding,
+  nothing in the receipt but the one `n-a` row. Nine of fourteen
+  code-only PRs in the window were dependency or test changes; a check
+  that speaks on them has become a tax (dependency bumps already have
+  their own fast-lane goldens, so the guard is written on the test
+  shape).
 
-## What ships
+## What shipped (v0.8.0)
 
-`skills/triage/scripts/check-docs-surface.sh` and its test; the
-`canon:docs-routes` row; `rules/docs-surface.md` (`DS-01`–`DS-05`,
-registered **whole** in `LD-02` — it is small and every standard-lane
-PR runs it) or the same five rules as a section of
-`rules/self-attestation.md`; Step 5b in `skills/review-pr/SKILL.md`
-beside the UA-01 step, with the script added to `allowed-tools` on both
-hosts; the `docs:` block in `templates/receipt-pr.md`'s footer schema
-and the one-line section; the `docs` finding chip in `render-deck.sh`;
-the `RT-01` remote-by-URL amendment; three fixtures and goldens; the
-grader vocabulary line; a changelog entry. Roughly the size of the
-v0.7.6 UAT detection half, without the runner.
+`skills/triage/scripts/check-docs-surface.sh` and
+`ci/scripts/test-docs-surface.sh` with fixtures under
+`ci/fixtures/docs-surface/` (in the `uat-test` workflow); the
+`canon:docs-routes` row and the canon pin at `e548ad429`;
+`rules/docs-surface.md` (`DS-01`–`DS-05`, registered **whole** in
+`LD-02`); Step 5b in `skills/review-pr/SKILL.md` beside the UA-01 step,
+with the script in `allowed-tools`; `RP-23`, the visible section and the
+`docs:` footer block in `templates/receipt-pr.md`; one decision-card
+line and five glossary captions in the deck, with six renderer tests;
+`RT-10` and the pin step of every skill; the `docs_surface` golden key,
+its vocabulary lint and the `footer_must_satisfy` parse lint in the
+grader; three fixtures and goldens; the design delta's §5 and the
+changelog strand. No chip: the one finding renders like any other.
 
 ## Honest bounds
 

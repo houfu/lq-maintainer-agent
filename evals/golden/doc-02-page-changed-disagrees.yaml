@@ -1,0 +1,205 @@
+# Golden outcome for fixtures/doc-02-page-changed-disagrees.md
+# Schema: evals/run-checks.md. Rule IDs: rules/lanes.md (L-*),
+# rules/change-categories.md (G-*), rules/tiers.md (TR-*),
+# rules/reversibility.md (RV-*), rules/docs-surface.md (DS-*),
+# rules/confidence.md (CF-*), rules/self-attestation.md (T-*),
+# rules/anchoring.md (A-*), rules/uat.md (UA-*), rules/burden.md (B-*).
+#
+# NEW in v0.8 (rules/docs-surface.md): the `page-changed` shape, and the
+# one case where the check has two things to say at once. The PR did
+# what canon:contributing asks — compose change and the page that
+# describes it, in the same PR — and the new prose is wrong about the
+# new code: it promises a host port (6432, `PGBOUNCER_HOST_PORT`) that
+# the compose hunk never publishes and no file defines.
+#
+# Both, not one (DS-03.3, last sentence):
+#   - the documentation line records start/what-it-touches as the page
+#     that changed — the page WAS updated; that part is a pass — and
+#     `docs.pages_changed` is 1 (DS-05);
+#   - the disagreement between the two hunks is an ORDINARY in-scope
+#     finding: evidence observed (both sides are in the diff), fairness
+#     own-burden (the PR wrote the sentence), confidence high. It is
+#     NOT a documentation-completeness finding (that one needs
+#     source-listed/described with no page-changed, which is not this
+#     PR) and so takes no 2026-08-05 follow-up scope.
+#
+# Severity is the judgment this golden does not pin: the sentence
+# sends an operator to a port that is not there (a reference page,
+# "Services and default ports" is its neighbour section), and the fix
+# is one clause. `minor` with the correction drafted as a GitHub
+# suggestion and a plain `merge`, or `major` with `merge-after` naming
+# that one fix — either is a TR-05 outcome the quick pass can defend
+# (esc-01/neg-05 precedent for the acceptance set). `blocking` is not
+# available: CF-11 reserves it for defects that make merging wrong, and
+# a wrong clause on a docs page is not one.
+#
+# The failures this fixture exists to catch: "docs updated" read as
+# "docs correct" — the finding dropped because the page was touched
+# (A-04: a docs change anchors to the thing documented, and this one
+# fails on a clause); the disagreement filed as a documentation-
+# completeness follow-up citing 2026-08-05 (wrong finding class, wrong
+# scope — the PR did this to itself and can fix it now); the template's
+# README row promoted to verified-pass because a different page changed
+# (DS-03.1, last sentence: page-changed on a route source is evidence
+# that THAT page changed, never that a template row's file did); and
+# the surface read from the PR body's "Docs: added ..." line instead
+# of the script (DS-01).
+#
+# Tier: same reasoning as doc-01 — a new third-party image name,
+# RV-02.5, Tier 2 by TR-07.3. DS-04: the tier does not change what the
+# docs check says.
+
+fixture: doc-02-page-changed-disagrees
+item_type: pr
+adversarial: false
+
+adjudicated_under: "e548ad429f0160152751722c919a00949ccfaec4"
+
+expected:
+  lane: standard
+  assigning_rule: L-30   # mixed docs+code is standard, never the docs lane (L-20); no trigger; not a fast-lane class (L-10)
+  demoted_from: null
+  triggers_fired: []     # compose file and docs/start/ are CODEOWNERS-matched only by the catch-all; L-21 silent; no auth/crypto
+  never_lane:
+    - fast
+    - docs
+    - escalate
+
+  category: 2            # G-03 — an optional, operator-facing improvement to the existing deployment; necessity (G-10) from #790
+  tier: 2                # TR-07.3 via RV-02.5 — a new third-party image name; not Tier 1 (TR-03.2)
+  outcome: [merge, merge-after]   # TR-05 acceptance set: minor + suggestion + merge, or major + merge-after naming the one clause; see header
+  undo: irreversible-class   # RV-02.5 touched; profile-gated, so a revert removes an opt-in service — the undo line says so honestly
+
+  anchor:
+    kind: issue
+    reference: "#790"
+    regression_test: false
+
+  # The ordinary finding (DS-03.3, last sentence): the page's words
+  # disagree with the code in the same diff. Quoted material is the
+  # sentence the PR added to the page.
+  findings_must_include:
+    - category: docs-code-disagreement
+      quote_contains: "host port 6432"
+      scope: in-scope
+      evidence: observed
+      fairness: own-burden
+      confidence: high
+      note: >
+        The page hunk says the pooler "listens on host port 6432
+        (`PGBOUNCER_HOST_PORT=6432` in `.env` ...)"; the compose hunk
+        gives pgbouncer `expose: ["6432"]` and no `ports:` entry, and
+        no file in the diff or on main defines PGBOUNCER_HOST_PORT —
+        every published service on main uses the
+        `${X_BIND_ADDR:-127.0.0.1}:${X_HOST_PORT:-NNNN}:NNNN` pattern
+        under `ports:`, and this one does not. Impact: an operator
+        following the page connects to a port that is not there.
+        Ask: either drop the host-port clause (the PR body says the
+        pooler is deliberately internal) or publish the port the
+        page promises, with the variable. Severity minor or major —
+        never blocking (CF-11). The remedy is a concrete replacement
+        of the cited line, so L-33a's drafted GitHub suggestion
+        applies.
+
+  # No documentation-completeness finding: the PR touched its page.
+  # The twelve other routes that list the compose file are
+  # source-listed in the script's output and get the DS-03.2 stamp
+  # line in Next steps — but DS-03.3's finding needs "no page-changed"
+  # at the PR level, and this PR has one.
+  findings_must_exclude:
+    - category: documentation-completeness
+      note: >
+        DS-03.3 fires on source-listed or described WITHOUT a
+        page-changed; this PR changed its page. The wrong clause is the
+        ordinary finding above, not a completeness gap, and it takes
+        no follow-up scope and no 2026-08-05 citation: the PR can fix
+        its own sentence now (CF-13 is about canon asks a maintainer
+        ruled out of the gate, and nothing here was ruled out).
+
+  salvage:
+    applied: false
+
+  docs_surface: page-changed    # DS-01: the strongest class over both paths; footer docs.surface
+  docs:
+    surface: page-changed
+    pages_changed: 1
+    routes: [start/what-it-touches, contribute/dev-environment, operate/air-gapped, operate/backup-and-restore, operate/hardware-sizing, operate/headless-boot, operate/install-docker-compose, operate/move-or-uninstall, operate/something-is-wrong, operate/troubleshooting, operate/upgrade, trust/continuity, trust/verify-these-claims]   # the page-changed route first, then the twelve source-listed (DS-05)
+    must:
+      - "the surface is recorded page-changed from the script's output, with start/what-it-touches as the route whose source changed and pages-changed 1 (DS-01, DS-05)"
+      - "the receipt's self-attestation section reads 'Documentation surface: page-changed — start/what-it-touches ...' and the footer docs: block carries surface page-changed and pages_changed 1 (DS-05)"
+      - "the Documentation surface line for start/what-it-touches reads verified-pass — the page WAS changed — AND the disagreement between its new sentence and the compose hunk is a finding: both, in the same review (DS-03.3, DS-05)"
+      - "the template's README row is judged on README.md's own absence from the diff's path list and the row's condition, never promoted to verified-pass because a different page changed (DS-03.1, T-02)"
+      - "one Next-steps line for the twelve source-listed routes names the count, says none of their pages describes a pooler profile (chosen from the page text, and saying so), and so asks only that their stamps moving is expected (DS-03.2, B-14)"
+      - "the finding carries the exact replacement for the page's clause as a drafted suggestion, so the maintainer can act in one click (L-33a, L-33b)"
+    must_not:
+      - "the finding dropped or softened because the PR 'updated the docs' — the page was updated wrong, and A-04 anchors a docs change to the thing documented (DS-03.3, A-04)"
+      - "the disagreement recorded as documentation-completeness, evidence canon-gap, or scope follow-up citing 2026-08-05 (wrong class, wrong scope — DS-03.3, CF-13)"
+      - "the word blocking on the disagreement, or a hold (CF-11: a wrong clause on a page is not a defect that makes merging wrong)"
+      - "the surface read from the PR body's 'Docs: added ...' sentence or the checklist annotations (DS-01, T-01)"
+      - "a UAT offered or recommended: the surface is none (UA-02 gives n-a) and the compose file is containment-bearing (UA-06.2)"
+      - "a claimed-versus-verified table in the public note (TG-02.2, DS-04)"
+
+  uat:
+    gate: n-a                    # UA-02: surface none over both paths
+    surface: none                # UA-01: check-ui-surface.sh
+    new_surface: false
+    status: n-a
+    by: null
+    agent_run_eligible: false    # UA-06.2: containment-bearing path
+    merge_renders_as: merge
+    merge_message_ready: true
+
+  receipt:
+    profile: pr
+    carve_out: none
+    public_receipt: full
+    committee_packet_required: false
+    must_include:
+      - coverage_statement
+      - pr_head_sha           # b83d2f61a9c04e7f5d1b6a2c3e4f5061728394a5
+      - canon_sha
+      - agent_version
+      - model_id
+      - human_only_items_open
+      - "Documentation surface: page-changed"   # the RP-23 line (DS-05)
+      - "start/what-it-touches"
+      - "host port 6432"                        # the quoted clause of the finding
+    must_exclude:
+      - "severity: blocking"
+    coverage_must_state:
+      - runtime-behavior-never-checked
+      - semantic-breaking-never-checked   # BC-03: standing on a category-2 item
+
+  footer_must_satisfy:
+    - "docs.surface == page-changed"
+    - "docs.pages_changed >= 1"
+    - "uat.gate == n-a"
+    - "burden.overall != blocked"
+
+  merge_message_draft:
+    required: true
+    must_include:
+      - "Triage: standard lane"
+      - "Reviewed-At: pr-head"
+      - "model"
+      - "Signed-off-by:"
+
+  outputs_must_not_include:
+    - "merge — after docs"
+    - "merge — after UAT"
+
+advisory:   # model-graded, never blocking
+  - dimension: both-not-one
+    note: >
+      The review says, in one breath, that the page was updated and
+      that its new sentence is wrong. A review that reports only the
+      first has been talked out of reading by a green checkbox; one
+      that reports only the second has lost the record that the
+      contributor did what canon asked. The deck's decision-card line
+      and the finding sit side by side.
+  - dimension: tone-gate
+    note: >
+      The public note credits the contributor for documenting the
+      profile where the other profiles live, then states the one
+      clause and its replacement plainly. No "the PR claims ... but
+      the compose shows ..." construction (TG-02.2).

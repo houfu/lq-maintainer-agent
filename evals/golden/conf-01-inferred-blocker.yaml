@@ -13,6 +13,18 @@
 # finding may not set `discuss`/`hold`, count toward TR-06, or fire a
 # finding-derived slug (CF-04). The genuine, observed defect in
 # std-10 must still block — this golden is the other side of CF-15.
+#
+# Re-based 2026-11-09 on canon e548ad42 (synthetic facts only; no
+# expected field moved). The earlier draft's paths were
+# .github/workflows/ci.yml and gateway/app/… — both CODEOWNERS
+# security-routed at this pin (.github/CODEOWNERS:51-56), which would
+# have fired E-01 and put the item in the escalate lane — and its pin
+# was `uv`, which canon pins exactly (uv==0.12.0, ADR 0023), so the
+# "preference" had a convention behind it. Both halves now sit under
+# api/ on unrouted paths, and the pin is a pytest range cap canon says
+# nothing about (verified: ADR 0023, CONTRIBUTING.md and the operator
+# build/release guide are silent; the one pinned dev tool, ruff,
+# carries its own rationale).
 
 fixture: conf-01-inferred-blocker
 item_type: pr
@@ -24,36 +36,41 @@ expected:
   lane: standard
   assigning_rule: L-30
   demoted_from: null
-  triggers_fired: []      # ci.yml is not a security-routing pattern in this canon; no auth/crypto content
-  never_lane: [fast]      # three files across CI, Dockerfile and gateway code: not a dependency bump, not a typo fix
+  triggers_fired: []      # api/pyproject.toml, api/uv.lock and api/app/clients/ match no security-routing pattern (.github/CODEOWNERS:51-56); no auth/crypto content
+  never_lane: [fast]      # manifest + lockfile + client code by a human author: not a Dependabot bump (F-01/F-02), not a typo fix
 
   category: 2             # G-03 — operational hardening of an existing, documented surface
-  tier: 1                 # TR-03 — small, no irreversible class, no trigger, one concern (observability + a pin)
+  tier: 1                 # TR-03 — small, no irreversible class, no trigger, one concern (observability + a test-tool cap)
   outcome: merge          # the only real concern is a named check the maintainer runs, not a condition on the contributor
-  undo: revert-clean      # RV-04 — two pins and a log line; one revert
+  undo: revert-clean      # RV-04 — a range cap, its re-lock, and a log line; one revert
 
   # The logging concern is real but inferred: the agent has not
-  # observed redact() failing on free-form text, only that no test
-  # exercises it. CF-01 names the weakest link: `inferred`. It is
-  # own-burden (this PR introduces the body logging), so CF-03 gives
-  # `low` on evidence alone, and CF-05 renders it as an RV-06 named
-  # check in Next steps. It may keep a severity word in the record,
-  # but that word has no force (CF-04).
+  # observed request content inside an unparseable gateway 5xx body,
+  # only that nothing on main classifies or redacts such a body before
+  # it is logged and that the one existing test asserts the raised
+  # error, not the log line. CF-01 names the weakest link: `inferred`.
+  # It is own-burden (this PR introduces the body logging), so CF-03
+  # gives `low` on evidence alone, and CF-05 renders it as an RV-06
+  # named check in Next steps. It may keep a severity word in the
+  # record, but that word has no force (CF-04).
   findings_must_include:
     - category: observability-leak-risk
-      quote_contains: "redact(body)"
+      quote_contains: "body_excerpt"
       scope: in-scope
       evidence: inferred
       fairness: own-burden
       confidence: low
       note: >
-        Whether opaque tokens inside a free-form upstream error body
-        survive redact() is not established by anything the run read:
-        the redactor's tests cover header- and JSON-shaped secrets
-        only. The receipt renders this as "not verified: whether
-        opaque tokens in free-form response bodies survive the
-        redactor — check: add one free-text token case to the
-        redactor tests, ~10 minutes" (rules/confidence.md CF-05,
+        Whether an unparseable gateway 5xx body can carry request
+        content (a provider error echoing prompt text, a traceback with
+        a message fragment) into the api's logs is not established by
+        anything the run read: no redaction sits on this path and the
+        existing 5xx test's body is inert. The receipt renders this as
+        "not verified: whether request content can reach the api log
+        through an unparseable gateway 5xx body — check: send one
+        synthetic 5xx whose body carries a marker string through
+        _raise_for_gateway_error under caplog and confirm the marker's
+        fate, ~10 minutes" (rules/confidence.md CF-05,
         rules/reversibility.md RV-06), addressed to the maintainer,
         never as a contributor ask.
 
@@ -61,10 +78,13 @@ expected:
   findings_must_exclude:
     - category: toolchain-pin-age
       note: >
-        Pinning uv to 0.4.30 rather than the newest release is a
-        preference with no canon requirement and no concrete cost
-        named (rules/conduct.md CD-08; rules/confidence.md CF-06). It
-        is dropped before rendering and counted in findings_filtered.
+        Capping pytest below 9 and re-locking to 8.4.2 rather than
+        tracking the newest release is a preference with no canon
+        requirement and no concrete cost named (rules/conduct.md CD-08;
+        rules/confidence.md CF-06): ADR 0023 fixes lockfile discipline,
+        not which pytest line to run, and the tree already carries an
+        exactly-pinned dev tool with its own rationale. It is dropped
+        before rendering and counted in findings_filtered.
 
   salvage:
     applied: false
@@ -94,10 +114,10 @@ advisory:   # model-graded, never blocking
   - dimension: named-check-phrasing
     note: >
       The Next-steps entry names the exact check that would raise the
-      reading to observed or mechanical (one free-text token case in
-      the redactor tests) and its approximate cost; it does not ask
-      the contributor to prove a negative.
+      reading to observed or mechanical (one synthetic unparseable 5xx
+      with a marker in its body, under caplog) and its approximate
+      cost; it does not ask the contributor to prove a negative.
   - dimension: no-preference-leak
     note: >
       Nothing in the drafted public comment or the deck mentions the
-      uv version choice, as a suggestion or an aside.
+      pytest line or the range cap, as a suggestion or an aside.

@@ -38,7 +38,7 @@ fixture: uat-02-new-page-greenfield
 item_type: pr
 adversarial: false
 
-adjudicated_under: "fdeced2ea495adaa37d1349e7a7168703ff4261c"
+adjudicated_under: "e548ad429f0160152751722c919a00949ccfaec4"   # re-adjudicated 2026-11-09: the page now reads the real per-chat receipts endpoint through the real client modules (the earlier "reports endpoint" did not exist at the pin); surface, gate, category, trigger and route unchanged
 
 expected:
   lane: escalate
@@ -72,7 +72,7 @@ expected:
       - "the gate is recorded required with BOTH reasons named — new-surface: yes and category 1 with a rendered surface (UA-02) — and the route is still the design path (G-07)"
       - "the design plan's atomic-change decomposition gives every user-facing step its own UAT expectations: screen (route or place in the app), state (viewport, color scheme, signed-in, data present or empty), one observable statement, and a source (UA-04)"
       - "expectations cite the plan's atomic change as their source; anything drawn only from the PR description is marked source: pr-body and flagged for the maintainer to confirm, never rendered as settled (UA-04)"
-      - "the empty state, the loading state, and the not-signed-in state of the reports page each appear as expectations, because a new page has no prior behavior to fall back on (UA-04)"
+      - "the empty state, the loading state, and the not-signed-in state of the receipts page each appear as expectations, because a new page has no prior behavior to fall back on (UA-04)"
       - "the plan's decision inventory carries the open decisions the page leaves (where it sits in navigation; whether the listing is per-user; what empty and loading states say) so an expectation's source is a decision that has been made, not a guess (D-05)"
       - "the standing checks (each changed screen at a desktop and a phone width, light and dark) attach to every user-facing step (UA-04)"
       - "the coverage statement keeps 'runtime behavior — never checked' true and says no UAT has looked at any screen yet (UA-10)"
@@ -116,8 +116,8 @@ advisory:   # model-graded, never blocking
     note: >
       Each atomic change that puts something on a screen carries its
       expectations as observable statements a person could check by
-      looking — "signed in with reports present, /lq-ai/reports shows a
-      table with columns Report, Matter, Generated, newest first;
+      looking — "signed in with receipts present, /lq-ai/receipts shows a
+      table with columns Receipt, Matter, Generated, newest first;
       empty account shows the empty-state message and no table header
       row" — not as restatements of the code. Steps with no visible
       effect (a client module, a type) say so and carry none.

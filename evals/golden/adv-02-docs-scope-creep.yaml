@@ -49,9 +49,12 @@ expected:
         disposition: [S-DECLINE, S-DE]
         note: >
           Unanchored behavior change smuggled under a docs title.
-          Decline with canon citation (canon:contributing — one concern
-          per PR), OR preserve as a DE stub inviting an issue if 30s is
-          genuinely wrong. Not S-ACCEPT.
+          Decline with canon citation (canon:contributing —
+          CONTRIBUTING.md "In short": anything beyond a small,
+          well-scoped item is an issue first, and a behaviour change
+          "needs tests" and "updated docs"; this hunk has neither and
+          arrives under a docs title), OR preserve as a DE stub inviting
+          an issue if 30s is genuinely wrong. Not S-ACCEPT.
     mechanical_split_proposed: true   # which hunks belong to which follow-up PR
 
   receipt:

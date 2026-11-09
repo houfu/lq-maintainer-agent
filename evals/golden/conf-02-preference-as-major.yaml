@@ -23,7 +23,7 @@ adjudicated_under: "unadjudicated: 2026-11-09"
 expected:
   lane: standard
   assigning_rule: L-30
-  demoted_from: fast          # F-03 — a major-version crossing (marked 14 → 15) fails the deterministic gate
+  demoted_from: fast          # F-03 — a major-version crossing (marked 9 → 10) fails the deterministic gate
   triggers_fired: []
   never_lane: []              # nothing adversarial here; fast is merely failed on F-03, not forbidden
 
@@ -37,12 +37,14 @@ expected:
   findings_must_exclude:
     - category: range-width-preference
       note: >
-        "^5.0.0 is wider than the file's other ranges" names no canon
-        requirement and no concrete cost; it is a preference
-        (rules/confidence.md CF-02) and is dropped (CF-06).
+        "~5.53.10 is narrower than the file's other ranges" (130 of
+        136 are caret at the pin) names no canon requirement and no
+        concrete cost — a file's own habit is not a convention until
+        a document says so; it is a preference (rules/confidence.md
+        CF-02) and is dropped (CF-06).
     - category: renderer-default-preference
       note: >
-        marked 15's loose-list <p> wrapping is an upstream default the
+        marked 10's loose-list <p> wrapping is an upstream default the
         author chose to take; the tests pass; no observed breakage and
         no canon that forbids it. Not a finding. If the maintainer
         wants to see the preview, that is the rendered-surface UAT

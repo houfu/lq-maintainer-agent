@@ -230,7 +230,9 @@ that motivated it:
   original author on a reimplementation; **`canon:release-conventions`**
   joins the canon map (nine style corrections, four credit omissions,
   two release-notes misfires).
-- **Canon is pinned to `origin/main` after a fetch** (eight stale pins).
+- **Canon is pinned to the canon remote's `main` after a fetch** (eight
+  stale pins) — the remote whose URL names the target, `RT-10` (§5),
+  not necessarily `origin`.
 - **Skills pass diffs to `check-breaking.sh` as a file argument** (the
   hook had blocked the plugin's own check).
 
@@ -240,7 +242,49 @@ maintainer's `.maintainer/` folder divergence, and pushing to a
 contributor's branch from a review session (which stays blocked on the
 review floor by design — the coder floor is where that work is done).
 
-## 5. What does not change
+## 5. The documentation surface: which published pages a change touches (new; `rules/docs-surface.md` DS-NN)
+
+Asked the day after the release was cut — *"evaluate whether PR review
+needs a check on whether docsite update is needed"* — and ruled into
+v0.8.0 the same day. The evidence and the plan are in
+`docs/proposals/docs-surface-check.md`; the shape is `UA-01`'s: a
+mechanical detector, a surface, never a verdict.
+
+- **Detection from paths, at the canon SHA (DS-01, DS-02).**
+  `check-docs-surface.sh` reads the target's route manifests — each
+  published page's one canonical source and its listed further
+  sources, which include code — through `git show` at the pinned canon
+  SHA, never from the contribution, and classifies the diff:
+  `page-changed` (a page's source is in the diff), `source-listed` (a
+  file a page lists changed while the page did not — the stamp moves,
+  the words were not checked), `reference-source` (an input to the
+  generated reference pages), `none`, or `unknown` (fail-closed: a
+  missing row or a manifest the stdlib subset parser refuses). The
+  model may raise `described`; nothing lowers.
+- **What it drives (DS-03).** The self-attestation documentation rows
+  — the detector decides whether a row's condition applies, the diff
+  decides whether the row's named file was touched, so the rows stop
+  reading `cannot-verify`; one Next-steps line naming the route and
+  the sentence to check; and the one finding the target's
+  contribution rules can require, `major` / `canon-gap` / `own-burden`
+  with `scope: follow-up` citing the 2026-08-05 limit-reviews ruling
+  (`CF-13`) — never a merge condition.
+- **What it never does (DS-04).** No lane, tier, category, trigger,
+  outcome or UAT gate reads it; nothing contributor-facing tabulates
+  it; claims drift across releases stays the target's release-time
+  work.
+- **The record (DS-05, RP-23).** One receipt line, an optional
+  additive `docs:` footer block (`surface`, `routes`, `pages_changed`),
+  one plain-language line on the deck's decision card.
+- **Two things the check pulled into the release.** The CI canon pin
+  advances from lq-ai's 2026-07-10 commit to 2026-11-08 — the
+  manifests do not exist at the old pin — and every golden was
+  re-adjudicated against the new tree. And `RT-10`: the canon remote
+  is the one whose URL names the target, found with `git remote -v`,
+  because the maintainer's own clone has a fork as `origin` and would
+  otherwise read none of the target's newer files.
+
+## 6. What does not change
 
 v0.7.6 §3 holds, and everything in v0.7 §10. No surface, floor,
 confidence or publication moves an item lighter; the coder floor is a
@@ -251,7 +295,7 @@ code outside the one UAT runner. The receipt footer stays `receipt:v2`
 with additive optional fields. A record's rules are the rules of the
 version that wrote it.
 
-## 6. Implementation order and status
+## 7. Implementation order and status
 
 Hook floors with their tests and the two second-layer files; rules
 (`RT-09`, `PB-NN`, `L-34`/`B-15`) and templates (`public-header.md`,
@@ -270,11 +314,3 @@ await the calibration report; Codex's hook payload fields are taken
 from its documentation, not observed in a live payload, and the first
 Codex session after this release is where that is confirmed (re-trust
 the hook in `/hooks` — every hook change re-arms that review).
-
-**Next item after this release (planned, not in v0.8.0):** a
-mechanical *docs-surface* check — which published documentation pages
-a change touches or is listed under, feeding one Next-steps line and
-the self-attestation docs rows, never a gate. Plan, evidence and the
-sequencing it depends on (the CI canon pin must first advance past
-lq-ai's 2026-10-25 docsite launch) in
-[../proposals/docs-surface-check.md](../proposals/docs-surface-check.md).

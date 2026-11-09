@@ -143,6 +143,12 @@ ISSUE_RECOS = ("proceed", "design", "needs-info", "decompose", "escalate")  # IV
 UAT_GATES = ("required", "recommended", "n-a")
 UAT_STATUSES = ("pending", "passed", "failed", "not-reached", "n-a")
 UAT_BY = ("agent", "maintainer")
+
+# The v0.8 optional `docs:` footer block (templates/receipt-pr.md RP-23,
+# rules/docs-surface.md DS-05). Enumerated only; absent on every earlier
+# footer. `none` and an absent block render nothing.
+DOCS_SURFACES = ("page-changed", "source-listed", "reference-source", "described",
+                 "none", "unknown")
 _SHA40 = re.compile(r"^[0-9a-f]{40}$")
 # The never-checked rail's runtime line when a UAT looked at named screens at
 # the reviewed head (RP-07, UA-10). A qualifier, never a resolution: the item
@@ -472,7 +478,7 @@ def maintainer_ruling_html(md, base):
 
 
 def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False,
-                        uat_note="", uat_bad=False):
+                        uat_note="", uat_bad=False, docs_note=""):
     """The decision card -- ONE card, never two (v0.7.2 §4): the maintainer's
     recorded ruling (RP-18) leads where it exists, and the agent's
     recommendation-shaped line rides under it, labelled, so the two can never
@@ -501,6 +507,10 @@ def build_decision_card(md, base, agent_line, undo_note="", undo_bad=False,
     if undo_note:
         out.append('<p class="decnote%s">%s</p>'
                    % (" d-bad" if undo_bad else "", esc(undo_note)))
+    if docs_note:
+        # v0.8 (DS-05): one plain line, never a hold -- the documentation
+        # surface is a surface, not a verdict (DS-04).
+        out.append('<p class="decnote docsnote">%s</p>' % esc(docs_note))
     out.append('</section>')
     return "".join(out)
 
@@ -1484,6 +1494,48 @@ def uat_hold_line(u, g):
                                      "merge should wait until it has been.")
 
 
+def docs_state(r):
+    """The v0.8 `docs:` block (RP-23) read into what the deck needs, or None
+    when the block is absent or its surface is `none`. A surface outside the
+    enum is kept as raw text and rendered as unrecognised (degrade, never
+    hide); routes are plain identifiers and are escaped like every other
+    footer value."""
+    d = r.get("docs")
+    if not isinstance(d, dict):
+        return None
+    raw = str(d.get("surface") or "").strip().lower()
+    if raw in ("", "none"):
+        return None
+    routes = d.get("routes")
+    if isinstance(routes, str):
+        routes = [x.strip() for x in routes.strip("[]").split(",") if x.strip()]
+    elif not isinstance(routes, list):
+        routes = []
+    routes = [str(x).strip() for x in routes if str(x).strip()][:6]
+    try:
+        pages = max(0, int(str(d.get("pages_changed"))))
+    except (TypeError, ValueError):
+        pages = 0
+    return {"surface": raw if raw in DOCS_SURFACES else "", "raw": raw,
+            "routes": routes, "pages": pages}
+
+
+def docs_line(d, g):
+    """The decision card's one documentation line (DS-05): the glossed surface
+    plus the routes it named. Never a hold (DS-04)."""
+    if not d:
+        return ""
+    if d["surface"]:
+        cap = g.cap("docs:surface:%s" % d["surface"], "") or \
+            ("Documentation surface: %s" % d["surface"])
+    else:
+        cap = ("Documentation surface recorded as \u201c%s\u201d, which this view does not "
+               "recognise" % d["raw"][:40])
+    if d["routes"]:
+        cap += " \u2014 " + ", ".join(d["routes"])
+    return cap
+
+
 def build_uat_card(u, md, g, base):
     """'Seen running?' -- the gate in plain words, the status, who ran it and
     at which head, the counts, and the screens it looked at. Every figure
@@ -1880,6 +1932,9 @@ def build_deck(md, g, below=None):
     # block renders byte-for-byte as before.
     uat = uat_state(r, pinned.get("pr_head_sha"))
     uat_hold = uat_hold_line(uat, g)
+    # v0.8 optional `docs:` block (RP-23): one line on the decision card, or
+    # nothing -- a footer without the block renders byte-for-byte as before.
+    docs_note = docs_line(docs_state(r), g)
 
     # --- verdict state + copy ---
     BSTATE = {"blocked": "s-bad", "high": "s-bad", "medium": "s-warn", "low": "s-ok"}
@@ -2147,7 +2202,7 @@ def build_deck(md, g, below=None):
         undo_note = ""
     A(build_decision_card(md, base, agent_line, undo_note,
                           undo == "irreversible-class",
-                          uat_hold, bool(uat and uat["failed"])))
+                          uat_hold, bool(uat and uat["failed"]), docs_note))
 
     # ---- spine 3a: seen running? (v0.7.6, RP-22) — directly under the
     # decision it can hold. Absent block or `gate: n-a`: no card at all.

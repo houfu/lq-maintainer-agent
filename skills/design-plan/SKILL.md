@@ -110,8 +110,9 @@ keeps a work log — record the canary line as its first row.
    If not, stop and tell the user to run this from inside their clone
    — the clone *is* the runtime canon (§3.4); a plan grounded without
    it is conservative and must say so (`B-00a`).
-2. **Record the canon SHA** (`git rev-parse main`; warn if behind
-   `origin/main`), the **agent version**
+2. **Record the canon SHA** (`git rev-parse <canon-remote>/main` after
+   `git fetch <canon-remote> main` — the remote whose URL is `canon:repo`,
+   `RT-10`; warn if local `main` is behind it), the **agent version**
    (`${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json` `version`), and
    the **served model ID** (as the platform reports it, never a guess;
    if unavailable the field reads "not-recorded — session did not

@@ -1,0 +1,10 @@
+- route: reference/configuration
+  source: docs/site/reference/configuration.intro.md
+  title: Configuration reference
+  kind: reference
+  status: draft
+- route: operate/install
+  source: docs/deployment-cookbook.md
+  title: Install
+  kind: how-to
+  sources: [docker-compose.yml, .env.example]

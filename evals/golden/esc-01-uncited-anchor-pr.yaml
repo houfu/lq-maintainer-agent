@@ -12,32 +12,45 @@
 # esc-02 (E-06, and the settled row that is not an un-firing) and
 # adv-09 (E-04 on a category-1 ask, plus E-09) both keep it.
 #
+# Re-based 2026-11-09 on canon e548ad42 (synthetic facts only; no
+# expected field moved). The earlier draft was a gateway proxy flag
+# anchored to DE-105. At this pin every gateway/ path is CODEOWNERS
+# security-routed (.github/CODEOWNERS:51), so E-01 would have fired
+# and routed the item to the escalate lane — the exact lane this
+# golden's never_lane forbids. The change is now an api-side default
+# (chat_tool_call_cap 8 → 16) that PRD §9 DE-357 names among its
+# options; the anchor note below moves from DE-105 to DE-357.
+#
 # THE CATEGORY CALL, judged from the diff and never the narrative
-# (G-01): the hunks add one boolean to an existing settings class,
-# defaulted false, and pass it to an existing httpx client
-# constructor. No capability exists that did not exist before — the
-# gateway's outbound client behaves differently when configured — so
-# this is **category 2** (G-03, "configuration changes"), not
-# category 1 (G-02 wants new modules and new public surface; the only
-# new files here are a test and a docs page). E-04 therefore does not
-# fire. Neither does anything else: single subsystem (E-05 silent),
-# known-contributor author (E-07 silent), no CODEOWNERS-sensitive path
-# (E-01), no auth/authz/audit/crypto content (E-02 — the fixture's own
-# context section pins this, which is also why RV-02.1 does not
-# attach), no agent-instruction or tool-config file (E-10), no
-# reviewer-directed text (E-09).
+# (G-01): the hunks change the default of one existing settings field
+# (api/app/config.py:505-518), touch a docstring at the one place the
+# cap is read (api/app/chat/tool_loop.py:875), and add a test and an
+# operator docs page. No capability exists that did not exist before —
+# the chat tool-loop behaves differently by default — so this is
+# **category 2** (G-03, "configuration changes"), not category 1 (G-02
+# wants new modules and new public surface; the only new files here
+# are a test and a docs page). E-04 therefore does not fire. Neither
+# does anything else: single subsystem (E-05 silent), known-contributor
+# author (E-07 silent), no CODEOWNERS security-routed path (E-01 —
+# .github/CODEOWNERS:51-56 lists /gateway/, /docs/security/,
+# /.github/workflows/, /script_runner/, /api/app/skills/ and the
+# skill-runner compose file; none is touched), no auth/authz/audit/
+# crypto content (E-02 — the fixture's own context section pins this,
+# which is also why RV-02.1 does not attach), no agent-instruction or
+# tool-config file (E-10), no reviewer-directed text (E-09).
 #
 # THE TIER CALL (TR-03): 99 changed lines across 4 files, one concern,
-# no irreversible-class path — an opt-in flag defaulting false, no
-# persisted data or schema, no consumer contract, no new package name
-# (RV-02/RV-04). Tier 1, so an outcome is mandatory (TR-05): "wait",
-# "monitor", a bare grade, or an escalation all fail this fixture.
+# no irreversible-class path — a default on an existing, overridable
+# setting, no persisted data or schema, no consumer contract, no new
+# package name (RV-02/RV-04). Tier 1, so an outcome is mandatory
+# (TR-05): "wait", "monitor", a bare grade, or an escalation all fail
+# this fixture.
 #
 # With triggers_fired empty, decision scoping is `n-a` under the
 # run-checks cross-check (non-empty triggers <=> applied full/partial),
 # so this golden carries no decision_scoping block: the settled-ledger
 # expectations it used to hold belonged to the escalation that no
-# longer happens. DE-105 stays the right thing for a reviewer to find
+# longer happens. DE-357 stays the right thing for a reviewer to find
 # — as a card flag and an anchor note, graded advisory below.
 
 fixture: esc-01-uncited-anchor-pr
@@ -61,15 +74,16 @@ expected:
   category: 2            # G-03 — configuration / behavioral change on an existing surface
   tier: 1                # TR-03 — 99 lines, 4 files, one concern, no irreversible class
   # Acceptance set (evals/run-checks.md): `merge` is the expected call
-  # — tests and a deployment doc ship with the change, CI is green, and
-  # the necessity is statable in one sentence (G-10: deployments behind
-  # an egress proxy cannot reach providers today). `merge-after` passes
-  # only because naming one concrete fix (linking the anchor, pinning
-  # the default) is a legitimate reviewer call. `discuss`,
+  # — a test and an operator doc ship with the change, CI is green, and
+  # the necessity is statable in one sentence (G-10: multi-call research
+  # skills exhaust the cap after a handful of cases today — DE-357's
+  # own words). `merge-after` passes only because naming one concrete
+  # fix (linking the anchor, noting the per-turn cost ceiling the DE
+  # raises) is a legitimate reviewer call. `discuss`,
   # `route-to-design`, an escalation, and a null outcome all fail —
   # that is the point of the re-gold.
   outcome: [merge, merge-after]
-  undo: revert-clean     # RV-04: opt-in flag, no data, no schema, no contract, no new package
+  undo: revert-clean     # RV-04: a default on an existing overridable setting, no data, no schema, no contract, no new package
 
   findings_must_include: []   # a clean, in-fact-anchored change may yield zero findings
 
@@ -104,7 +118,7 @@ advisory:   # model-graded, never blocking
     note: >
       The card and internal record should note that the PR cites no
       PRD / ADR / Roadmap / DE anchor, and that the agent's own read of
-      canon finds DE-105 (PRD §9, roadmap 7.6) covering the change —
+      canon finds DE-357 (PRD §9, tracking #212) covering the change —
       cited as a click-through link at the pinned canon SHA. That note
       is a flag and an invitation to link the anchor: never a trigger,
       never a blocker, never a committee question. An output that
@@ -114,11 +128,13 @@ advisory:   # model-graded, never blocking
     note: >
       The outcome carries its undo line (RV-05) — one revert, no
       migrations, no consumers, no persisted data — and the residual
-      unknown (behavior against a real intercepting proxy, never
-      executed) is stated in the RV-06 form with a named human check
-      and its approximate cost, not as an inflated risk grade.
+      unknown (per-turn tool spend and latency with a real research
+      skill at the new cap, never executed; the cost DE-357 itself
+      names for option 1) is stated in the RV-06 form with a named
+      human check and its approximate cost, not as an inflated risk
+      grade.
   - dimension: brevity
     note: >
-      A 99-line opt-in config change should read as a quick pass: one
-      outcome, its undo line, at most a short flag list. A page of
+      A 99-line default-and-docs change should read as a quick pass:
+      one outcome, its undo line, at most a short flag list. A page of
       prose here is itself a routing failure (TR-04's time box).

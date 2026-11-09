@@ -70,8 +70,10 @@ keeps a work log — record the canary line as its first row.
    to run `/lq-maintainer:triage` from inside their clone — the clone
    *is* the runtime canon (design §3.4); there is no fallback source
    for it.
-2. **Record the canon SHA**: `git rev-parse main` in the clone. Warn
-   (do not block) if local `main` is behind `origin/main` — the
+2. **Record the canon SHA**: `git rev-parse <canon-remote>/main` in the
+   clone after `git fetch <canon-remote> main` — the remote whose URL is
+   `canon:repo`, `RT-10`, which is `origin` only when `origin` points at
+   the target. Warn (do not block) if local `main` is behind it — the
    maintainer may want to pull first.
 3. **Record the agent version**: read `version` from
    `${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json`.

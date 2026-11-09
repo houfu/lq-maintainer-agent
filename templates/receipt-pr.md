@@ -407,6 +407,22 @@ by `rules/canon-map.md`; this template itself names no lq-ai paths.
   Everything above is visible-body free text except the footer's
   enumerated `uat:` block (see the footer schema); the expectations,
   verdict lines and screenshot names never enter the footer (§8.4).
+- **RP-23 — Documentation surface (v0.8).** Which published
+  documentation pages this change touches or is listed under
+  (`rules/docs-surface.md`), recorded as **one line** in the
+  self-attestation cross-check section — `Documentation surface:
+  <page-changed | source-listed | reference-source | described | none |
+  unknown> — <routes>` — as `check-docs-surface.sh` printed it at the
+  pinned canon SHA, plus any surface the reviewer **raised** to
+  `described` with the page and the reason (DS-01; nothing lowers it),
+  and the optional footer `docs:` block (DS-05). The surface feeds the
+  documentation rows of the cross-check (the detector decides whether a
+  row's condition applies, the diff whether its named file was touched —
+  DS-03.1), one Next-steps entry (RP-16) when the surface is not `none`,
+  and the one follow-up-scoped finding DS-03.3 describes. It changes no
+  lane, tier, outcome or UAT gate (DS-04), and nothing contributor-facing
+  tabulates it (`TG-02.2`). `unknown` is a cannot-verify reading and
+  adds the dangling-key note to the coverage statement.
 
 
 ## Template
@@ -581,6 +597,15 @@ provider keys; pinned camera; only screenshots + manifest kept.>
 override: "U-<i>: agent verdict <v>; overruled by @<maintainer>
 (<date>): <their ruling>.">
 
+### Documentation surface (RP-23)
+
+**Surface:** <page-changed | source-listed | reference-source | described
+| none | unknown> — <route(s), or the count and the routes whose page
+describes the changed behaviour when more than three; `none`: that is
+the whole section><if raised: ; raised by the reviewer to described —
+<page>, <reason> (DS-01)><if unknown: ; the page map was not readable at
+the canon SHA — cannot-verify on the documentation rows (DS-03)>
+
 ### Coverage statement
 
 Covered: <e.g. deterministic gate, anchor, vetting checklist>
@@ -739,6 +764,10 @@ uat:
   at_sha: <40-hex|null>
   expectations: <integer>
   differs: <integer>
+docs:
+  surface: <page-changed|source-listed|reference-source|described|none|unknown>
+  routes: [<route>, ...]
+  pages_changed: <integer>
 decision:
   final_outcome: <merge|merge-after|discuss|route-to-design|hold|security-escalate|null>
   alignment: <accepted|adjusted|overridden|null>
@@ -888,6 +917,19 @@ eval-grading interface (`evals/run-checks.md`).
   wording (RP-07) and never resolve it: a parser must never read
   `status: passed` as coverage of anything outside the screens the
   visible section lists (UA-11).
+- **`docs`** (RP-23, `rules/docs-surface.md` DS-05, v0.8) — an
+  **optional**, additive block with the same posture as `uat`: the
+  marker stays `receipt:v2`, and **absent means the run predates v0.8**
+  — never "no documentation surface" (that is `surface: none`).
+  Enumerated fields only: `surface` (`page-changed` / `source-listed` /
+  `reference-source` / `described` / `none` / `unknown`, as
+  `check-docs-surface.sh` printed it or as the reviewer raised it,
+  DS-01), `routes` (an inline list of the route identifiers the script
+  or the raise named — plain path-shaped identifiers from the target's
+  own manifests, never contributor text; empty for `none` and
+  `unknown`), and `pages_changed` (an integer: routes whose canonical
+  source is in the diff). The sentence to check, the row-by-row
+  cross-check results and any finding live in the visible body.
 - **v1 → v2.** The marker is now `lq-maintainer-agent:receipt:v2`.
   Parsers match the `lq-maintainer-agent:receipt` prefix and accept
   both markers; a v1 footer parses as

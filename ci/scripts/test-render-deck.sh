@@ -597,6 +597,19 @@ UAT_SHORT_SHA = uat_receipt("required", "passed", "maintainer", UAT_HEAD[:12])
 UAT_PENDING_NORULING = uat_receipt("required", "pending", base=UAT_BASE_NORULING)
 
 
+def docs_receipt(surface, routes="[]", pages=0, base=UAT_BASE):
+    """UAT_BASE with an RP-23 `docs:` footer block (v0.8, enumerated only)."""
+    block = ("docs:\n  surface: %s\n  routes: %s\n  pages_changed: %d\n"
+             % (surface, routes, pages))
+    return base.replace("decision:\n  final_outcome", block + "decision:\n  final_outcome")
+
+
+DOCS_LISTED = docs_receipt("source-listed", "[start/what-it-touches, operate/install-docker-compose]")
+DOCS_PAGE = docs_receipt("page-changed", "[start/quickstart]", 1)
+DOCS_NONE = docs_receipt("none")
+DOCS_WEIRD = docs_receipt("maybe-later", "[start/quickstart]")
+
+
 # --------------------------------------------------------------------------
 def main():
     print("render-deck renderer tests")
@@ -1167,6 +1180,31 @@ def main():
             if "Whether the code actually runs correctly" in li:
                 return li
         return ""
+
+    # ---------------------------------------------------------------------
+    # v0.8 — documentation surface: the optional `docs:` footer block (RP-23).
+    # One line on the decision card, never a hold, nothing when absent/none.
+    # ---------------------------------------------------------------------
+    rc, out = run(UAT_BASE)
+    check("docs absent: no documentation line", rc == 0 and "docsnote" not in out, "rc=%d" % rc)
+    rc, out = run(DOCS_NONE)
+    check("docs none: renders as absent", rc == 0 and "docsnote" not in out, "rc=%d" % rc)
+    rc, out = run(DOCS_LISTED)
+    dc = out.split('class="card decision"', 1)[1].split("</section>", 1)[0]
+    check("docs source-listed: one line on the decision card naming the routes",
+          rc == 0 and dc.count("docsnote") == 1 and "start/what-it-touches" in dc
+          and "operate/install-docker-compose" in dc, dc)
+    check("docs source-listed: never a hold — merge headline and paste-ready message unchanged",
+          "<h1>Ready to merge</h1>" in out and "not ready to paste" not in out, out[:200])
+    rc, out = run(DOCS_PAGE)
+    dc = out.split('class="card decision"', 1)[1].split("</section>", 1)[0]
+    check("docs page-changed: glossed caption and the route",
+          rc == 0 and "docsnote" in dc and "start/quickstart" in dc
+          and ("built from was edited" in dc or "page-changed" in dc), dc)
+    rc, out = run(DOCS_WEIRD)
+    dc = out.split('class="card decision"', 1)[1].split("</section>", 1)[0]
+    check("docs unknown vocabulary: degrades to 'does not recognise', never hidden",
+          rc == 0 and "does not recognise" in dc and "maybe-later" in dc, dc)
 
     # (a) absent block — every pre-v0.7.6 fixture renders no UAT furniture,
     # and a record whose BODY carries an RP-22 section but whose footer does

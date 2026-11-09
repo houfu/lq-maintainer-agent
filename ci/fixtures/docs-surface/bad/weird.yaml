@@ -1,0 +1,5 @@
+- route: a/page
+  source: docs/a.md
+  sources:
+    - path: docs/b.md
+      weight: 2

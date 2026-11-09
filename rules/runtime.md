@@ -163,6 +163,21 @@ it protected does not run on that host.
   `gh` through Bash for every GitHub read and never a connector (MCP)
   tool** — the hook sees what it does.
 
+- **RT-10 — The canon remote is the one whose URL names the target
+  repository, not the one called `origin`.** *(v0.8.)* Every skill that
+  pins a canon SHA finds the remote with `git remote -v` whose URL
+  matches `canon:repo`, fetches that remote's `main` (a named-remote
+  fetch of a branch ref, which the hook allows on both floors), and pins
+  `git rev-parse <canon-remote>/main`. `origin` is the canon remote only
+  when its URL is the target's. A clone whose `origin` is a fork — the
+  maintainer's own machine in the 2026 record — would otherwise pin a
+  fork's `main` as canon and read none of the target's newer files
+  (`canon:docs-routes` first exposed it). When no remote matches, the
+  Step-0 remote check has already stopped the run; when two match, the
+  first in `git remote -v` order is used and named in the coverage
+  statement. The pinned field stays `canon_sha`; the remote name is
+  recorded beside it in the visible record, never in the footer.
+
 ## Invocation
 
 - **RT-05 — Skills fire only when named, on both hosts, and render the
