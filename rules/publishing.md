@@ -153,8 +153,9 @@ happens.
   history** — every item newest activity first, sub-lists by GitHub
   state, `index.json` for the machine readers — and is reached from
   the item pages' navigation, not from GitHub; no public comment links
-  it. There is no search: the site carries no script (the output scan
-  refuses one), and the machine index is the search. **(iv) A link may
+  it. No search is built in this version: the site carries no script
+  (the output scan refuses one), `index.json` is the machine index, and
+  adding a search would be a rules change here, not a page. **(iv) A link may
   point at a page that is not there.** The comment is posted when the
   review is; the site refreshes on the maintainer's schedule, and the
   item may be unselected (`--select`), held (PB-03) or refused (PB-02).

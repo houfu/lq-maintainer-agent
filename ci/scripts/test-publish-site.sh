@@ -169,7 +169,7 @@ def main():
         # PC-04's link shape and the directory the publisher writes must not drift apart
         with open(os.path.join(ROOT, "templates", "pr-comment.md"), encoding="utf-8") as fh:
             pc = fh.read()
-        check("PC-04: links the flow page at pr-<number>/", "`<site>/pr-<number>/`" in pc and "<site>/pr-<number>/" in pc.split("## Template", 1)[-1])
+        check("PC-04: links the flow page at pr-<number>/", "`<site>/pr-<number>/`" in pc and "<site>/<pr|issue>-<number>/" in pc.split("## Template", 1)[-1])
         check("PC-04: never links a deck path", "deck.html" not in pc)
         p2 = texts.get("pr-9002/index.html", "")
         check("flow page: absent decision says so", "Absence is not agreement" in p2)

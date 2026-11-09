@@ -160,7 +160,7 @@ thing done, named.>
 <PC-03: the one next step, and who owns it — "over to you: <ask>" or
 "nothing needed from you — this is on us now.">
 
-<if PC-04 applies: The record of this review, if you're curious: <site>/pr-<number>/>
+<if PC-04 applies: The record of this review, if you're curious: <site>/<pr|issue>-<number>/>
 
 ---
 *Drafted by [lq-maintainer-agent](https://github.com/houfu/lq-maintainer-agent/blob/main/docs/bot-behavior.md)
