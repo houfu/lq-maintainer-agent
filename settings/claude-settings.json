@@ -16,11 +16,7 @@
       "Bash(gh alias set:*)",
       "Bash(gh alias import:*)",
       "Bash(gh api graphql)",
-      "Bash(gh api graphql:*)",
-      "Bash(git push)",
-      "Bash(git push:*)",
-      "Bash(git send-pack)",
-      "Bash(git send-pack:*)"
+      "Bash(gh api graphql:*)"
     ]
   },
   "hooks": {
