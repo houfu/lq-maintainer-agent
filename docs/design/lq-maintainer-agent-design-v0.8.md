@@ -270,3 +270,11 @@ await the calibration report; Codex's hook payload fields are taken
 from its documentation, not observed in a live payload, and the first
 Codex session after this release is where that is confirmed (re-trust
 the hook in `/hooks` — every hook change re-arms that review).
+
+**Next item after this release (planned, not in v0.8.0):** a
+mechanical *docs-surface* check — which published documentation pages
+a change touches or is listed under, feeding one Next-steps line and
+the self-attestation docs rows, never a gate. Plan, evidence and the
+sequencing it depends on (the CI canon pin must first advance past
+lq-ai's 2026-10-25 docsite launch) in
+[../proposals/docs-surface-check.md](../proposals/docs-surface-check.md).
