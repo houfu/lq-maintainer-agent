@@ -4,4 +4,4 @@
 # Advanced only by the scheduled canon-pin-advance job in
 # ci/canon-drift-check.yml, which opens a PR: review that PR with its
 # drift-check result and the goldens it re-flags.
-e548ad429f0160152751722c919a00949ccfaec4
+de4a72eac773469b34751eb0c51c16f06a1e94c9
